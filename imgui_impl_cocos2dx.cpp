@@ -1,9 +1,7 @@
 #include "imgui_impl_cocos2dx.h"
 #include "cocos2d.h"
 #include "renderer/backend/Backend.h"
-#ifdef CC_USE_GFX
 #include "renderer/backend/gfx/DeviceGFX.h"
-#endif
 
 #ifdef CC_PLATFORM_PC
 #include "platform/desktop/CCGLViewImpl-desktop.h"
@@ -51,10 +49,6 @@ static_assert(
 
 #endif // CC_PLATFORM_PC
 
-#if defined(CC_USE_GL) && defined(CC_PLATFORM_PC) && !defined(CC_USE_GFX)
-#define IMPL_MULTI_WINDOW
-#endif
-
 using namespace cocos2d;
 using namespace backend;
 
@@ -88,11 +82,6 @@ struct ProgramInfo
 	// Uniforms location
 	UniformLocation texture;
 	UniformLocation projection;
-	// Vertex attributes location
-	int position = 0;
-	int uv = 0;
-	int color = 0;
-	cocos2d::backend::VertexLayout layout;
 };
 static ProgramInfo g_ProgramInfo;
 static ProgramInfo g_ProgramFontInfo;
@@ -193,7 +182,6 @@ void ImGui_ImplCocos2dx_RenderDrawData(ImDrawData* draw_data)
 		size_t ibuffer_offset = 0;
 
 		// Upload vertex/index buffers
-#ifdef CC_USE_GFX
 		const auto device = static_cast<backend::DeviceGFX*>(backend::Device::getInstance());
 		const auto vsize = cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
 		IM_ASSERT(vsize > 0);
@@ -203,16 +191,6 @@ void ImGui_ImplCocos2dx_RenderDrawData(ImDrawData* draw_data)
 		IM_ASSERT(isize > 0);
 		auto ibuffer = device->newBuffer(
 			isize, sizeof(ImDrawIdx), BufferType::INDEX, BufferUsage::STATIC);
-#else
-		const auto vsize = cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
-		IM_ASSERT(vsize > 0);
-		auto vbuffer = backend::Device::getInstance()->newBuffer(
-			vsize, BufferType::VERTEX, BufferUsage::STATIC);
-		const auto isize = cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
-		IM_ASSERT(isize > 0);
-		auto ibuffer = backend::Device::getInstance()->newBuffer(
-			isize, BufferType::INDEX, BufferUsage::STATIC);
-#endif
 		vbuffer->autorelease();
 		vbuffer->updateData(cmd_list->VtxBuffer.Data, vsize);
 		ibuffer->autorelease();
@@ -271,10 +249,6 @@ void ImGui_ImplCocos2dx_RenderDrawData(ImDrawData* draw_data)
 						g_ProgramStates.pushBack(state);
 						auto& desc = cmd->getPipelineDescriptor();
 						desc.programState = state;
-#ifndef CC_USE_GFX
-						// setup attributes for ImDrawVert
-						*desc.programState->getVertexLayout() = pinfo->layout;
-#endif
 						desc.programState->setUniform(pinfo->projection, &g_Projection, sizeof(Mat4));
 						desc.programState->setTexture(pinfo->texture, 0, tex->getBackendTexture());
 						// In order to composite our output buffer we need to preserve alpha
@@ -320,14 +294,9 @@ void ImGui_ImplCocos2dx_RenderPlatform()
 #ifdef CC_PLATFORM_PC
 	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 	{
-		GLFWwindow* backup_current_context = glfwGetCurrentContext();
+		// no GL context to restore under gfx; platform windows only
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
-		glfwMakeContextCurrent(backup_current_context);
-		AddRendererCommand([=]()
-		{
-			glfwMakeContextCurrent(backup_current_context);
-		});
 	}
 #endif
 }
@@ -430,13 +399,8 @@ bool ImGui_ImplCocos2dx_CreateFontsTexture()
 	g_FontTexture = new Texture2D();
 
 	g_FontTexture->setAntiAliasTexParameters();
-#ifdef CC_USE_GFX
 	g_FontTexture->initWithData(pixels, width * height,
 		backend::PixelFormat::A8, width, height);
-#else
-	g_FontTexture->initWithData(pixels, width*height,
-		backend::PixelFormat::A8, width, height, cocos2d::Size(width, height));
-#endif
 	io.Fonts->SetTexID((ImTextureID)g_FontTexture);
 	return true;
 }
@@ -513,7 +477,6 @@ void main()
 #endif
 }
 )";
-#ifdef CC_USE_GFX
 	static auto fragment_shader_font = R"(
 #ifdef GL_ES
 precision lowp float;
@@ -541,35 +504,6 @@ void main()
 #endif
 }
 )";
-#else
-	static auto fragment_shader_font = R"(
-#ifdef GL_ES
-precision lowp float;
-#endif
-
-#if __VERSION__ >= 300
-layout(location=0) in vec4 v_fragmentColor;
-layout(location=1) in vec2 v_texCoord;
-layout(binding=2) uniform sampler2D u_texture;
-layout(location=0) out vec4 cc_FragColor;
-#else
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-uniform sampler2D u_texture;
-#endif
-
-void main()
-{
-#if __VERSION__ >= 300
-	float a = texture(u_texture, v_texCoord.st).a;
-    cc_FragColor = vec4(v_fragmentColor.rgb, v_fragmentColor.a * a);
-#else
-	float a = texture2D(u_texture, v_texCoord.st).a;
-    gl_FragColor = vec4(v_fragmentColor.rgb, v_fragmentColor.a * a);
-#endif
-}
-)";
-#endif
 	CC_SAFE_RELEASE(g_ProgramInfo.program);
 	CC_SAFE_RELEASE(g_ProgramFontInfo.program);
 	g_ProgramInfo.program = backend::Device::getInstance()->newProgram(
@@ -587,7 +521,6 @@ void main()
 		p->projection = p->program->getUniformLocation(MVP_MATRIX);
 		IM_ASSERT(bool(p->texture));
 		IM_ASSERT(bool(p->projection));
-#ifdef CC_USE_GFX
 		auto layout = p->program->getVertexLayout();
 		layout->setAttribute("a_position", 0,
 			VertexFormat::FLOAT2, 0, false);
@@ -596,22 +529,6 @@ void main()
 		layout->setAttribute("a_color", 2,
 			VertexFormat::UBYTE4, offsetof(ImDrawVert, col), true);
 		layout->setStride(sizeof(ImDrawVert));
-#else
-		p->position = p->program->getAttributeLocation(POSITION);
-		p->uv = p->program->getAttributeLocation(TEXCOORD);
-		p->color = p->program->getAttributeLocation(COLOR);
-		IM_ASSERT(p->position >= 0);
-		IM_ASSERT(p->uv >= 0);
-		IM_ASSERT(p->color >= 0);
-		auto& layout = p->layout;
-		layout.setAttribute("a_position", p->position,
-			VertexFormat::FLOAT2, 0, false);
-		layout.setAttribute("a_texCoord", p->uv,
-			VertexFormat::FLOAT2, offsetof(ImDrawVert, uv), false);
-		layout.setAttribute("a_color", p->color,
-			VertexFormat::UBYTE4, offsetof(ImDrawVert, col), true);
-		layout.setLayout(sizeof(ImDrawVert));
-#endif
 	}
 
 	ImGui_ImplCocos2dx_CreateFontsTexture();
@@ -668,10 +585,7 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	// We can set io.MouseHoveredViewport correctly (optional, not easy)
 	io.BackendFlags |= ImGuiBackendFlags_HasMouseHoveredViewport;
 #endif
-	// metal renderer is not supported
-#ifdef IMPL_MULTI_WINDOW
-	io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
-#endif
+	// gfx renderer does not support multi-viewports rendering
 	ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
 	platform_io.Renderer_RenderWindow = ImGui_ImplOpenGL2_RenderWindow;
 #endif // CC_PLATFORM_PC
@@ -1233,11 +1147,8 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
 #if GLFW_HAS_WINDOW_TOPMOST
 	glfwWindowHint(GLFW_FLOATING, (viewport->Flags & ImGuiViewportFlags_TopMost) ? true : false);
 #endif
-#ifdef IMPL_MULTI_WINDOW
-	GLFWwindow* share_window = ImGui_ImplCocos2dx_GetWindow();
-#else
+	// gfx renderer does not own a shareable GL context
 	GLFWwindow* share_window = nullptr;
-#endif
 	data->Window = glfwCreateWindow((int)viewport->Size.x, (int)viewport->Size.y, "No Title Yet", nullptr, share_window);
 	data->WindowOwned = true;
 	viewport->PlatformHandle = (void*)data->Window;
@@ -1254,15 +1165,6 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
 	glfwSetWindowCloseCallback(data->Window, ImGui_ImplGlfw_WindowCloseCallback);
 	glfwSetWindowPosCallback(data->Window, ImGui_ImplGlfw_WindowPosCallback);
 	glfwSetWindowSizeCallback(data->Window, ImGui_ImplGlfw_WindowSizeCallback);
-#ifdef IMPL_MULTI_WINDOW
-	const auto window = data->Window;
-	glfwMakeContextCurrent(window);
-	glfwSwapInterval(0);
-	AddRendererCommand([=]()
-	{
-		glfwMakeContextCurrent(window);
-	});
-#endif
 }
 
 static void ImGui_ImplGlfw_DestroyWindow(ImGuiViewport* viewport)
@@ -1433,29 +1335,12 @@ static void ImGui_ImplGlfw_SetWindowAlpha(ImGuiViewport* viewport, float alpha)
 
 static void ImGui_ImplGlfw_RenderWindow(ImGuiViewport* viewport, void*)
 {
-#ifdef IMPL_MULTI_WINDOW
-	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
-	const auto window = data->Window;
-	glfwMakeContextCurrent(window);
-	AddRendererCommand([=]()
-	{
-		glfwMakeContextCurrent(window);
-	});
-#endif
+	// gfx renderer does not render into secondary platform windows
 }
 
 static void ImGui_ImplGlfw_SwapBuffers(ImGuiViewport* viewport, void*)
 {
-#ifdef IMPL_MULTI_WINDOW
-	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
-	const auto window = data->Window;
-	glfwMakeContextCurrent(window);
-	AddRendererCommand([=]()
-	{
-		glfwMakeContextCurrent(window);
-		glfwSwapBuffers(window);
-	});
-#endif 
+	// gfx renderer presents through its own swapchain; nothing to do here
 }
 
 //--------------------------------------------------------------------------------------------------------
