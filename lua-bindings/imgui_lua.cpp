@@ -15,10 +15,6 @@
 
 #pragma warning (disable: 4244)
 
-#ifndef COCOS2D_DEBUG
-#define COCOS2D_DEBUG 0
-#endif
-
 #define lua_opt_value(_N, _IDX, _F, _DEF) _N >= _IDX ? _F(L, _IDX) : _DEF
 #define lua_opt_number(_N, _IDX, _DEF) lua_opt_value(_N, _IDX, luaL_checknumber, _DEF)
 #define lua_opt_int(_N, _IDX, _DEF) (int)(lua_opt_value(_N, _IDX, luaL_checkinteger, _DEF))
@@ -115,7 +111,7 @@ bool luaval_to_ImPlotPoint(lua_State* L, int lo, ImPlotPoint* out, const char* n
 	tolua_Error tolua_err;
 	if (!tolua_istable(L, lo, 0, &tolua_err))
 	{
-#if COCOS2D_DEBUG >=1
+#if CC_DEBUG >=1
 		luaval_to_native_err(L, "#ferror:", &tolua_err, name);
 #endif
 		ok = false;
@@ -142,7 +138,7 @@ bool luaval_to_ImPlotRange(lua_State* L, int lo, ImPlotRange* out, const char* n
 	tolua_Error tolua_err;
 	if (!tolua_istable(L, lo, 0, &tolua_err))
 	{
-#if COCOS2D_DEBUG >=1
+#if CC_DEBUG >=1
 		luaval_to_native_err(L, "#ferror:", &tolua_err, name);
 #endif
 		ok = false;
@@ -169,7 +165,7 @@ bool luaval_to_ImPlotRect(lua_State* L, int lo, ImPlotRect* out, const char* nam
 	tolua_Error tolua_err;
 	if (!tolua_istable(L, lo, 0, &tolua_err))
 	{
-#if COCOS2D_DEBUG >=1
+#if CC_DEBUG >=1
 		luaval_to_native_err(L, "#ferror:", &tolua_err, name);
 #endif
 		ok = false;
