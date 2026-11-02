@@ -3,6 +3,12 @@
 #include "renderer/backend/Backend.h"
 #include "renderer/backend/gfx/DeviceGFX.h"
 
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+#include "imgui_internal.h"
+#include "base/CCIMEDelegate.h"
+#include "platform/android/jni/JniHelper.h"
+#endif
+
 #ifdef CC_PLATFORM_PC
 #include "platform/desktop/CCGLViewImpl-desktop.h"
 // GLFW
@@ -56,6 +62,183 @@ using namespace backend;
 static double               g_Time = 0.0;
 static bool                 g_MouseJustPressed[5] = { false, false, false, false, false };
 static ImVec2               g_CursorPos = ImVec2(-FLT_MAX, -FLT_MAX);
+
+#ifndef CC_PLATFORM_PC
+static EventListenerTouchOneByOne* g_TouchListener = nullptr;
+static EventListenerKeyboard* g_KeyboardListener = nullptr;
+static int g_TouchId = -1;
+#endif
+
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+static bool g_AndroidKeys[512] = {};
+// Android owns preedit/candidates. Only committed UTF-8 reaches ImGui. Use the
+// queued key API for deletion so multiple deletes and replacement text retain
+// their order even when the IME delivers them within a single rendered frame.
+class ImGuiCocosIME final : public IMEDelegate
+{
+public:
+	void newFrame()
+	{
+		if (_closing)
+		{
+			// Let queued commits/deletions reach InputText before releasing its
+			// Active ID. InputEventsQueue is drained by NewFrame with trickling.
+			if (ImGui::GetCurrentContext()->InputEventsQueue.empty())
+			{
+				_closing = false;
+				ImGui::GetIO().ClearInputKeys();
+				std::fill(std::begin(g_AndroidKeys), std::end(g_AndroidKeys), false);
+				stop();
+			}
+		}
+	}
+
+	void update(bool wanted)
+	{
+		if (_closing) return;
+		const ImGuiID active = ImGui::GetActiveID();
+		if (!wanted || active == 0)
+		{
+			if (_attached) detachWithIME();
+			return;
+		}
+		if (_attached && _active == active) return;
+		if (_attached) detachWithIME();
+		_active = active;
+		if (attachWithIME())
+			Director::getInstance()->getOpenGLView()->setIMEKeyboardState(true);
+	}
+
+	void stop()
+	{
+		if (_attached) detachWithIME();
+	}
+
+protected:
+	bool canAttachWithIME() override { return true; }
+	bool canDetachWithIME() override { return true; }
+	void didAttachWithIME() override { _attached = true; }
+	void didDetachWithIME() override
+	{
+		_attached = false;
+		_closing = false;
+		if (ImGui::GetActiveID() == _active) ImGui::ClearActiveID();
+		Director::getInstance()->getOpenGLView()->setIMEKeyboardState(false);
+	}
+	std::string_view getContentText() override { return {}; }
+	void insertText(const char* text, size_t length) override
+	{
+		auto& io = ImGui::GetIO();
+		const std::string committed(text, length);
+		size_t start = 0;
+		for (size_t i = 0; i < committed.size(); ++i)
+		{
+			if (committed[i] != '\n') continue;
+			io.AddInputCharactersUTF8(committed.substr(start, i - start).c_str());
+			io.AddKeyEvent(ImGuiKey_Enter, true);
+			io.AddKeyEvent(ImGuiKey_Enter, false);
+			start = i + 1;
+		}
+		io.AddInputCharactersUTF8(committed.substr(start).c_str());
+	}
+	void deleteBackward() override
+	{
+		auto& io = ImGui::GetIO();
+		io.AddKeyEvent(ImGuiKey_Backspace, true);
+		io.AddKeyEvent(ImGuiKey_Backspace, false);
+	}
+	void keyboardDidHide(IMEKeyboardNotificationInfo&) override
+	{
+		if (!_attached) return;
+		_closing = true;
+	}
+
+private:
+	bool _attached = false;
+	bool _closing = false;
+	ImGuiID _active = 0;
+};
+
+static std::unique_ptr<ImGuiCocosIME> g_AndroidIME;
+
+static ImGuiKey ImGui_ImplCocos2dx_TranslateKey(EventKeyboard::KeyCode key)
+{
+	using K = EventKeyboard::KeyCode;
+	if (key >= K::KEY_A && key <= K::KEY_Z)
+		return (ImGuiKey)(ImGuiKey_A + (int)key - (int)K::KEY_A);
+	if (key >= K::KEY_CAPITAL_A && key <= K::KEY_CAPITAL_Z)
+		return (ImGuiKey)(ImGuiKey_A + (int)key - (int)K::KEY_CAPITAL_A);
+	if (key >= K::KEY_0 && key <= K::KEY_9)
+		return (ImGuiKey)(ImGuiKey_0 + (int)key - (int)K::KEY_0);
+	if (key >= K::KEY_F1 && key <= K::KEY_F12)
+		return (ImGuiKey)(ImGuiKey_F1 + (int)key - (int)K::KEY_F1);
+	switch (key)
+	{
+#define IMGUI_COCOS_KEY(cocos, imgui) case K::cocos: return ImGuiKey_##imgui
+		IMGUI_COCOS_KEY(KEY_TAB, Tab);
+		IMGUI_COCOS_KEY(KEY_LEFT_ARROW, LeftArrow);
+		IMGUI_COCOS_KEY(KEY_DPAD_LEFT, LeftArrow);
+		IMGUI_COCOS_KEY(KEY_RIGHT_ARROW, RightArrow);
+		IMGUI_COCOS_KEY(KEY_DPAD_RIGHT, RightArrow);
+		IMGUI_COCOS_KEY(KEY_UP_ARROW, UpArrow);
+		IMGUI_COCOS_KEY(KEY_DPAD_UP, UpArrow);
+		IMGUI_COCOS_KEY(KEY_DOWN_ARROW, DownArrow);
+		IMGUI_COCOS_KEY(KEY_DPAD_DOWN, DownArrow);
+		IMGUI_COCOS_KEY(KEY_PG_UP, PageUp);
+		IMGUI_COCOS_KEY(KEY_PG_DOWN, PageDown);
+		IMGUI_COCOS_KEY(KEY_HOME, Home);
+		IMGUI_COCOS_KEY(KEY_END, End);
+		IMGUI_COCOS_KEY(KEY_INSERT, Insert);
+		IMGUI_COCOS_KEY(KEY_DELETE, Delete);
+		IMGUI_COCOS_KEY(KEY_BACKSPACE, Backspace);
+		IMGUI_COCOS_KEY(KEY_SPACE, Space);
+		IMGUI_COCOS_KEY(KEY_RETURN, Enter);
+		IMGUI_COCOS_KEY(KEY_ENTER, Enter);
+		IMGUI_COCOS_KEY(KEY_KP_ENTER, KeypadEnter);
+		IMGUI_COCOS_KEY(KEY_ESCAPE, Escape);
+		IMGUI_COCOS_KEY(KEY_LEFT_CTRL, LeftCtrl);
+		IMGUI_COCOS_KEY(KEY_RIGHT_CTRL, RightCtrl);
+		IMGUI_COCOS_KEY(KEY_LEFT_SHIFT, LeftShift);
+		IMGUI_COCOS_KEY(KEY_RIGHT_SHIFT, RightShift);
+		IMGUI_COCOS_KEY(KEY_LEFT_ALT, LeftAlt);
+		IMGUI_COCOS_KEY(KEY_RIGHT_ALT, RightAlt);
+		IMGUI_COCOS_KEY(KEY_HYPER, LeftSuper);
+		IMGUI_COCOS_KEY(KEY_COMMA, Comma);
+		IMGUI_COCOS_KEY(KEY_MINUS, Minus);
+		IMGUI_COCOS_KEY(KEY_PERIOD, Period);
+		IMGUI_COCOS_KEY(KEY_SLASH, Slash);
+		IMGUI_COCOS_KEY(KEY_SEMICOLON, Semicolon);
+		IMGUI_COCOS_KEY(KEY_EQUAL, Equal);
+		IMGUI_COCOS_KEY(KEY_LEFT_BRACKET, LeftBracket);
+		IMGUI_COCOS_KEY(KEY_BACK_SLASH, Backslash);
+		IMGUI_COCOS_KEY(KEY_RIGHT_BRACKET, RightBracket);
+		IMGUI_COCOS_KEY(KEY_APOSTROPHE, Apostrophe);
+		IMGUI_COCOS_KEY(KEY_GRAVE, GraveAccent);
+#undef IMGUI_COCOS_KEY
+		default: return ImGuiKey_None;
+	}
+}
+
+static void ImGui_ImplCocos2dx_AndroidKey(EventKeyboard::KeyCode key, bool down)
+{
+	const int native = (int)key;
+	if (native < 0 || native >= IM_ARRAYSIZE(g_AndroidKeys)) return;
+	g_AndroidKeys[native] = down;
+	auto& io = ImGui::GetIO();
+	using K = EventKeyboard::KeyCode;
+	io.AddKeyEvent(ImGuiMod_Ctrl, g_AndroidKeys[(int)K::KEY_LEFT_CTRL] || g_AndroidKeys[(int)K::KEY_RIGHT_CTRL]);
+	io.AddKeyEvent(ImGuiMod_Shift, g_AndroidKeys[(int)K::KEY_LEFT_SHIFT] || g_AndroidKeys[(int)K::KEY_RIGHT_SHIFT]);
+	io.AddKeyEvent(ImGuiMod_Alt, g_AndroidKeys[(int)K::KEY_LEFT_ALT] || g_AndroidKeys[(int)K::KEY_RIGHT_ALT]);
+	io.AddKeyEvent(ImGuiMod_Super, g_AndroidKeys[(int)K::KEY_HYPER]);
+	const auto translated = ImGui_ImplCocos2dx_TranslateKey(key);
+	if (translated != ImGuiKey_None) io.AddKeyEvent(translated, down);
+}
+
+static void ImGui_ImplCocos2dx_SetAndroidIME(ImGuiViewport*, ImGuiPlatformImeData* data)
+{
+	if (g_AndroidIME) g_AndroidIME->update(data->WantVisible);
+}
+#endif
 
 #ifdef CC_PLATFORM_PC
 static GLFWcursor*          g_MouseCursors[ImGuiMouseCursor_COUNT] = { nullptr };
@@ -305,6 +488,10 @@ static const char* ImGui_ImplCocos2dx_GetClipboardText(void* user_data)
 {
 #ifdef CC_PLATFORM_PC
 	return glfwGetClipboardString((GLFWwindow*)user_data);
+#elif CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+	static std::string clipboard;
+	clipboard = JniHelper::callStaticStringMethod("org/cocos/lib/CocosEngine", "getClipboardString");
+	return clipboard.c_str();
 #else
 	return "";
 #endif
@@ -314,6 +501,8 @@ static void ImGui_ImplCocos2dx_SetClipboardText(void* user_data, const char* tex
 {
 #ifdef CC_PLATFORM_PC
 	glfwSetClipboardString((GLFWwindow*)user_data, text);
+#elif CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+	JniHelper::callStaticVoidMethod("org/cocos/lib/CocosEngine", "setClipboardString", std::string(text ? text : ""));
 #else
 #endif
 }
@@ -595,6 +784,15 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	// disable auto load and save
 	io.IniFilename = nullptr;
 
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+	g_AndroidIME.reset(new ImGuiCocosIME());
+	std::fill(std::begin(g_AndroidKeys), std::end(g_AndroidKeys), false);
+	io.ConfigInputTrickleEventQueue = true;
+	io.SetPlatformImeDataFn = ImGui_ImplCocos2dx_SetAndroidIME;
+	io.SetClipboardTextFn = ImGui_ImplCocos2dx_SetClipboardText;
+	io.GetClipboardTextFn = ImGui_ImplCocos2dx_GetClipboardText;
+#endif
+
 #ifdef CC_PLATFORM_PC
 	// Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array.
 	io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
@@ -707,6 +905,8 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	//e1->setSwallowTouches(true);
 	e1->onTouchBegan = [](Touch* touch, Event*)
 	{
+		if (g_TouchId != -1) return false;
+		g_TouchId = touch->getID();
 		const auto loc = touch->getLocationInView();
 		g_CursorPos.x = loc.x;
 		g_CursorPos.y = loc.y;
@@ -715,6 +915,7 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	};
 	e1->onTouchMoved = [](Touch* touch, Event*)
 	{
+		if (g_TouchId != touch->getID()) return;
 		const auto loc = touch->getLocationInView();
 		g_CursorPos.x = loc.x;
 		g_CursorPos.y = loc.y;
@@ -722,19 +923,27 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	};
 	e1->onTouchEnded = [](Touch* touch, Event*)
 	{
+		if (g_TouchId != touch->getID()) return;
+		g_TouchId = -1;
 		const auto loc = touch->getLocationInView();
 		g_CursorPos.x = loc.x;
 		g_CursorPos.y = loc.y;
 		g_MouseJustPressed[0] = false;
 	};
-	e1->onTouchCancelled = [&](Touch* touch, Event*)
+	e1->onTouchCancelled = [](Touch* touch, Event*)
 	{
+		if (g_TouchId != touch->getID()) return;
+		g_TouchId = -1;
 		g_CursorPos = ImVec2(-FLT_MAX, -FLT_MAX);
 		g_MouseJustPressed[0] = false;
 	};
 	cocos2d::Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(e1, -1);
+	g_TouchListener = e1;
 
 	using KeyCode = cocos2d::EventKeyboard::KeyCode;
+#if CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID
+	// Android submits named keys with AddKeyEvent, including IME deletion.
+	// ImGui rejects a backend that also installs the legacy key map.
 	io.KeyMap[ImGuiKey_Tab] = (int)KeyCode::KEY_TAB;
 	io.KeyMap[ImGuiKey_LeftArrow] = (int)KeyCode::KEY_LEFT_ARROW;
 	io.KeyMap[ImGuiKey_RightArrow] = (int)KeyCode::KEY_RIGHT_ARROW;
@@ -757,10 +966,14 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	io.KeyMap[ImGuiKey_X] = (int)KeyCode::KEY_X;
 	io.KeyMap[ImGuiKey_Y] = (int)KeyCode::KEY_Y;
 	io.KeyMap[ImGuiKey_Z] = (int)KeyCode::KEY_Z;
+#endif
 
 	auto e2 = cocos2d::EventListenerKeyboard::create();
 	e2->onKeyPressed = [](KeyCode k, cocos2d::Event* ev)
 	{
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+		ImGui_ImplCocos2dx_AndroidKey(k, true);
+#else
 		auto& _io = ImGui::GetIO();
 		_io.KeysDown[(int)k] = true;
 		// Modifiers are not reliable across systems
@@ -768,9 +981,13 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 		_io.KeyShift = _io.KeysDown[(int)KeyCode::KEY_LEFT_SHIFT] || _io.KeysDown[(int)KeyCode::KEY_RIGHT_SHIFT];
 		_io.KeyAlt = _io.KeysDown[(int)KeyCode::KEY_LEFT_ALT] || _io.KeysDown[(int)KeyCode::KEY_RIGHT_ALT];
 		_io.KeySuper = _io.KeysDown[(int)KeyCode::KEY_HYPER];
+#endif
 	};
 	e2->onKeyReleased = [](KeyCode k, cocos2d::Event* ev)
 	{
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+		ImGui_ImplCocos2dx_AndroidKey(k, false);
+#else
 		auto& _io = ImGui::GetIO();
 		_io.KeysDown[(int)k] = false;
 		// Modifiers are not reliable across systems
@@ -778,14 +995,30 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 		_io.KeyShift = _io.KeysDown[(int)KeyCode::KEY_LEFT_SHIFT] || _io.KeysDown[(int)KeyCode::KEY_RIGHT_SHIFT];
 		_io.KeyAlt = _io.KeysDown[(int)KeyCode::KEY_LEFT_ALT] || _io.KeysDown[(int)KeyCode::KEY_RIGHT_ALT];
 		_io.KeySuper = _io.KeysDown[(int)KeyCode::KEY_HYPER];
+#endif
 	};
 	cocos2d::Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(e2, 1);
+	g_KeyboardListener = e2;
 #endif // CC_PLATFORM_PC
 	return true;
 }
 
 void ImGui_ImplCocos2dx_Shutdown()
 {
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+	g_AndroidIME->stop();
+	g_AndroidIME.reset();
+#endif
+#ifndef CC_PLATFORM_PC
+	auto dispatcher = Director::getInstance()->getEventDispatcher();
+	dispatcher->removeEventListener(g_TouchListener);
+	dispatcher->removeEventListener(g_KeyboardListener);
+	g_TouchListener = nullptr;
+	g_KeyboardListener = nullptr;
+	g_TouchId = -1;
+	g_CursorPos = ImVec2(-FLT_MAX, -FLT_MAX);
+	std::fill(std::begin(g_MouseJustPressed), std::end(g_MouseJustPressed), false);
+#endif
 #ifdef CC_PLATFORM_PC
 	ImGui_ImplGlfw_ShutdownPlatformInterface();
 	const auto g_Window = ImGui_ImplCocos2dx_GetWindow();
@@ -1024,6 +1257,12 @@ static void ImGui_ImplGlfw_UpdateMonitors()
 
 void ImGui_ImplCocos2dx_NewFrame()
 {
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+	// WantTextInput is computed at NewFrame and lags widget activation. Only
+	// SetPlatformImeDataFn's current WantVisible may change attachment; polling
+	// last frame's flag here detaches a newly focused widget before it can type.
+	if (g_AndroidIME) g_AndroidIME->newFrame();
+#endif
 	g_CallbackCommands.clear();
 	g_CustomCommands.clear();
 	g_ProgramStates.clear();
