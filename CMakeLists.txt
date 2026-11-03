@@ -16,7 +16,6 @@ set(INCLUDES
 )
 if(BUILD_LUA_LIBS)
     list(APPEND INCLUDES
-        ${COCOS2DX_ROOT_PATH}/external/lua/luajit/include
         ${COCOS2DX_ROOT_PATH}/external/lua/tolua)
 endif()
 foreach(dir ${INCLUDES})
@@ -96,6 +95,7 @@ use_cocos2dx_compile_options(${LIB_NAME})
 
 if(BUILD_LUA_LIBS)
     target_compile_definitions(${LIB_NAME} PUBLIC _USRLUASTATIC)
+    target_link_libraries(${LIB_NAME} PUBLIC luajit)
 endif()
 
 if(CC_USE_GFX)
