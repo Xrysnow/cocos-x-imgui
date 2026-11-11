@@ -726,6 +726,10 @@ void main()
 
 void ImGui_ImplCocos2dx_DestroyDeviceObjects()
 {
+	// Shutdown may have no next frame to release the last draw's buffers.
+	g_CallbackCommands.clear();
+	g_CustomCommands.clear();
+	g_ProgramStates.clear();
 	CC_SAFE_RELEASE_NULL(g_ProgramInfo.program);
 	CC_SAFE_RELEASE_NULL(g_ProgramFontInfo.program);
 	ImGui_ImplCocos2dx_DestroyFontsTexture();
