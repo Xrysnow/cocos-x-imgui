@@ -1273,6 +1273,9 @@ void ImGui_ImplCocos2dx_NewFrame()
 
 	if (!g_FontTexture)
 		ImGui_ImplCocos2dx_CreateDeviceObjects();
+	else if (!ImGui::GetIO().Fonts->IsBuilt())
+		// Fonts added lazily also invalidate an existing atlas and GPU texture.
+		ImGui_ImplCocos2dx_CreateFontsTexture();
 
 	ImGuiIO& io = ImGui::GetIO();
 	IM_ASSERT(io.Fonts->IsBuilt() &&
@@ -1301,7 +1304,10 @@ void ImGui_ImplCocos2dx_NewFrame()
 #endif // CC_PLATFORM_PC
 
 	// Setup time step
-	io.DeltaTime = Director::getInstance()->getDeltaTime();
+	const auto deltaTime = Director::getInstance()->getDeltaTime();
+	// cocos resets the next frame's delta to zero after changing FPS or resuming.
+	// ImGui requires a positive time step even on those reset frames.
+	io.DeltaTime = deltaTime > 0.0f ? deltaTime : 1.0f / 60.0f;
 
 	ImGui_ImplCocos2dx_UpdateMousePosAndButtons();
 	ImGui_ImplCocos2dx_UpdateMouseCursor();

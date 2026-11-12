@@ -3160,16 +3160,23 @@ int luaopen_imgui(lua_State *L)
 	lua_setfield(L, -2, "version");
 	lua_pop(L, 1);
 
-	CCIMGUI::setOnInit([=](CCIMGUI* ins)
+	CCIMGUI::setOnInit([](CCIMGUI* ins)
 	{
-		ins->addCallback([=]()
+		ins->addCallback([]()
 		{
-			lua_getglobal(L, "imgui");
-			lua_getfield(L, -1, "draw");
-			if (lua_isfunction(L, -1))
+			auto* stack = LuaEngine::getInstance()->getLuaStack();
+			// Keep lookup and drawing temporaries inside the protected callback frame.
+			stack->executeCallback([stack]() -> int
 			{
-				LuaEngine::getInstance()->getLuaStack()->executeFunction(0);
-			}
+				auto* state = stack->getLuaState();
+				lua_getglobal(state, "imgui");
+				if (!lua_istable(state, -1))
+					return 0;
+				lua_getfield(state, -1, "draw");
+				if (!lua_isfunction(state, -1))
+					return 0;
+				return stack->executeFunction(0);
+			});
 		}, "__luadraw__");
 	});
     return 0;
