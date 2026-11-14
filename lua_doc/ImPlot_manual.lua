@@ -26,670 +26,552 @@ end
 -- Plot Items
 -------------------------------------------------------------------------------
 
--- The template functions below are explicitly instantiated in implot_items.cpp.
--- They are not intended to be used generically with custom types. You will get
--- a linker error if you try! All functions support the following scalar types:
---
--- float, double, ImS8, ImU8, ImS16, ImU16, ImS32, ImU32, ImS64, ImU64
---
---
--- If you need to plot custom or non-homogenous data you have a few options:
---
--- 1. If your data is a simple struct/class (e.g. Vector2f), you can use striding.
---    This is the most performant option if applicable.
---
---    struct Vector2f { float X, Y; };
---    ...
---    Vector2f data[42];
---    ImPlot::PlotLine("line", &data[0].x, &data[0].y, 42, 0, sizeof(Vector2f)); // or sizeof(float)*2
---
--- 2. Write a custom getter function or C++ lambda and pass it and your data to
---    an ImPlot function post-fixed with a G (e.g. PlotScatterG). This has a
---    slight performance cost, but probably not enough to worry about.
---
---    ImPlotPoint MyDataGetter(void* data, int idx) {
---        MyData* my_data = (MyData*)data;
---        ImPlotPoint p;
---        p.x = my_data->GetTime(idx);
---        p.y = my_data->GetValue(idx);
---        return p
---    }
---    ...
---    MyData my_data;
---    ImPlot::PlotScatterG("scatter", MyDataGetter, &my_data, my_data.Size());
---
--- NB: All types are converted to double before plotting. You may loose information
--- if you try plotting extremely large 64-bit integral types. Proceed with caution!
+-- Lua-array variants copy numeric data to packed double arrays. Counts are non-negative
+-- integers and are clamped to the shortest input (except dimensional plots, which require
+-- complete data). Empty histograms return 0. No data pointer is retained after a call.
+-- C variants accept LuaJIT cdata buffers and an ImGuiDataType selector. The caller must
+-- keep backing allocations alive and provide correctly typed/aligned storage covering
+-- count elements (or item_count * group_count / rows * cols), including byte stride.
+-- Pointer capacity and pointee type cannot be inferred from the dtype argument.
+-- Plotting converts values to double; very large 64-bit integers may lose plot precision.
+-- All variants accept a final spec table, or an integer shorthand for spec.Flags.
+-- Line/Scatter/Stairs/Shaded/Bars/ErrorBars/Stems/InfLines/Digital C variants also accept
+-- the legacy tail flags, offset, stride instead of spec. Stems now consistently includes
+-- offset before stride; InfLines and Digital now honor stride too.
+-- Array specs only allow Stride = -1 (auto) or sizeof(double) = 8. C specs allow auto or
+-- a positive stride >= sizeof(T), divisible by sizeof(T). Offset is a circular index.
+-- Use spec.Flags for horizontal, stacked, normalized, cumulative and density modes.
 
---- Plots a standard 2D line plot.
+---@class implot.ImPlotSpec
+---@field LineColor ImVec4|nil
+---@field LineWeight number|nil
+---@field FillColor ImVec4|nil
+---@field FillAlpha number|nil
+---@field Marker integer|nil
+---@field MarkerSize number|nil
+---@field MarkerLineColor ImVec4|nil
+---@field MarkerFillColor ImVec4|nil
+---@field Size number|nil
+---@field Offset integer|nil
+---@field Stride integer|nil
+---@field Flags integer|nil
+local ImPlotSpec
+
+--- Plot a line; xscale defaults to 1, xstart to 0.
 ---@param label_id string
 ---@param values number[]
----@param count number
----@param offset number @optional
-function implot.plotLine(label_id, values, count, offset)
+---@param count integer
+---@param xscale? number
+---@param xstart? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotLine(label_id, values, count, xscale, xstart, spec)
 end
 
---- Plots a standard 2D line plot.
+--- Plot a line; xscale defaults to 1, xstart to 0.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param values ffi.cdata
+---@param count integer
+---@param xscale? number
+---@param xstart? number
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotLineC(label_id, dtype, values, count, xscale, xstart, spec, offset, stride)
+end
+
+--- Plot a line from paired coordinates.
 ---@param label_id string
 ---@param xs number[]
 ---@param ys number[]
----@param count number
----@param offset number @optional
-function implot.plotLine(label_id, xs, ys, count, offset)
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotLine(label_id, xs, ys, count, spec)
 end
 
---- Plots a standard 2D line plot.
+--- Plot a line from paired coordinates.
 ---@param label_id string
----@param dtype number @ImGuiDataType
----@param values ffi.cdata
----@param count number
----@param offset number @optional
----@param stride number @optional
-function implot.plotLineC(label_id, dtype, values, count, offset, stride)
-end
-
---- Plots a standard 2D line plot.
----@param label_id string
----@param dtype number @ImGuiDataType
+---@param dtype imgui.ImGuiDataType
 ---@param xs ffi.cdata
 ---@param ys ffi.cdata
----@param count number
----@param offset number @optional
----@param stride number @optional
-function implot.plotLineC(label_id, dtype, xs, ys, count, offset, stride)
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotLineC(label_id, dtype, xs, ys, count, spec, offset, stride)
 end
 
--------------------------------------------------------------------------------
-
---- Plots a standard 2D scatter plot. Default marker is ImPlotMarker_Circle.
+--- Plot markers; xscale defaults to 1, xstart to 0.
 ---@param label_id string
 ---@param values number[]
----@param count number
----@param xscale number @optional
----@param x0 number @optional
----@param offset number @optional
-function implot.plotScatter(label_id, values, count, xscale, x0, offset)
+---@param count integer
+---@param xscale? number
+---@param xstart? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotScatter(label_id, values, count, xscale, xstart, spec)
 end
 
---- Plots a standard 2D scatter plot. Default marker is ImPlotMarker_Circle.
+--- Plot markers; xscale defaults to 1, xstart to 0.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param values ffi.cdata
+---@param count integer
+---@param xscale? number
+---@param xstart? number
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotScatterC(label_id, dtype, values, count, xscale, xstart, spec, offset, stride)
+end
+
+--- Plot markers from paired coordinates.
 ---@param label_id string
 ---@param xs number[]
 ---@param ys number[]
----@param count number
----@param offset number @optional
-function implot.plotScatter(label_id, xs, ys, count, offset)
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotScatter(label_id, xs, ys, count, spec)
 end
 
---- Plots a standard 2D scatter plot. Default marker is ImPlotMarker_Circle.
+--- Plot markers from paired coordinates.
 ---@param label_id string
----@param dtype number @ImGuiDataType
----@param values ffi.cdata
----@param count number
----@param xscale number @optional
----@param x0 number @optional
----@param offset number @optional
----@param stride number @optional
-function implot.plotScatterC(label_id, dtype, values, count, xscale, x0, offset, stride)
-end
-
---- Plots a standard 2D scatter plot. Default marker is ImPlotMarker_Circle.
----@param label_id string
----@param dtype number @ImGuiDataType
+---@param dtype imgui.ImGuiDataType
 ---@param xs ffi.cdata
 ---@param ys ffi.cdata
----@param count number
----@param offset number @optional
----@param stride number @optional
-function implot.plotScatterC(label_id, dtype, xs, ys, count, offset, stride)
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotScatterC(label_id, dtype, xs, ys, count, spec, offset, stride)
 end
 
--------------------------------------------------------------------------------
-
---- Plots a a stairstep graph. The y value is continued constantly from every x position,
---- i.e. the interval [x[i], x[i+1]) has the value y[i].
+--- Plot stairs; xscale defaults to 1, xstart to 0.
 ---@param label_id string
 ---@param values number[]
----@param count number
----@param xscale number @optional
----@param x0 number @optional
----@param offset number @optional
-function implot.plotStairs(label_id, values, count, xscale, x0, offset)
+---@param count integer
+---@param xscale? number
+---@param xstart? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotStairs(label_id, values, count, xscale, xstart, spec)
 end
 
---- Plots a a stairstep graph. The y value is continued constantly from every x position,
---- i.e. the interval [x[i], x[i+1]) has the value y[i].
+--- Plot stairs; xscale defaults to 1, xstart to 0.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param values ffi.cdata
+---@param count integer
+---@param xscale? number
+---@param xstart? number
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotStairsC(label_id, dtype, values, count, xscale, xstart, spec, offset, stride)
+end
+
+--- Plot stairs from paired coordinates.
 ---@param label_id string
 ---@param xs number[]
 ---@param ys number[]
----@param count number
----@param offset number @optional
-function implot.plotStairs(label_id, xs, ys, count, offset)
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotStairs(label_id, xs, ys, count, spec)
 end
 
---- Plots a a stairstep graph. The y value is continued constantly from every x position,
---- i.e. the interval [x[i], x[i+1]) has the value y[i].
+--- Plot stairs from paired coordinates.
 ---@param label_id string
----@param dtype number @ImGuiDataType
----@param values ffi.cdata
----@param count number
----@param xscale number @optional
----@param x0 number @optional
----@param offset number @optional
----@param stride number @optional
-function implot.plotStairsC(label_id, dtype, values, count, xscale, x0, offset, stride)
-end
-
---- Plots a a stairstep graph. The y value is continued constantly from every x position,
---- i.e. the interval [x[i], x[i+1]) has the value y[i].
----@param label_id string
----@param dtype number @ImGuiDataType
+---@param dtype imgui.ImGuiDataType
 ---@param xs ffi.cdata
 ---@param ys ffi.cdata
----@param count number
----@param offset number @optional
----@param stride number @optional
-function implot.plotStairsC(label_id, dtype, xs, ys, count, offset, stride)
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotStairsC(label_id, dtype, xs, ys, count, spec, offset, stride)
 end
 
--------------------------------------------------------------------------------
-
---- Plots a shaded (filled) region between two lines, or a line and a horizontal reference. Set y_ref to +/-INFINITY for infinite fill extents.
+--- Shade to yref (default 0); xscale defaults to 1, xstart to 0.
 ---@param label_id string
 ---@param values number[]
----@param count number
----@param y_ref number @optional
----@param xscale number @optional
----@param x0 number @optional
----@param offset number @optional
-function implot.plotShaded(label_id, values, count, y_ref, xscale, x0, offset)
+---@param count integer
+---@param yref? number
+---@param xscale? number
+---@param xstart? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotShaded(label_id, values, count, yref, xscale, xstart, spec)
 end
 
---- Plots a shaded (filled) region between two lines, or a line and a horizontal reference. Set y_ref to +/-INFINITY for infinite fill extents.
+--- Shade to yref (default 0); xscale defaults to 1, xstart to 0.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param values ffi.cdata
+---@param count integer
+---@param yref? number
+---@param xscale? number
+---@param xstart? number
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotShadedC(label_id, dtype, values, count, yref, xscale, xstart, spec, offset, stride)
+end
+
+--- Shade paired coordinates to yref (default 0).
 ---@param label_id string
 ---@param xs number[]
 ---@param ys number[]
----@param count number
----@param y_ref number @optional
----@param offset number @optional
-function implot.plotShaded(label_id, xs, ys, count, y_ref, offset)
+---@param count integer
+---@param yref? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotShaded(label_id, xs, ys, count, yref, spec)
 end
 
---- Plots a shaded (filled) region between two lines, or a line and a horizontal reference. Set y_ref to +/-INFINITY for infinite fill extents.
+--- Shade paired coordinates to yref (default 0).
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param xs ffi.cdata
+---@param ys ffi.cdata
+---@param count integer
+---@param yref? number
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotShadedC(label_id, dtype, xs, ys, count, yref, spec, offset, stride)
+end
+
+--- Shade between two curves.
 ---@param label_id string
 ---@param xs number[]
 ---@param ys1 number[]
 ---@param ys2 number[]
----@param count number
----@param offset number @optional
-function implot.plotShaded(label_id, xs, ys1, ys2, count, offset)
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotShaded(label_id, xs, ys1, ys2, count, spec)
 end
 
---- Plots a shaded (filled) region between two lines, or a line and a horizontal reference. Set y_ref to +/-INFINITY for infinite fill extents.
+--- Shade between two curves.
 ---@param label_id string
----@param dtype number @ImGuiDataType
----@param values ffi.cdata
----@param count number
----@param y_ref number @optional
----@param xscale number @optional
----@param x0 number @optional
----@param offset number @optional
----@param stride number @optional
-function implot.plotShadedC(label_id, dtype, values, count, y_ref, xscale, x0, offset, stride)
-end
-
---- Plots a shaded (filled) region between two lines, or a line and a horizontal reference. Set y_ref to +/-INFINITY for infinite fill extents.
----@param label_id string
----@param dtype number @ImGuiDataType
----@param xs ffi.cdata
----@param ys ffi.cdata
----@param count number
----@param y_ref number @optional
----@param offset number @optional
----@param stride number @optional
-function implot.plotShadedC(label_id, dtype, xs, ys, count, y_ref, offset, stride)
-end
-
---- Plots a shaded (filled) region between two lines, or a line and a horizontal reference. Set y_ref to +/-INFINITY for infinite fill extents.
----@param label_id string
----@param dtype number @ImGuiDataType
+---@param dtype imgui.ImGuiDataType
 ---@param xs ffi.cdata
 ---@param ys1 ffi.cdata
 ---@param ys2 ffi.cdata
----@param count number
----@param offset number @optional
----@param stride number @optional
-function implot.plotShadedC(label_id, dtype, xs, ys1, ys2, count, offset, stride)
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotShadedC(label_id, dtype, xs, ys1, ys2, count, spec, offset, stride)
 end
 
--------------------------------------------------------------------------------
-
---- Plots a vertical bar graph. #width and #shift are in X units.
+--- Plot bars; bar_size defaults to 0.67, shift to 0.
 ---@param label_id string
 ---@param values number[]
----@param count number
----@param width number @optional
----@param shift number @optional
----@param offset number @optional
-function implot.plotBars(label_id, values, count, width, shift, offset)
+---@param count integer
+---@param bar_size? number
+---@param shift? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotBars(label_id, values, count, bar_size, shift, spec)
 end
 
---- Plots a vertical bar graph. #width and #shift are in X units.
+--- Plot bars; bar_size defaults to 0.67, shift to 0.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param values ffi.cdata
+---@param count integer
+---@param bar_size? number
+---@param shift? number
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotBarsC(label_id, dtype, values, count, bar_size, shift, spec, offset, stride)
+end
+
+--- Plot bars from paired coordinates.
 ---@param label_id string
 ---@param xs number[]
 ---@param ys number[]
----@param count number
----@param width number
----@param offset number @optional
-function implot.plotBars(label_id, xs, ys, count, width, offset)
+---@param count integer
+---@param bar_size number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotBars(label_id, xs, ys, count, bar_size, spec)
 end
 
---- Plots a vertical bar graph. #width and #shift are in X units.
+--- Plot bars from paired coordinates.
 ---@param label_id string
----@param dtype number @ImGuiDataType
----@param values ffi.cdata
----@param count number
----@param width number @optional
----@param shift number @optional
----@param offset number @optional
----@param stride number @optional
-function implot.plotBarsC(label_id, dtype, values, count, width, shift, offset, stride)
-end
-
---- Plots a vertical bar graph. #width and #shift are in X units.
----@param label_id string
----@param dtype number @ImGuiDataType
+---@param dtype imgui.ImGuiDataType
 ---@param xs ffi.cdata
 ---@param ys ffi.cdata
----@param count number
----@param width number
----@param offset number @optional
----@param stride number @optional
-function implot.plotBarsC(label_id, dtype, xs, ys, count, width, offset, stride)
+---@param count integer
+---@param bar_size number
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotBarsC(label_id, dtype, xs, ys, count, bar_size, spec, offset, stride)
 end
 
--------------------------------------------------------------------------------
-
---- Plots a horizontal bar graph. #height and #shift are in Y units.
----@param label_id string
----@param values number[]
----@param count number
----@param height number @optional
----@param shift number @optional
----@param offset number @optional
-function implot.plotBarsH(label_id, values, count, height, shift, offset)
-end
-
---- Plots a horizontal bar graph. #height and #shift are in Y units.
----@param label_id string
----@param xs number[]
----@param ys number[]
----@param count number
----@param height number
----@param offset number @optional
-function implot.plotBarsH(label_id, xs, ys, count, height, offset)
-end
-
---- Plots a horizontal bar graph. #height and #shift are in Y units.
----@param label_id string
----@param dtype number @ImGuiDataType
----@param values ffi.cdata
----@param count number
----@param height number @optional
----@param shift number @optional
----@param offset number @optional
----@param stride number @optional
-function implot.plotBarsHC(label_id, dtype, values, count, height, shift, offset, stride)
-end
-
---- Plots a horizontal bar graph. #height and #shift are in Y units.
----@param label_id string
----@param dtype number @ImGuiDataType
----@param xs ffi.cdata
----@param ys ffi.cdata
----@param count number
----@param height number
----@param offset number @optional
----@param stride number @optional
-function implot.plotBarsHC(label_id, dtype, xs, ys, count, height, offset, stride)
-end
-
--------------------------------------------------------------------------------
-
---- Plots vertical error bar. The label_id should be the same as the label_id of the associated line or bar plot.
----@param label_id string
----@param xs number[]
----@param ys number[]
----@param err number[]
----@param count number
----@param offset number @optional
-function implot.plotErrorBars(label_id, xs, ys, err, count, offset)
-end
-
---- Plots vertical error bar. The label_id should be the same as the label_id of the associated line or bar plot.
----@param label_id string
----@param xs number[]
----@param ys number[]
----@param neg number[]
----@param pos number[]
----@param count number
----@param offset number @optional
-function implot.plotErrorBars(label_id, xs, ys, neg, pos, count, offset)
-end
-
---- Plots vertical error bar. The label_id should be the same as the label_id of the associated line or bar plot.
----@param label_id string
----@param dtype number @ImGuiDataType
----@param xs number[]
----@param ys number[]
----@param err number[]
----@param count number
----@param offset number @optional
----@param stride number @optional
-function implot.plotErrorBarsC(label_id, dtype, xs, ys, err, count, offset, stride)
-end
-
---- Plots vertical error bar. The label_id should be the same as the label_id of the associated line or bar plot.
----@param label_id string
----@param dtype number @ImGuiDataType
----@param xs number[]
----@param ys number[]
----@param neg number[]
----@param pos number[]
----@param count number
----@param offset number @optional
----@param stride number @optional
-function implot.plotErrorBarsC(label_id, dtype, xs, ys, neg, pos, count, offset, stride)
-end
-
--------------------------------------------------------------------------------
-
---- Plots horizontal error bars. The label_id should be the same as the label_id of the associated line or bar plot.
----@param label_id string
----@param xs number[]
----@param ys number[]
----@param err number[]
----@param count number
----@param offset number @optional
-function implot.plotErrorBarsH(label_id, xs, ys, err, count, offset)
-end
-
---- Plots horizontal error bars. The label_id should be the same as the label_id of the associated line or bar plot.
----@param label_id string
----@param xs number[]
----@param ys number[]
----@param neg number[]
----@param pos number[]
----@param count number
----@param offset number @optional
-function implot.plotErrorBarsH(label_id, xs, ys, neg, pos, count, offset)
-end
-
---- Plots horizontal error bars. The label_id should be the same as the label_id of the associated line or bar plot.
----@param label_id string
----@param dtype number @ImGuiDataType
----@param xs number[]
----@param ys number[]
----@param err number[]
----@param count number
----@param offset number @optional
----@param stride number @optional
-function implot.plotErrorBarsHC(label_id, dtype, xs, ys, err, count, offset, stride)
-end
-
---- Plots horizontal error bars. The label_id should be the same as the label_id of the associated line or bar plot.
----@param label_id string
----@param dtype number @ImGuiDataType
----@param xs number[]
----@param ys number[]
----@param neg number[]
----@param pos number[]
----@param count number
----@param offset number @optional
----@param stride number @optional
-function implot.plotErrorBarsHC(label_id, dtype, xs, ys, neg, pos, count, offset, stride)
-end
-
--------------------------------------------------------------------------------
-
---- Plots vertical stems.
----@param label_id string
----@param values number[]
----@param count number
----@param y_ref number @optional
----@param xscale number @optional
----@param x0 number @optional
----@param offset number @optional
-function implot.plotStems(label_id, values, count, y_ref, xscale, x0, offset)
-end
-
---- Plots vertical stems.
----@param label_id string
----@param xs number[]
----@param ys number[]
----@param count number
----@param y_ref number @optional
----@param offset number @optional
-function implot.plotStems(label_id, xs, ys, count, y_ref, offset)
-end
-
---- Plots vertical stems.
----@param label_id string
----@param dtype number @ImGuiDataType
----@param values ffi.cdata
----@param count number
----@param y_ref number @optional
----@param xscale number @optional
----@param x0 number @optional
----@param offset number @optional
----@param stride number @optional
-function implot.plotStemsC(label_id, dtype, values, count, y_ref, xscale, x0, offset, stride)
-end
-
---- Plots vertical stems.
----@param label_id string
----@param dtype number @ImGuiDataType
----@param xs ffi.cdata
----@param ys ffi.cdata
----@param count number
----@param y_ref number @optional
----@param offset number @optional
----@param stride number @optional
-function implot.plotStemsC(label_id, dtype, xs, ys, count, y_ref, offset, stride)
-end
-
--------------------------------------------------------------------------------
-
---- Plots infinite vertical lines (e.g. for references or asymptotes).
----@param label_id string
----@param xs number[]
----@param count number
----@param offset number @optional
-function implot.plotVLines(label_id, xs, count, offset)
-end
-
---- Plots infinite vertical lines (e.g. for references or asymptotes).
----@param label_id string
----@param dtype number @ImGuiDataType
----@param xs number[]
----@param count number
----@param offset number @optional
-function implot.plotVLinesC(label_id, dtype, xs, count, offset)
-end
-
--------------------------------------------------------------------------------
-
---- Plots infinite horizontal lines (e.g. for references or asymptotes).
----@param label_id string
----@param ys number[]
----@param count number
----@param offset number @optional
-function implot.plotHLines(label_id, ys, count, offset)
-end
-
---- Plots infinite horizontal lines (e.g. for references or asymptotes).
----@param label_id string
----@param dtype number @ImGuiDataType
----@param ys number[]
----@param count number
----@param offset number @optional
-function implot.plotHLinesC(label_id, dtype, ys, count, offset)
-end
-
--------------------------------------------------------------------------------
-
---- Plots a pie chart. If the sum of values > 1 or normalize is true, each value will be normalized.
---- Center and radius are in plot units. #label_fmt can be set to NULL for no labels.
+--- Requires item_count labels and item_count * group_count values; group_size defaults to 0.67, shift to 0.
 ---@param label_ids string[]
 ---@param values number[]
----@param count number
+---@param item_count integer
+---@param group_count integer
+---@param group_size? number
+---@param shift? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotBarGroups(label_ids, values, item_count, group_count, group_size, shift, spec)
+end
+
+--- Requires item_count labels and item_count * group_count values; group_size defaults to 0.67, shift to 0.
+---@param label_ids string[]
+---@param dtype imgui.ImGuiDataType
+---@param values ffi.cdata
+---@param item_count integer
+---@param group_count integer
+---@param group_size? number
+---@param shift? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotBarGroupsC(label_ids, dtype, values, item_count, group_count, group_size, shift, spec)
+end
+
+--- Plot symmetric error bars.
+---@param label_id string
+---@param xs number[]
+---@param ys number[]
+---@param err number[]
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotErrorBars(label_id, xs, ys, err, count, spec)
+end
+
+--- Plot symmetric error bars.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param xs ffi.cdata
+---@param ys ffi.cdata
+---@param err ffi.cdata
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotErrorBarsC(label_id, dtype, xs, ys, err, count, spec, offset, stride)
+end
+
+--- Plot asymmetric error bars.
+---@param label_id string
+---@param xs number[]
+---@param ys number[]
+---@param neg number[]
+---@param pos number[]
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotErrorBars(label_id, xs, ys, neg, pos, count, spec)
+end
+
+--- Plot asymmetric error bars.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param xs ffi.cdata
+---@param ys ffi.cdata
+---@param neg ffi.cdata
+---@param pos ffi.cdata
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotErrorBarsC(label_id, dtype, xs, ys, neg, pos, count, spec, offset, stride)
+end
+
+--- Plot stems; ref/start default to 0, scale to 1.
+---@param label_id string
+---@param values number[]
+---@param count integer
+---@param ref? number
+---@param scale? number
+---@param start? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotStems(label_id, values, count, ref, scale, start, spec)
+end
+
+--- Plot stems; ref/start default to 0, scale to 1.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param values ffi.cdata
+---@param count integer
+---@param ref? number
+---@param scale? number
+---@param start? number
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotStemsC(label_id, dtype, values, count, ref, scale, start, spec, offset, stride)
+end
+
+--- Plot stems from paired coordinates; ref defaults to 0.
+---@param label_id string
+---@param xs number[]
+---@param ys number[]
+---@param count integer
+---@param ref? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotStems(label_id, xs, ys, count, ref, spec)
+end
+
+--- Plot stems from paired coordinates; ref defaults to 0.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param xs ffi.cdata
+---@param ys ffi.cdata
+---@param count integer
+---@param ref? number
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotStemsC(label_id, dtype, xs, ys, count, ref, spec, offset, stride)
+end
+
+--- Plot infinite lines; use Flags for horizontal lines.
+---@param label_id string
+---@param values number[]
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotInfLines(label_id, values, count, spec)
+end
+
+--- Plot infinite lines; use Flags for horizontal lines.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param values ffi.cdata
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotInfLinesC(label_id, dtype, values, count, spec, offset, stride)
+end
+
+--- Plot a pie chart; label_fmt defaults to "%.1f", angle0 to 90. Count is also clamped to labels.
+---@param label_ids string[]
+---@param values number[]
+---@param count integer
 ---@param x number
 ---@param y number
 ---@param radius number
----@param normalize boolean @optional, false
----@param label_fmt string @optional, '%.1f'
----@param angle0 number @optional, 90
-function implot.plotPieChart(label_ids, values, count, x, y, radius, normalize, label_fmt, angle0)
+---@param label_fmt? string
+---@param angle0? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotPieChart(label_ids, values, count, x, y, radius, label_fmt, angle0, spec)
 end
 
---- Plots a pie chart. If the sum of values > 1 or normalize is true, each value will be normalized.
---- Center and radius are in plot units. #label_fmt can be set to NULL for no labels.
+--- Plot a pie chart; label_fmt defaults to "%.1f", angle0 to 90. Count is also clamped to labels.
 ---@param label_ids string[]
----@param dtype number @ImGuiDataType
+---@param dtype imgui.ImGuiDataType
 ---@param values ffi.cdata
----@param count number
+---@param count integer
 ---@param x number
 ---@param y number
 ---@param radius number
----@param normalize boolean @optional, false
----@param label_fmt string @optional, '%.1f'
----@param angle0 number @optional, 90
-function implot.plotPieChartC(label_ids, dtype, values, count, x, y, radius, normalize, label_fmt, angle0)
+---@param label_fmt? string
+---@param angle0? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotPieChartC(label_ids, dtype, values, count, x, y, radius, label_fmt, angle0, spec)
 end
 
--------------------------------------------------------------------------------
-
---- Plots a 2D heatmap chart. Values are expected to be in row-major order.
---- Leave #scale_min and scale_max both at 0 for automatic color scaling, or set them to a predefined range.
---- #label_fmt can be set to NULL for no labels.
+--- Requires rows * cols values. Scale defaults to auto (0, 0), format to "%.1f", bounds to (0, 0) / (1, 1).
 ---@param label_id string
 ---@param values number[]
----@param rows number
----@param cols number
----@param scale_min number
----@param scale_max number
----@param label_fmt string @optional, '%.1f'
----@param bounds_min implot.ImPlotPoint @optional, (0, 0)
----@param bounds_max implot.ImPlotPoint @optional, (1, 1)
-function implot.plotHeatmap(label_id, values, rows, cols, scale_min, scale_max, label_fmt, bounds_min, bounds_max)
+---@param rows integer
+---@param cols integer
+---@param scale_min? number
+---@param scale_max? number
+---@param label_fmt? string
+---@param bounds_min? implot.ImPlotPoint
+---@param bounds_max? implot.ImPlotPoint
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotHeatmap(label_id, values, rows, cols, scale_min, scale_max, label_fmt, bounds_min, bounds_max, spec)
 end
 
---- Plots a 2D heatmap chart. Values are expected to be in row-major order.
---- Leave #scale_min and scale_max both at 0 for automatic color scaling, or set them to a predefined range.
---- #label_fmt can be set to NULL for no labels.
+--- Requires rows * cols values. Scale defaults to auto (0, 0), format to "%.1f", bounds to (0, 0) / (1, 1).
 ---@param label_id string
----@param dtype number @ImGuiDataType
+---@param dtype imgui.ImGuiDataType
 ---@param values ffi.cdata
----@param rows number
----@param cols number
----@param scale_min number
----@param scale_max number
----@param label_fmt string @optional, '%.1f'
----@param bounds_min implot.ImPlotPoint @optional, (0, 0)
----@param bounds_max implot.ImPlotPoint @optional, (1, 1)
-function implot.plotHeatmapC(label_id, dtype, values, rows, cols, scale_min, scale_max, label_fmt, bounds_min, bounds_max)
+---@param rows integer
+---@param cols integer
+---@param scale_min? number
+---@param scale_max? number
+---@param label_fmt? string
+---@param bounds_min? implot.ImPlotPoint
+---@param bounds_max? implot.ImPlotPoint
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotHeatmapC(label_id, dtype, values, rows, cols, scale_min, scale_max, label_fmt, bounds_min, bounds_max, spec)
 end
 
--------------------------------------------------------------------------------
-
---- Plots a horizontal histogram. #bins can be a positive integer or an ImPlotBin_ method. If #cumulative is true, each bin contains its count plus the counts of all previous bins.
---- If #density is true, the PDF is visualized. If both are true, the CDF is visualized. If #range is left unspecified, the min/max of #values will be used as the range.
---- If #range is specified, outlier values outside of the range are not binned. However, outliers still count toward normalizing and cumulative counts unless #outliers is false. The largest bin count or density is returned.
+--- Return the largest bin count/density. Defaults: Sturges bins, scale 1, automatic range.
 ---@param label_id string
 ---@param values number[]
----@param count number
----@param bins implot.ImPlotBin @optional, ImPlotBin_Sturges
----@param cumulative boolean @optional, false
----@param density boolean @optional, false
----@param range implot.ImPlotRange @optional
----@param outliers boolean @optional, true
----@param bar_scale number @optional, 1.0
-function implot.plotHistogram(label_id, values, count, bins, cumulative, density, range, outliers, bar_scale)
+---@param count integer
+---@param bins? number
+---@param bar_scale? number
+---@param range? implot.ImPlotRange
+---@param spec? implot.ImPlotSpec|integer
+---@return number
+function implot.plotHistogram(label_id, values, count, bins, bar_scale, range, spec)
 end
 
---- Plots a horizontal histogram. #bins can be a positive integer or an ImPlotBin_ method. If #cumulative is true, each bin contains its count plus the counts of all previous bins.
---- If #density is true, the PDF is visualized. If both are true, the CDF is visualized. If #range is left unspecified, the min/max of #values will be used as the range.
---- If #range is specified, outlier values outside of the range are not binned. However, outliers still count toward normalizing and cumulative counts unless #outliers is false. The largest bin count or density is returned.
+--- Return the largest bin count/density. Defaults: Sturges bins, scale 1, automatic range.
 ---@param label_id string
----@param dtype number @ImGuiDataType
+---@param dtype imgui.ImGuiDataType
 ---@param values ffi.cdata
----@param count number
----@param bins implot.ImPlotBin @optional, ImPlotBin_Sturges
----@param cumulative boolean @optional, false
----@param density boolean @optional, false
----@param range implot.ImPlotRange @optional
----@param outliers boolean @optional, true
----@param bar_scale number @optional, 1.0
-function implot.plotHistogramC(label_id, dtype, values, count, bins, cumulative, density, range, outliers, bar_scale)
+---@param count integer
+---@param bins? number
+---@param bar_scale? number
+---@param range? implot.ImPlotRange
+---@param spec? implot.ImPlotSpec|integer
+---@return number
+function implot.plotHistogramC(label_id, dtype, values, count, bins, bar_scale, range, spec)
 end
 
--------------------------------------------------------------------------------
-
---- Plots two dimensional, bivariate histogram as a heatmap. #x_bins and #y_bins can be a positive integer or an ImPlotBin. If #density is true, the PDF is visualized.
---- If #range is left unspecified, the min/max of #xs an #ys will be used as the ranges. If #range is specified, outlier values outside of range are not binned.
---- However, outliers still count toward the normalizing count for density plots unless #outliers is false. The largest bin count or density is returned.
+--- Return the largest bin count/density. Defaults: Sturges bins and automatic range.
 ---@param label_id string
 ---@param xs number[]
 ---@param ys number[]
----@param count number
----@param x_bins implot.ImPlotBin @optional, ImPlotBin_Sturges
----@param y_bins implot.ImPlotBin @optional, ImPlotBin_Sturges
----@param density boolean @optional, false
----@param range implot.ImPlotLimits @optional
----@param outliers boolean @optional, true
-function implot.plotHistogram2D(label_id, xs, ys, count, x_bins, y_bins, density, range, outliers)
+---@param count integer
+---@param x_bins? number
+---@param y_bins? number
+---@param range? implot.ImPlotRect
+---@param spec? implot.ImPlotSpec|integer
+---@return number
+function implot.plotHistogram2D(label_id, xs, ys, count, x_bins, y_bins, range, spec)
 end
 
---- Plots two dimensional, bivariate histogram as a heatmap. #x_bins and #y_bins can be a positive integer or an ImPlotBin. If #density is true, the PDF is visualized.
---- If #range is left unspecified, the min/max of #xs an #ys will be used as the ranges. If #range is specified, outlier values outside of range are not binned.
---- However, outliers still count toward the normalizing count for density plots unless #outliers is false. The largest bin count or density is returned.
+--- Return the largest bin count/density. Defaults: Sturges bins and automatic range.
 ---@param label_id string
----@param dtype number @ImGuiDataType
----@param xs number[]
----@param ys number[]
----@param count number
----@param x_bins implot.ImPlotBin @optional, ImPlotBin_Sturges
----@param y_bins implot.ImPlotBin @optional, ImPlotBin_Sturges
----@param density boolean @optional, false
----@param range implot.ImPlotLimits @optional
----@param outliers boolean @optional, true
-function implot.plotHistogram2DC(label_id, dtype, xs, ys, count, x_bins, y_bins, density, range, outliers)
-end
-
--------------------------------------------------------------------------------
-
---- Plots digital data. Digital plots do not respond to y drag or zoom,
---- and are always referenced to the bottom of the plot.
----@param label_id string
----@param xs number[]
----@param ys number[]
----@param count number
----@param offset number @optional
-function implot.plotDigital(label_id, xs, ys, count, offset)
-end
-
---- Plots digital data. Digital plots do not respond to y drag or zoom,
---- and are always referenced to the bottom of the plot.
----@param label_id string
----@param dtype number @ImGuiDataType
+---@param dtype imgui.ImGuiDataType
 ---@param xs ffi.cdata
 ---@param ys ffi.cdata
----@param count number
----@param offset number @optional
----@param stride number @optional
-function implot.plotDigitalC(label_id, dtype, xs, ys, count, offset, stride)
+---@param count integer
+---@param x_bins? number
+---@param y_bins? number
+---@param range? implot.ImPlotRect
+---@param spec? implot.ImPlotSpec|integer
+---@return number
+function implot.plotHistogram2DC(label_id, dtype, xs, ys, count, x_bins, y_bins, range, spec)
 end
 
--------------------------------------------------------------------------------
+--- Plot digital signals.
+---@param label_id string
+---@param xs number[]
+---@param ys number[]
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotDigital(label_id, xs, ys, count, spec)
+end
+
+--- Plot digital signals.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param xs ffi.cdata
+---@param ys ffi.cdata
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotDigitalC(label_id, dtype, xs, ys, count, spec, offset, stride)
+end
 
 --- Plots an axis-aligned image. #bounds_min/bounds_max are in plot coordinates (y-up)
 --- and #uv0/uv1 are in texture coordinates (y-down).
