@@ -18,6 +18,7 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <unordered_set>
 #include <vector>
 
 #pragma warning (disable: 4244)
@@ -1244,6 +1245,252 @@ static int luaReg_imguiMultiSelectIO(lua_State* lua_S)
 	LUA_FIELD("RangeSrcReset", lua_ImGuiMultiSelectIO_RangeSrcReset_getter, lua_ImGuiMultiSelectIO_RangeSrcReset_setter);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
+	return 0;
+}
+
+// Own the native storage and its adapter data together. Never copy a self-referencing adapter.
+struct LuaImGuiSelectionBasicStorage
+{
+	ImGuiSelectionBasicStorage storage;
+	std::vector<ImGuiID> ids;
+	bool mapped = false;
+	LuaImGuiSelectionBasicStorage()
+	{
+		storage.UserData = this;
+		storage.AdapterIndexToStorageId = [](ImGuiSelectionBasicStorage* native, int index) {
+			auto* self = static_cast<LuaImGuiSelectionBasicStorage*>(native->UserData);
+			return self->mapped ? self->ids[static_cast<size_t>(index)] : static_cast<ImGuiID>(index);
+		};
+	}
+	LuaImGuiSelectionBasicStorage(const LuaImGuiSelectionBasicStorage&) = delete;
+	LuaImGuiSelectionBasicStorage& operator=(const LuaImGuiSelectionBasicStorage&) = delete;
+};
+
+namespace lua
+{
+	template<> struct value_type<LuaImGuiSelectionBasicStorage> : std::true_type {};
+}
+
+static LuaImGuiSelectionBasicStorage* selection_check(lua_State* L, int argc)
+{
+	if (argc >= 0 && lua_gettop(L) != argc + 1)
+		luaL_error(L, "selection storage expects %d arguments", argc);
+	LuaImGuiSelectionBasicStorage* self = nullptr;
+	if (!lua::read_value_pointer(L, 1, &self))
+		luaL_error(L, "invalid imgui.ImGuiSelectionBasicStorage object");
+	return self;
+}
+
+static bool selection_readId(lua_State* L, int index, ImGuiID* result)
+{
+	if (lua_type(L, index) != LUA_TNUMBER) return false;
+	const auto value = lua_tonumber(L, index);
+	if (!std::isfinite(value) || std::trunc(value) != value || value < 0 || value > UINT32_MAX)
+		return false;
+	*result = static_cast<ImGuiID>(value);
+	return true;
+}
+
+static ImGuiID selection_checkId(lua_State* L, int index)
+{
+	ImGuiID id = 0;
+	if (!selection_readId(L, index, &id))
+		luaL_error(L, "selection ID must be an integer in [0, 4294967295]");
+	return id;
+}
+
+// No Lua callbacks/metamethods during validation. Commit the replacement only after all checks.
+static bool selection_readMapping(lua_State* L, LuaImGuiSelectionBasicStorage& self)
+{
+	if (lua_isnil(L, 2)) { self.ids.clear(); self.mapped = false; return true; }
+	if (lua_type(L, 2) != LUA_TTABLE) return false;
+	const size_t size = lua_objlen(L, 2);
+	if (size > static_cast<size_t>((std::numeric_limits<int>::max)())) return false;
+	size_t keys = 0;
+	lua_pushnil(L);
+	while (lua_next(L, 2))
+	{
+		ImGuiID index;
+		const bool ok = selection_readId(L, -2, &index) && index >= 1 && index <= size;
+		lua_pop(L, 1);
+		if (!ok) { lua_pop(L, 1); return false; }
+		++keys;
+	}
+	if (keys != size) return false;
+	std::vector<ImGuiID> ids;
+	std::unordered_set<ImGuiID> unique;
+	ids.reserve(size);
+	for (size_t i = 0; i < size; ++i)
+	{
+		lua_rawgeti(L, 2, static_cast<int>(i + 1));
+		ImGuiID id;
+		const bool ok = selection_readId(L, -1, &id);
+		lua_pop(L, 1);
+		if (!ok || !unique.insert(id).second) return false;
+		ids.push_back(id);
+	}
+	self.ids.swap(ids);
+	self.mapped = true;
+	return true;
+}
+
+static int selection_new(lua_State* lua_S)
+{
+	if (lua_gettop(lua_S) > 1 || (lua_gettop(lua_S) == 1 && !lua_istable(lua_S, 1)))
+		return luaL_error(lua_S, "ImGuiSelectionBasicStorage expects no arguments");
+	lua::push_value_owned(lua_S, new LuaImGuiSelectionBasicStorage());
+	return 1;
+}
+
+static int selection_Size_getter(lua_State* lua_S)
+{
+	// tolua property getters receive both the object and the property key.
+	auto* self = selection_check(lua_S, -1);
+	LUA_PUSH_NATIVE(self->storage.Size);
+	return 1;
+}
+static int selection_Size_setter(lua_State* lua_S)
+{
+	return luaL_error(lua_S, "ImGuiSelectionBasicStorage.Size is read-only");
+}
+static int selection_PreserveOrder_getter(lua_State* lua_S)
+{
+	auto* self = selection_check(lua_S, -1);
+	LUA_PUSH_NATIVE(self->storage.PreserveOrder);
+	return 1;
+}
+static int selection_PreserveOrder_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiSelectionBasicStorage.PreserveOrder/setter");
+	auto* self = selection_check(lua_S, 1);
+	LUA_NATIVE_SETTER(self->storage.PreserveOrder, 2);
+	return 0;
+}
+static int selection_contains(lua_State* lua_S)
+{
+	auto* self = selection_check(lua_S, 1);
+	LUA_PUSH_NATIVE(self->storage.Contains(selection_checkId(lua_S, 2)));
+	return 1;
+}
+static int selection_setItemSelected(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiSelectionBasicStorage:setItemSelected");
+	auto* self = selection_check(lua_S, 2);
+	const auto id = selection_checkId(lua_S, 2);
+	bool selected = false;
+	LUA_NATIVE_SETTER(selected, 3);
+	if (selected && !self->storage.Contains(id) && self->storage._SelectionOrder == (std::numeric_limits<int>::max)())
+		return luaL_error(lua_S, "selection order exhausted; clear the storage first");
+	self->storage.SetItemSelected(id, selected);
+	return 0;
+}
+static int selection_clear(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("imgui.ImGuiSelectionBasicStorage", "imgui.ImGuiSelectionBasicStorage:clear");
+	LUA_TRY_INVOKE_R(0, [](LuaImGuiSelectionBasicStorage& self) { self.storage.Clear(); });
+	LUA_INVOKE_FOOTER("0");
+}
+static int selection_swap(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("imgui.ImGuiSelectionBasicStorage", "imgui.ImGuiSelectionBasicStorage:swap");
+	LUA_TRY_INVOKE_R(1, ([](LuaImGuiSelectionBasicStorage& self, LuaImGuiSelectionBasicStorage& other) {
+		self.storage.Swap(other.storage);
+	}));
+	LUA_INVOKE_FOOTER("1");
+}
+static int selection_setIndexToStorageIds(lua_State* lua_S)
+{
+	auto* self = selection_check(lua_S, 1);
+	if (!selection_readMapping(lua_S, *self))
+		return luaL_error(lua_S, "ID mapping must be nil or a dense array of unique uint32 IDs");
+	return 0;
+}
+static int selection_getStorageIdFromIndex(lua_State* lua_S)
+{
+	auto* self = selection_check(lua_S, 1);
+	const auto index = selection_checkId(lua_S, 2);
+	if (index > static_cast<ImGuiID>((std::numeric_limits<int>::max)()) ||
+		(self->mapped && index >= self->ids.size()))
+		return luaL_error(lua_S, "selection index is outside the mapping/int range");
+	LUA_PUSH_NATIVE(self->storage.GetStorageIdFromIndex(static_cast<int>(index)));
+	return 1;
+}
+
+static const char* selection_validateRequests(const LuaImGuiSelectionBasicStorage& self, const ImGuiMultiSelectIO& io)
+{
+	if (io.ItemsCount < 0) return "applyRequests requires a known non-negative ItemsCount";
+	if (self.mapped && static_cast<size_t>(io.ItemsCount) > self.ids.size())
+		return "ID mapping does not cover ItemsCount";
+	// Bound all native int order arithmetic before mutating anything.
+	int64_t order = self.storage._SelectionOrder;
+	for (const auto& request : io.Requests)
+	{
+		if (request.Type == ImGuiSelectionRequestType_SetAll)
+			order = 1 + (request.Selected ? static_cast<int64_t>(io.ItemsCount) : 0);
+		else if (request.Type == ImGuiSelectionRequestType_SetRange)
+		{
+			if (request.RangeFirstItem < 0 || request.RangeLastItem < request.RangeFirstItem ||
+				request.RangeLastItem >= io.ItemsCount)
+				return "SetRange endpoints must be ordered indices within ItemsCount";
+			if (request.RangeDirection != 1 && request.RangeDirection != -1)
+				return "SetRange direction must be +1 or -1";
+			order += request.RangeLastItem - request.RangeFirstItem + 1;
+		}
+		else if (request.Type != ImGuiSelectionRequestType_None)
+			return "unknown selection request type";
+		if (order >= (std::numeric_limits<int>::max)())
+			return "selection order exhausted; clear the storage first";
+	}
+	return nullptr;
+}
+static int selection_applyRequests(lua_State* lua_S)
+{
+	auto* self = selection_check(lua_S, 1);
+	ImGuiMultiSelectIO* io = nullptr;
+	if (!luaval_to_native(lua_S, 2, &io) || !io)
+		return luaL_error(lua_S, "applyRequests expects a live ImGuiMultiSelectIO");
+	if (const char* error = selection_validateRequests(*self, *io))
+		return luaL_error(lua_S, "%s", error);
+	self->storage.ApplyRequests(io);
+	return 0;
+}
+static int selection_getSelectedItems(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("imgui.ImGuiSelectionBasicStorage", "imgui.ImGuiSelectionBasicStorage:getSelectedItems");
+	LUA_TRY_INVOKE_R(0, [](const LuaImGuiSelectionBasicStorage& self) {
+		std::vector<ImGuiStoragePair> records;
+		for (const auto& record : self.storage._Storage.Data)
+			if (record.val_i != 0) records.push_back(record);
+		if (self.storage.PreserveOrder)
+			std::stable_sort(records.begin(), records.end(), [](const ImGuiStoragePair& a, const ImGuiStoragePair& b) {
+				return a.val_i < b.val_i;
+			});
+		std::vector<ImGuiID> snapshot;
+		snapshot.reserve(records.size());
+		for (const auto& record : records) snapshot.push_back(record.key);
+		return snapshot;
+	});
+	LUA_INVOKE_FOOTER("0");
+}
+static int luaReg_imguiSelectionBasicStorage(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_CLS_DEF(LuaImGuiSelectionBasicStorage, "ImGuiSelectionBasicStorage", "imgui.ImGuiSelectionBasicStorage", nullptr, nullptr);
+	LUA_METHOD("new", selection_new);
+	LUA_METHOD(".call", selection_new);
+	LUA_FIELD("Size", selection_Size_getter, selection_Size_setter);
+	LUA_FIELD("PreserveOrder", selection_PreserveOrder_getter, selection_PreserveOrder_setter);
+	LUA_METHOD("contains", selection_contains);
+	LUA_METHOD("setItemSelected", selection_setItemSelected);
+	LUA_METHOD("clear", selection_clear);
+	LUA_METHOD("swap", selection_swap);
+	LUA_METHOD("setIndexToStorageIds", selection_setIndexToStorageIds);
+	LUA_METHOD("getStorageIdFromIndex", selection_getStorageIdFromIndex);
+	LUA_METHOD("applyRequests", selection_applyRequests);
+	LUA_METHOD("getSelectedItems", selection_getSelectedItems);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	lua::register_value_metatable<LuaImGuiSelectionBasicStorage>(lua_S, "imgui.ImGuiSelectionBasicStorage");
 	return 0;
 }
 
@@ -3518,6 +3765,7 @@ int luaopen_imgui(lua_State *L)
 	luaReg_imguiDrawList(L);
 	luaReg_imguiTableSortSpecs(L);
 	luaReg_imguiMultiSelectIO(L);
+	luaReg_imguiSelectionBasicStorage(L);
 
 	lua_pushstring(L, "imgui.ImDrawList");
 	lua_rawget(L, LUA_REGISTRYINDEX);

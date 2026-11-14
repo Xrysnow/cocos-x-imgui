@@ -639,6 +639,68 @@ local ImGuiMultiSelectIO
 function imgui.setNextItemSelectionUserData(selection_user_data)
 end
 
+--- Owning selection storage, collected by Lua and safe to retain across frames.
+--- Storage IDs are Lua integer numbers in [0, 4294967295], including zero (not int64 cdata).
+--- With this helper, submit zero-based item indices to setNextItemSelectionUserData(), not storage IDs.
+--- UserData, AdapterIndexToStorageId, internal storage and native iteration are not exposed.
+---@class imgui.ImGuiSelectionBasicStorage
+---@field Size integer Read-only selected item count.
+---@field PreserveOrder boolean Writable; snapshots use selection order when true, ascending ID otherwise. Defaults to false.
+local ImGuiSelectionBasicStorage
+
+--- Create empty storage with identity index-to-ID mapping. Also callable as imgui.ImGuiSelectionBasicStorage().
+---@return imgui.ImGuiSelectionBasicStorage
+function ImGuiSelectionBasicStorage.new()
+end
+
+---@param id integer Unsigned 32-bit storage ID.
+---@return boolean
+function ImGuiSelectionBasicStorage:contains(id)
+end
+
+--- Update selection by storage ID; the ID need not currently appear in the mapping.
+--- If the native selection-order counter is exhausted, clear the storage before adding selections.
+---@param id integer Unsigned 32-bit storage ID.
+---@param selected boolean
+function ImGuiSelectionBasicStorage:setItemSelected(id, selected)
+end
+
+--- Clear selection and reset its order counter; retain the mapping and PreserveOrder.
+function ImGuiSelectionBasicStorage:clear()
+end
+
+--- Swap selected IDs and their order counters only. Each object retains its mapping and PreserveOrder.
+---@param other imgui.ImGuiSelectionBasicStorage
+function ImGuiSelectionBasicStorage:swap(other)
+end
+
+--- Copy a dense 1-based array of unique unsigned 32-bit IDs; ids[index + 1] maps a zero-based index.
+--- nil restores identity mapping; an empty table installs an empty mapping. Invalid input leaves the old map intact.
+--- Replacing the mapping does not change selected IDs. Keep it consistent with the submitted item order.
+---@param ids integer[]|nil
+function ImGuiSelectionBasicStorage:setIndexToStorageIds(ids)
+end
+
+--- Resolve a zero-based non-negative int index; explicit mappings require the index to be in bounds.
+---@param index integer
+---@return integer
+function ImGuiSelectionBasicStorage:getStorageIdFromIndex(index)
+end
+
+--- Apply live IO, not its Requests snapshot. Requires known ItemsCount >= 0 and mapping coverage for all items.
+--- Range endpoints must be ordered zero-based indices within ItemsCount; invalid requests fail before mutation.
+--- Apply Begin's IO before submitting any items, and End's IO immediately after endMultiSelect().
+--- Do not retain borrowed IO beyond its documented lifetime; no lifetime validation is performed here.
+---@param io imgui.ImGuiMultiSelectIO
+function ImGuiSelectionBasicStorage:applyRequests(io)
+end
+
+--- Return a fresh 1-based array of selected storage IDs, with no sentinel or native iterator state.
+--- Editing the array or subsequently changing storage does not affect the other; reading never reorders storage.
+---@return integer[]
+function ImGuiSelectionBasicStorage:getSelectedItems()
+end
+
 --
 -- Tab Bars, Tabs
 -- [BETA API] API may evolve!
