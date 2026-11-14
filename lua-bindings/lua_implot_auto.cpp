@@ -2,6 +2,32 @@
 #include "implot/implot.h"
 #include "imgui_lua.hpp"
 
+int luaReg_implot_IMPLOT_AUTO_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("implot.IMPLOT_AUTO/getter");
+	LUA_PUSH_NATIVE(IMPLOT_AUTO);
+	return 1;
+}
+int luaReg_implot_implotIMPLOT_AUTO(lua_State* lua_S)
+{
+	LUA_ENTRY("implot");
+	LUA_FIELD("IMPLOT_AUTO", luaReg_implot_IMPLOT_AUTO_getter, nullptr);
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_implot_IMPLOT_AUTO_COL_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("implot.IMPLOT_AUTO_COL/getter");
+	LUA_PUSH_NATIVE(IMPLOT_AUTO_COL);
+	return 1;
+}
+int luaReg_implot_implotIMPLOT_AUTO_COL(lua_State* lua_S)
+{
+	LUA_ENTRY("implot");
+	LUA_FIELD("IMPLOT_AUTO_COL", luaReg_implot_IMPLOT_AUTO_COL_getter, nullptr);
+	LUA_ENTRY_END(1);
+	return 0;
+}
 int luaReg_implot_implotImAxis(lua_State* lua_S)
 {
 	LUA_ENTRY("implot");
@@ -17,6 +43,31 @@ int luaReg_implot_implotImAxis(lua_State* lua_S)
 	LUA_ENTRY_END(1);
 	return 0;
 }
+int luaReg_implot_implotImPlotProp(lua_State* lua_S)
+{
+	LUA_ENTRY("implot");
+	LUA_ENUM_DEF("ImPlotProp");
+	LUA_ENUM_ENTRY("ImPlotProp_LineColor", ImPlotProp_::ImPlotProp_LineColor);
+	LUA_ENUM_ENTRY("ImPlotProp_LineColors", ImPlotProp_::ImPlotProp_LineColors);
+	LUA_ENUM_ENTRY("ImPlotProp_LineWeight", ImPlotProp_::ImPlotProp_LineWeight);
+	LUA_ENUM_ENTRY("ImPlotProp_FillColor", ImPlotProp_::ImPlotProp_FillColor);
+	LUA_ENUM_ENTRY("ImPlotProp_FillColors", ImPlotProp_::ImPlotProp_FillColors);
+	LUA_ENUM_ENTRY("ImPlotProp_FillAlpha", ImPlotProp_::ImPlotProp_FillAlpha);
+	LUA_ENUM_ENTRY("ImPlotProp_Marker", ImPlotProp_::ImPlotProp_Marker);
+	LUA_ENUM_ENTRY("ImPlotProp_MarkerSize", ImPlotProp_::ImPlotProp_MarkerSize);
+	LUA_ENUM_ENTRY("ImPlotProp_MarkerSizes", ImPlotProp_::ImPlotProp_MarkerSizes);
+	LUA_ENUM_ENTRY("ImPlotProp_MarkerLineColor", ImPlotProp_::ImPlotProp_MarkerLineColor);
+	LUA_ENUM_ENTRY("ImPlotProp_MarkerLineColors", ImPlotProp_::ImPlotProp_MarkerLineColors);
+	LUA_ENUM_ENTRY("ImPlotProp_MarkerFillColor", ImPlotProp_::ImPlotProp_MarkerFillColor);
+	LUA_ENUM_ENTRY("ImPlotProp_MarkerFillColors", ImPlotProp_::ImPlotProp_MarkerFillColors);
+	LUA_ENUM_ENTRY("ImPlotProp_Size", ImPlotProp_::ImPlotProp_Size);
+	LUA_ENUM_ENTRY("ImPlotProp_Offset", ImPlotProp_::ImPlotProp_Offset);
+	LUA_ENUM_ENTRY("ImPlotProp_Stride", ImPlotProp_::ImPlotProp_Stride);
+	LUA_ENUM_ENTRY("ImPlotProp_Flags", ImPlotProp_::ImPlotProp_Flags);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
 int luaReg_implot_implotImPlotFlags(lua_State* lua_S)
 {
 	LUA_ENTRY("implot");
@@ -28,7 +79,6 @@ int luaReg_implot_implotImPlotFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("NoInputs", ImPlotFlags_::ImPlotFlags_NoInputs);
 	LUA_ENUM_ENTRY("NoMenus", ImPlotFlags_::ImPlotFlags_NoMenus);
 	LUA_ENUM_ENTRY("NoBoxSelect", ImPlotFlags_::ImPlotFlags_NoBoxSelect);
-	LUA_ENUM_ENTRY("NoChild", ImPlotFlags_::ImPlotFlags_NoChild);
 	LUA_ENUM_ENTRY("NoFrame", ImPlotFlags_::ImPlotFlags_NoFrame);
 	LUA_ENUM_ENTRY("Equal", ImPlotFlags_::ImPlotFlags_Equal);
 	LUA_ENUM_ENTRY("Crosshairs", ImPlotFlags_::ImPlotFlags_Crosshairs);
@@ -58,6 +108,7 @@ int luaReg_implot_implotImPlotAxisFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("PanStretch", ImPlotAxisFlags_::ImPlotAxisFlags_PanStretch);
 	LUA_ENUM_ENTRY("LockMin", ImPlotAxisFlags_::ImPlotAxisFlags_LockMin);
 	LUA_ENUM_ENTRY("LockMax", ImPlotAxisFlags_::ImPlotAxisFlags_LockMax);
+	LUA_ENUM_ENTRY("TickLabelsInside", ImPlotAxisFlags_::ImPlotAxisFlags_TickLabelsInside);
 	LUA_ENUM_ENTRY("Lock", ImPlotAxisFlags_::ImPlotAxisFlags_Lock);
 	LUA_ENUM_ENTRY("NoDecorations", ImPlotAxisFlags_::ImPlotAxisFlags_NoDecorations);
 	LUA_ENUM_ENTRY("AuxDefault", ImPlotAxisFlags_::ImPlotAxisFlags_AuxDefault);
@@ -97,6 +148,7 @@ int luaReg_implot_implotImPlotLegendFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("Outside", ImPlotLegendFlags_::ImPlotLegendFlags_Outside);
 	LUA_ENUM_ENTRY("Horizontal", ImPlotLegendFlags_::ImPlotLegendFlags_Horizontal);
 	LUA_ENUM_ENTRY("Sort", ImPlotLegendFlags_::ImPlotLegendFlags_Sort);
+	LUA_ENUM_ENTRY("Reverse", ImPlotLegendFlags_::ImPlotLegendFlags_Reverse);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -122,6 +174,8 @@ int luaReg_implot_implotImPlotDragToolFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("NoFit", ImPlotDragToolFlags_::ImPlotDragToolFlags_NoFit);
 	LUA_ENUM_ENTRY("NoInputs", ImPlotDragToolFlags_::ImPlotDragToolFlags_NoInputs);
 	LUA_ENUM_ENTRY("Delayed", ImPlotDragToolFlags_::ImPlotDragToolFlags_Delayed);
+	LUA_ENUM_ENTRY("NoMove", ImPlotDragToolFlags_::ImPlotDragToolFlags_NoMove);
+	LUA_ENUM_ENTRY("NoResize", ImPlotDragToolFlags_::ImPlotDragToolFlags_NoResize);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -169,6 +223,25 @@ int luaReg_implot_implotImPlotScatterFlags(lua_State* lua_S)
 	LUA_ENUM_DEF("ImPlotScatterFlags");
 	LUA_ENUM_ENTRY("None", ImPlotScatterFlags_::ImPlotScatterFlags_None);
 	LUA_ENUM_ENTRY("NoClip", ImPlotScatterFlags_::ImPlotScatterFlags_NoClip);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_implot_implotImPlotBubblesFlags(lua_State* lua_S)
+{
+	LUA_ENTRY("implot");
+	LUA_ENUM_DEF("ImPlotBubblesFlags");
+	LUA_ENUM_ENTRY("ImPlotBubblesFlags_None", ImPlotBubblesFlags_::ImPlotBubblesFlags_None);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_implot_implotImPlotPolygonFlags(lua_State* lua_S)
+{
+	LUA_ENTRY("implot");
+	LUA_ENUM_DEF("ImPlotPolygonFlags");
+	LUA_ENUM_ENTRY("ImPlotPolygonFlags_None", ImPlotPolygonFlags_::ImPlotPolygonFlags_None);
+	LUA_ENUM_ENTRY("ImPlotPolygonFlags_Concave", ImPlotPolygonFlags_::ImPlotPolygonFlags_Concave);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -250,6 +323,9 @@ int luaReg_implot_implotImPlotPieChartFlags(lua_State* lua_S)
 	LUA_ENUM_DEF("ImPlotPieChartFlags");
 	LUA_ENUM_ENTRY("None", ImPlotPieChartFlags_::ImPlotPieChartFlags_None);
 	LUA_ENUM_ENTRY("Normalize", ImPlotPieChartFlags_::ImPlotPieChartFlags_Normalize);
+	LUA_ENUM_ENTRY("IgnoreHidden", ImPlotPieChartFlags_::ImPlotPieChartFlags_IgnoreHidden);
+	LUA_ENUM_ENTRY("Exploding", ImPlotPieChartFlags_::ImPlotPieChartFlags_Exploding);
+	LUA_ENUM_ENTRY("NoSliceBorder", ImPlotPieChartFlags_::ImPlotPieChartFlags_NoSliceBorder);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -330,11 +406,6 @@ int luaReg_implot_implotImPlotCol(lua_State* lua_S)
 {
 	LUA_ENTRY("implot");
 	LUA_ENUM_DEF("ImPlotCol");
-	LUA_ENUM_ENTRY("Line", ImPlotCol_::ImPlotCol_Line);
-	LUA_ENUM_ENTRY("Fill", ImPlotCol_::ImPlotCol_Fill);
-	LUA_ENUM_ENTRY("MarkerOutline", ImPlotCol_::ImPlotCol_MarkerOutline);
-	LUA_ENUM_ENTRY("MarkerFill", ImPlotCol_::ImPlotCol_MarkerFill);
-	LUA_ENUM_ENTRY("ErrorBar", ImPlotCol_::ImPlotCol_ErrorBar);
 	LUA_ENUM_ENTRY("FrameBg", ImPlotCol_::ImPlotCol_FrameBg);
 	LUA_ENUM_ENTRY("PlotBg", ImPlotCol_::ImPlotCol_PlotBg);
 	LUA_ENUM_ENTRY("PlotBorder", ImPlotCol_::ImPlotCol_PlotBorder);
@@ -360,15 +431,8 @@ int luaReg_implot_implotImPlotStyleVar(lua_State* lua_S)
 {
 	LUA_ENTRY("implot");
 	LUA_ENUM_DEF("ImPlotStyleVar");
-	LUA_ENUM_ENTRY("LineWeight", ImPlotStyleVar_::ImPlotStyleVar_LineWeight);
-	LUA_ENUM_ENTRY("Marker", ImPlotStyleVar_::ImPlotStyleVar_Marker);
-	LUA_ENUM_ENTRY("MarkerSize", ImPlotStyleVar_::ImPlotStyleVar_MarkerSize);
-	LUA_ENUM_ENTRY("MarkerWeight", ImPlotStyleVar_::ImPlotStyleVar_MarkerWeight);
-	LUA_ENUM_ENTRY("FillAlpha", ImPlotStyleVar_::ImPlotStyleVar_FillAlpha);
-	LUA_ENUM_ENTRY("ErrorBarSize", ImPlotStyleVar_::ImPlotStyleVar_ErrorBarSize);
-	LUA_ENUM_ENTRY("ErrorBarWeight", ImPlotStyleVar_::ImPlotStyleVar_ErrorBarWeight);
-	LUA_ENUM_ENTRY("DigitalBitHeight", ImPlotStyleVar_::ImPlotStyleVar_DigitalBitHeight);
-	LUA_ENUM_ENTRY("DigitalBitGap", ImPlotStyleVar_::ImPlotStyleVar_DigitalBitGap);
+	LUA_ENUM_ENTRY("PlotDefaultSize", ImPlotStyleVar_::ImPlotStyleVar_PlotDefaultSize);
+	LUA_ENUM_ENTRY("PlotMinSize", ImPlotStyleVar_::ImPlotStyleVar_PlotMinSize);
 	LUA_ENUM_ENTRY("PlotBorderSize", ImPlotStyleVar_::ImPlotStyleVar_PlotBorderSize);
 	LUA_ENUM_ENTRY("MinorAlpha", ImPlotStyleVar_::ImPlotStyleVar_MinorAlpha);
 	LUA_ENUM_ENTRY("MajorTickLen", ImPlotStyleVar_::ImPlotStyleVar_MajorTickLen);
@@ -385,8 +449,8 @@ int luaReg_implot_implotImPlotStyleVar(lua_State* lua_S)
 	LUA_ENUM_ENTRY("MousePosPadding", ImPlotStyleVar_::ImPlotStyleVar_MousePosPadding);
 	LUA_ENUM_ENTRY("AnnotationPadding", ImPlotStyleVar_::ImPlotStyleVar_AnnotationPadding);
 	LUA_ENUM_ENTRY("FitPadding", ImPlotStyleVar_::ImPlotStyleVar_FitPadding);
-	LUA_ENUM_ENTRY("PlotDefaultSize", ImPlotStyleVar_::ImPlotStyleVar_PlotDefaultSize);
-	LUA_ENUM_ENTRY("PlotMinSize", ImPlotStyleVar_::ImPlotStyleVar_PlotMinSize);
+	LUA_ENUM_ENTRY("DigitalPadding", ImPlotStyleVar_::ImPlotStyleVar_DigitalPadding);
+	LUA_ENUM_ENTRY("DigitalSpacing", ImPlotStyleVar_::ImPlotStyleVar_DigitalSpacing);
 	LUA_ENUM_ENTRY("COUNT", ImPlotStyleVar_::ImPlotStyleVar_COUNT);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
@@ -409,6 +473,7 @@ int luaReg_implot_implotImPlotMarker(lua_State* lua_S)
 	LUA_ENTRY("implot");
 	LUA_ENUM_DEF("ImPlotMarker");
 	LUA_ENUM_ENTRY("None", ImPlotMarker_::ImPlotMarker_None);
+	LUA_ENUM_ENTRY("Auto", ImPlotMarker_::ImPlotMarker_Auto);
 	LUA_ENUM_ENTRY("Circle", ImPlotMarker_::ImPlotMarker_Circle);
 	LUA_ENUM_ENTRY("Square", ImPlotMarker_::ImPlotMarker_Square);
 	LUA_ENUM_ENTRY("Diamond", ImPlotMarker_::ImPlotMarker_Diamond);
@@ -419,6 +484,8 @@ int luaReg_implot_implotImPlotMarker(lua_State* lua_S)
 	LUA_ENUM_ENTRY("Cross", ImPlotMarker_::ImPlotMarker_Cross);
 	LUA_ENUM_ENTRY("Plus", ImPlotMarker_::ImPlotMarker_Plus);
 	LUA_ENUM_ENTRY("Asterisk", ImPlotMarker_::ImPlotMarker_Asterisk);
+	LUA_ENUM_ENTRY("Vertical", ImPlotMarker_::ImPlotMarker_Vertical);
+	LUA_ENUM_ENTRY("Horizontal", ImPlotMarker_::ImPlotMarker_Horizontal);
 	LUA_ENUM_ENTRY("COUNT", ImPlotMarker_::ImPlotMarker_COUNT);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
@@ -505,74 +572,32 @@ int lua_ImPlotStyle_Colormap_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->Colormap, 2);
 	return 0;
 }
-int lua_ImPlotStyle_DigitalBitGap_getter(lua_State* lua_S)
+int lua_ImPlotStyle_DigitalPadding_getter(lua_State* lua_S)
 {
-	LUA_CUR_FNAME("implot.ImPlotStyle.DigitalBitGap/getter");
+	LUA_CUR_FNAME("implot.ImPlotStyle.DigitalPadding/getter");
 	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_PUSH_NATIVE(cobj->DigitalBitGap);
+	LUA_PUSH_NATIVE(cobj->DigitalPadding);
 	return 1;
 }
-int lua_ImPlotStyle_DigitalBitGap_setter(lua_State* lua_S)
+int lua_ImPlotStyle_DigitalPadding_setter(lua_State* lua_S)
 {
-	LUA_CUR_FNAME("implot.ImPlotStyle.DigitalBitGap/setter");
+	LUA_CUR_FNAME("implot.ImPlotStyle.DigitalPadding/setter");
 	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_NATIVE_SETTER(cobj->DigitalBitGap, 2);
+	LUA_NATIVE_SETTER(cobj->DigitalPadding, 2);
 	return 0;
 }
-int lua_ImPlotStyle_DigitalBitHeight_getter(lua_State* lua_S)
+int lua_ImPlotStyle_DigitalSpacing_getter(lua_State* lua_S)
 {
-	LUA_CUR_FNAME("implot.ImPlotStyle.DigitalBitHeight/getter");
+	LUA_CUR_FNAME("implot.ImPlotStyle.DigitalSpacing/getter");
 	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_PUSH_NATIVE(cobj->DigitalBitHeight);
+	LUA_PUSH_NATIVE(cobj->DigitalSpacing);
 	return 1;
 }
-int lua_ImPlotStyle_DigitalBitHeight_setter(lua_State* lua_S)
+int lua_ImPlotStyle_DigitalSpacing_setter(lua_State* lua_S)
 {
-	LUA_CUR_FNAME("implot.ImPlotStyle.DigitalBitHeight/setter");
+	LUA_CUR_FNAME("implot.ImPlotStyle.DigitalSpacing/setter");
 	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_NATIVE_SETTER(cobj->DigitalBitHeight, 2);
-	return 0;
-}
-int lua_ImPlotStyle_ErrorBarSize_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.ErrorBarSize/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_PUSH_NATIVE(cobj->ErrorBarSize);
-	return 1;
-}
-int lua_ImPlotStyle_ErrorBarSize_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.ErrorBarSize/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_NATIVE_SETTER(cobj->ErrorBarSize, 2);
-	return 0;
-}
-int lua_ImPlotStyle_ErrorBarWeight_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.ErrorBarWeight/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_PUSH_NATIVE(cobj->ErrorBarWeight);
-	return 1;
-}
-int lua_ImPlotStyle_ErrorBarWeight_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.ErrorBarWeight/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_NATIVE_SETTER(cobj->ErrorBarWeight, 2);
-	return 0;
-}
-int lua_ImPlotStyle_FillAlpha_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.FillAlpha/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_PUSH_NATIVE(cobj->FillAlpha);
-	return 1;
-}
-int lua_ImPlotStyle_FillAlpha_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.FillAlpha/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_NATIVE_SETTER(cobj->FillAlpha, 2);
+	LUA_NATIVE_SETTER(cobj->DigitalSpacing, 2);
 	return 0;
 }
 int lua_ImPlotStyle_FitPadding_getter(lua_State* lua_S)
@@ -645,20 +670,6 @@ int lua_ImPlotStyle_LegendSpacing_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->LegendSpacing, 2);
 	return 0;
 }
-int lua_ImPlotStyle_LineWeight_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.LineWeight/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_PUSH_NATIVE(cobj->LineWeight);
-	return 1;
-}
-int lua_ImPlotStyle_LineWeight_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.LineWeight/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_NATIVE_SETTER(cobj->LineWeight, 2);
-	return 0;
-}
 int lua_ImPlotStyle_MajorGridSize_getter(lua_State* lua_S)
 {
 	LUA_CUR_FNAME("implot.ImPlotStyle.MajorGridSize/getter");
@@ -699,48 +710,6 @@ int lua_ImPlotStyle_MajorTickSize_setter(lua_State* lua_S)
 	LUA_CUR_FNAME("implot.ImPlotStyle.MajorTickSize/setter");
 	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
 	LUA_NATIVE_SETTER(cobj->MajorTickSize, 2);
-	return 0;
-}
-int lua_ImPlotStyle_Marker_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.Marker/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_PUSH_NATIVE(cobj->Marker);
-	return 1;
-}
-int lua_ImPlotStyle_Marker_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.Marker/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_NATIVE_SETTER(cobj->Marker, 2);
-	return 0;
-}
-int lua_ImPlotStyle_MarkerSize_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.MarkerSize/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_PUSH_NATIVE(cobj->MarkerSize);
-	return 1;
-}
-int lua_ImPlotStyle_MarkerSize_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.MarkerSize/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_NATIVE_SETTER(cobj->MarkerSize, 2);
-	return 0;
-}
-int lua_ImPlotStyle_MarkerWeight_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.MarkerWeight/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_PUSH_NATIVE(cobj->MarkerWeight);
-	return 1;
-}
-int lua_ImPlotStyle_MarkerWeight_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotStyle.MarkerWeight/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotStyle*, 1);
-	LUA_NATIVE_SETTER(cobj->MarkerWeight, 2);
 	return 0;
 }
 int lua_ImPlotStyle_MinorAlpha_getter(lua_State* lua_S)
@@ -918,23 +887,16 @@ int luaReg_implot_implotImPlotStyle(lua_State* lua_S)
 		nullptr, nullptr);
 	LUA_FIELD("AnnotationPadding", lua_ImPlotStyle_AnnotationPadding_getter, lua_ImPlotStyle_AnnotationPadding_setter);
 	LUA_FIELD("Colormap", lua_ImPlotStyle_Colormap_getter, lua_ImPlotStyle_Colormap_setter);
-	LUA_FIELD("DigitalBitGap", lua_ImPlotStyle_DigitalBitGap_getter, lua_ImPlotStyle_DigitalBitGap_setter);
-	LUA_FIELD("DigitalBitHeight", lua_ImPlotStyle_DigitalBitHeight_getter, lua_ImPlotStyle_DigitalBitHeight_setter);
-	LUA_FIELD("ErrorBarSize", lua_ImPlotStyle_ErrorBarSize_getter, lua_ImPlotStyle_ErrorBarSize_setter);
-	LUA_FIELD("ErrorBarWeight", lua_ImPlotStyle_ErrorBarWeight_getter, lua_ImPlotStyle_ErrorBarWeight_setter);
-	LUA_FIELD("FillAlpha", lua_ImPlotStyle_FillAlpha_getter, lua_ImPlotStyle_FillAlpha_setter);
+	LUA_FIELD("DigitalPadding", lua_ImPlotStyle_DigitalPadding_getter, lua_ImPlotStyle_DigitalPadding_setter);
+	LUA_FIELD("DigitalSpacing", lua_ImPlotStyle_DigitalSpacing_getter, lua_ImPlotStyle_DigitalSpacing_setter);
 	LUA_FIELD("FitPadding", lua_ImPlotStyle_FitPadding_getter, lua_ImPlotStyle_FitPadding_setter);
 	LUA_FIELD("LabelPadding", lua_ImPlotStyle_LabelPadding_getter, lua_ImPlotStyle_LabelPadding_setter);
 	LUA_FIELD("LegendInnerPadding", lua_ImPlotStyle_LegendInnerPadding_getter, lua_ImPlotStyle_LegendInnerPadding_setter);
 	LUA_FIELD("LegendPadding", lua_ImPlotStyle_LegendPadding_getter, lua_ImPlotStyle_LegendPadding_setter);
 	LUA_FIELD("LegendSpacing", lua_ImPlotStyle_LegendSpacing_getter, lua_ImPlotStyle_LegendSpacing_setter);
-	LUA_FIELD("LineWeight", lua_ImPlotStyle_LineWeight_getter, lua_ImPlotStyle_LineWeight_setter);
 	LUA_FIELD("MajorGridSize", lua_ImPlotStyle_MajorGridSize_getter, lua_ImPlotStyle_MajorGridSize_setter);
 	LUA_FIELD("MajorTickLen", lua_ImPlotStyle_MajorTickLen_getter, lua_ImPlotStyle_MajorTickLen_setter);
 	LUA_FIELD("MajorTickSize", lua_ImPlotStyle_MajorTickSize_getter, lua_ImPlotStyle_MajorTickSize_setter);
-	LUA_FIELD("Marker", lua_ImPlotStyle_Marker_getter, lua_ImPlotStyle_Marker_setter);
-	LUA_FIELD("MarkerSize", lua_ImPlotStyle_MarkerSize_getter, lua_ImPlotStyle_MarkerSize_setter);
-	LUA_FIELD("MarkerWeight", lua_ImPlotStyle_MarkerWeight_getter, lua_ImPlotStyle_MarkerWeight_setter);
 	LUA_FIELD("MinorAlpha", lua_ImPlotStyle_MinorAlpha_getter, lua_ImPlotStyle_MinorAlpha_setter);
 	LUA_FIELD("MinorGridSize", lua_ImPlotStyle_MinorGridSize_getter, lua_ImPlotStyle_MinorGridSize_setter);
 	LUA_FIELD("MinorTickLen", lua_ImPlotStyle_MinorTickLen_getter, lua_ImPlotStyle_MinorTickLen_setter);
@@ -1143,28 +1105,28 @@ int luaReg_implot_implotImPlotInputMap(lua_State* lua_S)
 int lua_ImPlot_beginAlignedPlots(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.beginAlignedPlots");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, bool)>(&ImPlot::BeginAlignedPlots));
+	LUA_TRY_INVOKE_R(2, &ImPlot::BeginAlignedPlots);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImPlot::BeginAlignedPlots(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImPlot_beginDragDropSourceAxis(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.beginDragDropSourceAxis");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(ImAxis, ImGuiDragDropFlags)>(&ImPlot::BeginDragDropSourceAxis));
+	LUA_TRY_INVOKE_R(2, &ImPlot::BeginDragDropSourceAxis);
 	LUA_TRY_INVOKE_R(1, [](ImAxis arg0){{return ImPlot::BeginDragDropSourceAxis(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImPlot_beginDragDropSourceItem(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.beginDragDropSourceItem");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, ImGuiDragDropFlags)>(&ImPlot::BeginDragDropSourceItem));
+	LUA_TRY_INVOKE_R(2, &ImPlot::BeginDragDropSourceItem);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImPlot::BeginDragDropSourceItem(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImPlot_beginDragDropSourcePlot(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.beginDragDropSourcePlot");
-	LUA_TRY_INVOKE_R(1, static_cast<bool(*)(ImGuiDragDropFlags)>(&ImPlot::BeginDragDropSourcePlot));
+	LUA_TRY_INVOKE_R(1, &ImPlot::BeginDragDropSourcePlot);
 	LUA_TRY_INVOKE_R(0, [](){{return ImPlot::BeginDragDropSourcePlot();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -1189,24 +1151,17 @@ int lua_ImPlot_beginDragDropTargetPlot(lua_State* lua_S)
 int lua_ImPlot_beginLegendPopup(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.beginLegendPopup");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, ImGuiMouseButton)>(&ImPlot::BeginLegendPopup));
+	LUA_TRY_INVOKE_R(2, &ImPlot::BeginLegendPopup);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImPlot::BeginLegendPopup(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImPlot_beginPlot(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.beginPlot");
-	LUA_TRY_INVOKE_R(3, static_cast<bool(*)(const char*, const ImVec2&, ImPlotFlags)>(&ImPlot::BeginPlot));
-	LUA_TRY_INVOKE_R(2, [](const char* arg0,const ImVec2& arg1){{return ImPlot::BeginPlot(arg0,arg1);}});
+	LUA_TRY_INVOKE_R(3, &ImPlot::BeginPlot);
+	LUA_TRY_INVOKE_R(2, ([](const char* arg0,const ImVec2& arg1){{return ImPlot::BeginPlot(arg0,arg1);}}));
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImPlot::BeginPlot(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2,3");
-}
-int lua_ImPlot_beginSubplots(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.beginSubplots");
-	LUA_TRY_INVOKE_R(5, [](const char* arg0,int arg1,int arg2,const ImVec2& arg3,ImPlotSubplotFlags arg4){{return ImPlot::BeginSubplots(arg0,std::move(arg1),std::move(arg2),arg3,std::move(arg4));}});
-	LUA_TRY_INVOKE_R(4, [](const char* arg0,int arg1,int arg2,const ImVec2& arg3){{return ImPlot::BeginSubplots(arg0,std::move(arg1),std::move(arg2),arg3);}});
-	LUA_GINVOKE_FOOTER("4,5");
 }
 int lua_ImPlot_cancelPlotSelection(lua_State* lua_S)
 {
@@ -1217,8 +1172,8 @@ int lua_ImPlot_cancelPlotSelection(lua_State* lua_S)
 int lua_ImPlot_colormapButton(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.colormapButton");
-	LUA_TRY_INVOKE_R(3, static_cast<bool(*)(const char*, const ImVec2&, ImPlotColormap)>(&ImPlot::ColormapButton));
-	LUA_TRY_INVOKE_R(2, [](const char* arg0,const ImVec2& arg1){{return ImPlot::ColormapButton(arg0,arg1);}});
+	LUA_TRY_INVOKE_R(3, &ImPlot::ColormapButton);
+	LUA_TRY_INVOKE_R(2, ([](const char* arg0,const ImVec2& arg1){{return ImPlot::ColormapButton(arg0,arg1);}}));
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImPlot::ColormapButton(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2,3");
 }
@@ -1231,11 +1186,11 @@ int lua_ImPlot_colormapIcon(lua_State* lua_S)
 int lua_ImPlot_colormapScale(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.colormapScale");
-	LUA_TRY_INVOKE(7, static_cast<void(*)(const char*, double, double, const ImVec2&, const char*, ImPlotColormapScaleFlags, ImPlotColormap)>(&ImPlot::ColormapScale));
-	LUA_TRY_INVOKE(6, [](const char* arg0,double arg1,double arg2,const ImVec2& arg3,const char* arg4,ImPlotColormapScaleFlags arg5){{return ImPlot::ColormapScale(arg0,std::move(arg1),std::move(arg2),arg3,arg4,std::move(arg5));}});
-	LUA_TRY_INVOKE(5, [](const char* arg0,double arg1,double arg2,const ImVec2& arg3,const char* arg4){{return ImPlot::ColormapScale(arg0,std::move(arg1),std::move(arg2),arg3,arg4);}});
-	LUA_TRY_INVOKE(4, [](const char* arg0,double arg1,double arg2,const ImVec2& arg3){{return ImPlot::ColormapScale(arg0,std::move(arg1),std::move(arg2),arg3);}});
-	LUA_TRY_INVOKE(3, [](const char* arg0,double arg1,double arg2){{return ImPlot::ColormapScale(arg0,std::move(arg1),std::move(arg2));}});
+	LUA_TRY_INVOKE(7, &ImPlot::ColormapScale);
+	LUA_TRY_INVOKE(6, ([](const char* arg0,double arg1,double arg2,const ImVec2& arg3,const char* arg4,ImPlotColormapScaleFlags arg5){{return ImPlot::ColormapScale(arg0,std::move(arg1),std::move(arg2),arg3,arg4,std::move(arg5));}}));
+	LUA_TRY_INVOKE(5, ([](const char* arg0,double arg1,double arg2,const ImVec2& arg3,const char* arg4){{return ImPlot::ColormapScale(arg0,std::move(arg1),std::move(arg2),arg3,arg4);}}));
+	LUA_TRY_INVOKE(4, ([](const char* arg0,double arg1,double arg2,const ImVec2& arg3){{return ImPlot::ColormapScale(arg0,std::move(arg1),std::move(arg2),arg3);}}));
+	LUA_TRY_INVOKE(3, ([](const char* arg0,double arg1,double arg2){{return ImPlot::ColormapScale(arg0,std::move(arg1),std::move(arg2));}}));
 	LUA_GINVOKE_FOOTER("3,4,5,6,7");
 }
 int lua_ImPlot_endAlignedPlots(lua_State* lua_S)
@@ -1277,7 +1232,7 @@ int lua_ImPlot_endSubplots(lua_State* lua_S)
 int lua_ImPlot_getColormapColor(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.getColormapColor");
-	LUA_TRY_INVOKE_R(2, static_cast<ImVec4(*)(int, ImPlotColormap)>(&ImPlot::GetColormapColor));
+	LUA_TRY_INVOKE_R(2, &ImPlot::GetColormapColor);
 	LUA_TRY_INVOKE_R(1, [](int arg0){{return ImPlot::GetColormapColor(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -1302,7 +1257,7 @@ int lua_ImPlot_getColormapName(lua_State* lua_S)
 int lua_ImPlot_getColormapSize(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.getColormapSize");
-	LUA_TRY_INVOKE_R(1, static_cast<int(*)(ImPlotColormap)>(&ImPlot::GetColormapSize));
+	LUA_TRY_INVOKE_R(1, &ImPlot::GetColormapSize);
 	LUA_TRY_INVOKE_R(0, [](){{return ImPlot::GetColormapSize();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -1327,7 +1282,7 @@ int lua_ImPlot_getPlotDrawList(lua_State* lua_S)
 int lua_ImPlot_getPlotLimits(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.getPlotLimits");
-	LUA_TRY_INVOKE_R(2, static_cast<ImPlotRect(*)(ImAxis, ImAxis)>(&ImPlot::GetPlotLimits));
+	LUA_TRY_INVOKE_R(2, &ImPlot::GetPlotLimits);
 	LUA_TRY_INVOKE_R(1, [](ImAxis arg0){{return ImPlot::GetPlotLimits(std::move(arg0));}});
 	LUA_TRY_INVOKE_R(0, [](){{return ImPlot::GetPlotLimits();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
@@ -1335,7 +1290,7 @@ int lua_ImPlot_getPlotLimits(lua_State* lua_S)
 int lua_ImPlot_getPlotMousePos(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.getPlotMousePos");
-	LUA_TRY_INVOKE_R(2, static_cast<ImPlotPoint(*)(ImAxis, ImAxis)>(&ImPlot::GetPlotMousePos));
+	LUA_TRY_INVOKE_R(2, &ImPlot::GetPlotMousePos);
 	LUA_TRY_INVOKE_R(1, [](ImAxis arg0){{return ImPlot::GetPlotMousePos(std::move(arg0));}});
 	LUA_TRY_INVOKE_R(0, [](){{return ImPlot::GetPlotMousePos();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
@@ -1349,7 +1304,7 @@ int lua_ImPlot_getPlotPos(lua_State* lua_S)
 int lua_ImPlot_getPlotSelection(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.getPlotSelection");
-	LUA_TRY_INVOKE_R(2, static_cast<ImPlotRect(*)(ImAxis, ImAxis)>(&ImPlot::GetPlotSelection));
+	LUA_TRY_INVOKE_R(2, &ImPlot::GetPlotSelection);
 	LUA_TRY_INVOKE_R(1, [](ImAxis arg0){{return ImPlot::GetPlotSelection(std::move(arg0));}});
 	LUA_TRY_INVOKE_R(0, [](){{return ImPlot::GetPlotSelection();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
@@ -1369,7 +1324,7 @@ int lua_ImPlot_getStyleColorName(lua_State* lua_S)
 int lua_ImPlot_hideNextItem(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.hideNextItem");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(bool, ImPlotCond)>(&ImPlot::HideNextItem));
+	LUA_TRY_INVOKE(2, &ImPlot::HideNextItem);
 	LUA_TRY_INVOKE(1, [](bool arg0){{return ImPlot::HideNextItem(std::move(arg0));}});
 	LUA_TRY_INVOKE(0, [](){{return ImPlot::HideNextItem();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
@@ -1379,6 +1334,18 @@ int lua_ImPlot_isAxisHovered(lua_State* lua_S)
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.isAxisHovered");
 	LUA_TRY_INVOKE_R(1, &ImPlot::IsAxisHovered);
 	LUA_GINVOKE_FOOTER("1");
+}
+int lua_ImPlot_isItemHidden(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.isItemHidden");
+	LUA_TRY_INVOKE_R(1, &ImPlot::IsItemHidden);
+	LUA_GINVOKE_FOOTER("1");
+}
+int lua_ImPlot_isLastItemHidden(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.isLastItemHidden");
+	LUA_TRY_INVOKE_R(0, &ImPlot::IsLastItemHidden);
+	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImPlot_isLegendEntryHovered(lua_State* lua_S)
 {
@@ -1410,47 +1377,51 @@ int lua_ImPlot_nextColormapColor(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, &ImPlot::NextColormapColor);
 	LUA_GINVOKE_FOOTER("0");
 }
+int lua_ImPlot_nextMarker(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.nextMarker");
+	LUA_TRY_INVOKE_R(0, &ImPlot::NextMarker);
+	LUA_GINVOKE_FOOTER("0");
+}
 int lua_ImPlot_pixelsToPlot(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.pixelsToPlot");
-	LUA_TRY_INVOKE_R(4, static_cast<ImPlotPoint(*)(float, float, ImAxis, ImAxis)>(&ImPlot::PixelsToPlot));
-	LUA_TRY_INVOKE_R(3, [](float arg0,float arg1,ImAxis arg2){{return ImPlot::PixelsToPlot(std::move(arg0),std::move(arg1),std::move(arg2));}});
-	LUA_TRY_INVOKE_R(3, [](const ImVec2& arg0,ImAxis arg1,ImAxis arg2){{return ImPlot::PixelsToPlot(arg0,std::move(arg1),std::move(arg2));}});
-	LUA_TRY_INVOKE_R(2, [](float arg0,float arg1){{return ImPlot::PixelsToPlot(std::move(arg0),std::move(arg1));}});
-	LUA_TRY_INVOKE_R(2, [](const ImVec2& arg0,ImAxis arg1){{return ImPlot::PixelsToPlot(arg0,std::move(arg1));}});
+	LUA_TRY_INVOKE_R(4, (static_cast<ImPlotPoint(*)(float, float, ImAxis, ImAxis)>(&ImPlot::PixelsToPlot)));
+	LUA_TRY_INVOKE_R_OVERLOAD(3, ([](float arg0,float arg1,ImAxis arg2){{return ImPlot::PixelsToPlot(std::move(arg0),std::move(arg1),std::move(arg2));}}));
+	LUA_TRY_INVOKE_R_OVERLOAD(3, (static_cast<ImPlotPoint(*)(const ImVec2&, ImAxis, ImAxis)>(&ImPlot::PixelsToPlot)));
+	LUA_TRY_INVOKE_R_OVERLOAD(2, ([](float arg0,float arg1){{return ImPlot::PixelsToPlot(std::move(arg0),std::move(arg1));}}));
+	LUA_TRY_INVOKE_R_OVERLOAD(2, ([](const ImVec2& arg0,ImAxis arg1){{return ImPlot::PixelsToPlot(arg0,std::move(arg1));}}));
 	LUA_TRY_INVOKE_R(1, [](const ImVec2& arg0){{return ImPlot::PixelsToPlot(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2,3,4");
 }
 int lua_ImPlot_plotDummy(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.plotDummy");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(const char*, ImPlotDummyFlags)>(&ImPlot::PlotDummy));
 	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImPlot::PlotDummy(arg0);}});
-	LUA_GINVOKE_FOOTER("1,2");
+	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImPlot_plotText(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.plotText");
-	LUA_TRY_INVOKE(5, static_cast<void(*)(const char*, double, double, const ImVec2&, ImPlotTextFlags)>(&ImPlot::PlotText));
-	LUA_TRY_INVOKE(4, [](const char* arg0,double arg1,double arg2,const ImVec2& arg3){{return ImPlot::PlotText(arg0,std::move(arg1),std::move(arg2),arg3);}});
-	LUA_TRY_INVOKE(3, [](const char* arg0,double arg1,double arg2){{return ImPlot::PlotText(arg0,std::move(arg1),std::move(arg2));}});
-	LUA_GINVOKE_FOOTER("3,4,5");
+	LUA_TRY_INVOKE(4, ([](const char* arg0,double arg1,double arg2,const ImVec2& arg3){{return ImPlot::PlotText(arg0,std::move(arg1),std::move(arg2),arg3);}}));
+	LUA_TRY_INVOKE(3, ([](const char* arg0,double arg1,double arg2){{return ImPlot::PlotText(arg0,std::move(arg1),std::move(arg2));}}));
+	LUA_GINVOKE_FOOTER("3,4");
 }
 int lua_ImPlot_plotToPixels(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.plotToPixels");
-	LUA_TRY_INVOKE_R(4, static_cast<ImVec2(*)(double, double, ImAxis, ImAxis)>(&ImPlot::PlotToPixels));
-	LUA_TRY_INVOKE_R(3, [](double arg0,double arg1,ImAxis arg2){{return ImPlot::PlotToPixels(std::move(arg0),std::move(arg1),std::move(arg2));}});
-	LUA_TRY_INVOKE_R(3, [](const ImPlotPoint& arg0,ImAxis arg1,ImAxis arg2){{return ImPlot::PlotToPixels(arg0,std::move(arg1),std::move(arg2));}});
-	LUA_TRY_INVOKE_R(2, [](double arg0,double arg1){{return ImPlot::PlotToPixels(std::move(arg0),std::move(arg1));}});
-	LUA_TRY_INVOKE_R(2, [](const ImPlotPoint& arg0,ImAxis arg1){{return ImPlot::PlotToPixels(arg0,std::move(arg1));}});
+	LUA_TRY_INVOKE_R(4, (static_cast<ImVec2(*)(double, double, ImAxis, ImAxis)>(&ImPlot::PlotToPixels)));
+	LUA_TRY_INVOKE_R_OVERLOAD(3, ([](double arg0,double arg1,ImAxis arg2){{return ImPlot::PlotToPixels(std::move(arg0),std::move(arg1),std::move(arg2));}}));
+	LUA_TRY_INVOKE_R_OVERLOAD(3, (static_cast<ImVec2(*)(const ImPlotPoint&, ImAxis, ImAxis)>(&ImPlot::PlotToPixels)));
+	LUA_TRY_INVOKE_R_OVERLOAD(2, ([](double arg0,double arg1){{return ImPlot::PlotToPixels(std::move(arg0),std::move(arg1));}}));
+	LUA_TRY_INVOKE_R_OVERLOAD(2, ([](const ImPlotPoint& arg0,ImAxis arg1){{return ImPlot::PlotToPixels(arg0,std::move(arg1));}}));
 	LUA_TRY_INVOKE_R(1, [](const ImPlotPoint& arg0){{return ImPlot::PlotToPixels(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2,3,4");
 }
 int lua_ImPlot_popColormap(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.popColormap");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(int)>(&ImPlot::PopColormap));
+	LUA_TRY_INVOKE(1, &ImPlot::PopColormap);
 	LUA_TRY_INVOKE(0, [](){{return ImPlot::PopColormap();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -1463,28 +1434,28 @@ int lua_ImPlot_popPlotClipRect(lua_State* lua_S)
 int lua_ImPlot_popStyleColor(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.popStyleColor");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(int)>(&ImPlot::PopStyleColor));
+	LUA_TRY_INVOKE(1, &ImPlot::PopStyleColor);
 	LUA_TRY_INVOKE(0, [](){{return ImPlot::PopStyleColor();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImPlot_popStyleVar(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.popStyleVar");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(int)>(&ImPlot::PopStyleVar));
+	LUA_TRY_INVOKE(1, &ImPlot::PopStyleVar);
 	LUA_TRY_INVOKE(0, [](){{return ImPlot::PopStyleVar();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImPlot_pushPlotClipRect(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.pushPlotClipRect");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(float)>(&ImPlot::PushPlotClipRect));
+	LUA_TRY_INVOKE(1, &ImPlot::PushPlotClipRect);
 	LUA_TRY_INVOKE(0, [](){{return ImPlot::PushPlotClipRect();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImPlot_sampleColormap(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.sampleColormap");
-	LUA_TRY_INVOKE_R(2, static_cast<ImVec4(*)(float, ImPlotColormap)>(&ImPlot::SampleColormap));
+	LUA_TRY_INVOKE_R(2, &ImPlot::SampleColormap);
 	LUA_TRY_INVOKE_R(1, [](float arg0){{return ImPlot::SampleColormap(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -1503,8 +1474,8 @@ int lua_ImPlot_setAxis(lua_State* lua_S)
 int lua_ImPlot_setNextAxesLimits(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setNextAxesLimits");
-	LUA_TRY_INVOKE(5, static_cast<void(*)(double, double, double, double, ImPlotCond)>(&ImPlot::SetNextAxesLimits));
-	LUA_TRY_INVOKE(4, [](double arg0,double arg1,double arg2,double arg3){{return ImPlot::SetNextAxesLimits(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}});
+	LUA_TRY_INVOKE(5, &ImPlot::SetNextAxesLimits);
+	LUA_TRY_INVOKE(4, ([](double arg0,double arg1,double arg2,double arg3){{return ImPlot::SetNextAxesLimits(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}}));
 	LUA_GINVOKE_FOOTER("4,5");
 }
 int lua_ImPlot_setNextAxesToFit(lua_State* lua_S)
@@ -1516,8 +1487,8 @@ int lua_ImPlot_setNextAxesToFit(lua_State* lua_S)
 int lua_ImPlot_setNextAxisLimits(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setNextAxisLimits");
-	LUA_TRY_INVOKE(4, static_cast<void(*)(ImAxis, double, double, ImPlotCond)>(&ImPlot::SetNextAxisLimits));
-	LUA_TRY_INVOKE(3, [](ImAxis arg0,double arg1,double arg2){{return ImPlot::SetNextAxisLimits(std::move(arg0),std::move(arg1),std::move(arg2));}});
+	LUA_TRY_INVOKE(4, &ImPlot::SetNextAxisLimits);
+	LUA_TRY_INVOKE(3, ([](ImAxis arg0,double arg1,double arg2){{return ImPlot::SetNextAxisLimits(std::move(arg0),std::move(arg1),std::move(arg2));}}));
 	LUA_GINVOKE_FOOTER("3,4");
 }
 int lua_ImPlot_setNextAxisToFit(lua_State* lua_S)
@@ -1526,77 +1497,40 @@ int lua_ImPlot_setNextAxisToFit(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, &ImPlot::SetNextAxisToFit);
 	LUA_GINVOKE_FOOTER("1");
 }
-int lua_ImPlot_setNextErrorBarStyle(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setNextErrorBarStyle");
-	LUA_TRY_INVOKE(3, static_cast<void(*)(const ImVec4&, float, float)>(&ImPlot::SetNextErrorBarStyle));
-	LUA_TRY_INVOKE(2, [](const ImVec4& arg0,float arg1){{return ImPlot::SetNextErrorBarStyle(arg0,std::move(arg1));}});
-	LUA_TRY_INVOKE(1, [](const ImVec4& arg0){{return ImPlot::SetNextErrorBarStyle(arg0);}});
-	LUA_TRY_INVOKE(0, [](){{return ImPlot::SetNextErrorBarStyle();}});
-	LUA_GINVOKE_FOOTER("0,1,2,3");
-}
-int lua_ImPlot_setNextFillStyle(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setNextFillStyle");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(const ImVec4&, float)>(&ImPlot::SetNextFillStyle));
-	LUA_TRY_INVOKE(1, [](const ImVec4& arg0){{return ImPlot::SetNextFillStyle(arg0);}});
-	LUA_TRY_INVOKE(0, [](){{return ImPlot::SetNextFillStyle();}});
-	LUA_GINVOKE_FOOTER("0,1,2");
-}
-int lua_ImPlot_setNextLineStyle(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setNextLineStyle");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(const ImVec4&, float)>(&ImPlot::SetNextLineStyle));
-	LUA_TRY_INVOKE(1, [](const ImVec4& arg0){{return ImPlot::SetNextLineStyle(arg0);}});
-	LUA_TRY_INVOKE(0, [](){{return ImPlot::SetNextLineStyle();}});
-	LUA_GINVOKE_FOOTER("0,1,2");
-}
-int lua_ImPlot_setNextMarkerStyle(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setNextMarkerStyle");
-	LUA_TRY_INVOKE(5, static_cast<void(*)(ImPlotMarker, float, const ImVec4&, float, const ImVec4&)>(&ImPlot::SetNextMarkerStyle));
-	LUA_TRY_INVOKE(4, [](ImPlotMarker arg0,float arg1,const ImVec4& arg2,float arg3){{return ImPlot::SetNextMarkerStyle(std::move(arg0),std::move(arg1),arg2,std::move(arg3));}});
-	LUA_TRY_INVOKE(3, [](ImPlotMarker arg0,float arg1,const ImVec4& arg2){{return ImPlot::SetNextMarkerStyle(std::move(arg0),std::move(arg1),arg2);}});
-	LUA_TRY_INVOKE(2, [](ImPlotMarker arg0,float arg1){{return ImPlot::SetNextMarkerStyle(std::move(arg0),std::move(arg1));}});
-	LUA_TRY_INVOKE(1, [](ImPlotMarker arg0){{return ImPlot::SetNextMarkerStyle(std::move(arg0));}});
-	LUA_TRY_INVOKE(0, [](){{return ImPlot::SetNextMarkerStyle();}});
-	LUA_GINVOKE_FOOTER("0,1,2,3,4,5");
-}
 int lua_ImPlot_setupAxes(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setupAxes");
-	LUA_TRY_INVOKE(4, static_cast<void(*)(const char*, const char*, ImPlotAxisFlags, ImPlotAxisFlags)>(&ImPlot::SetupAxes));
-	LUA_TRY_INVOKE(3, [](const char* arg0,const char* arg1,ImPlotAxisFlags arg2){{return ImPlot::SetupAxes(arg0,arg1,std::move(arg2));}});
-	LUA_TRY_INVOKE(2, [](const char* arg0,const char* arg1){{return ImPlot::SetupAxes(arg0,arg1);}});
+	LUA_TRY_INVOKE(4, &ImPlot::SetupAxes);
+	LUA_TRY_INVOKE(3, ([](const char* arg0,const char* arg1,ImPlotAxisFlags arg2){{return ImPlot::SetupAxes(arg0,arg1,std::move(arg2));}}));
+	LUA_TRY_INVOKE(2, ([](const char* arg0,const char* arg1){{return ImPlot::SetupAxes(arg0,arg1);}}));
 	LUA_GINVOKE_FOOTER("2,3,4");
 }
 int lua_ImPlot_setupAxesLimits(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setupAxesLimits");
-	LUA_TRY_INVOKE(5, static_cast<void(*)(double, double, double, double, ImPlotCond)>(&ImPlot::SetupAxesLimits));
-	LUA_TRY_INVOKE(4, [](double arg0,double arg1,double arg2,double arg3){{return ImPlot::SetupAxesLimits(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}});
+	LUA_TRY_INVOKE(5, &ImPlot::SetupAxesLimits);
+	LUA_TRY_INVOKE(4, ([](double arg0,double arg1,double arg2,double arg3){{return ImPlot::SetupAxesLimits(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}}));
 	LUA_GINVOKE_FOOTER("4,5");
 }
 int lua_ImPlot_setupAxis(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setupAxis");
-	LUA_TRY_INVOKE(3, static_cast<void(*)(ImAxis, const char*, ImPlotAxisFlags)>(&ImPlot::SetupAxis));
-	LUA_TRY_INVOKE(2, [](ImAxis arg0,const char* arg1){{return ImPlot::SetupAxis(std::move(arg0),arg1);}});
+	LUA_TRY_INVOKE(3, &ImPlot::SetupAxis);
+	LUA_TRY_INVOKE(2, ([](ImAxis arg0,const char* arg1){{return ImPlot::SetupAxis(std::move(arg0),arg1);}}));
 	LUA_TRY_INVOKE(1, [](ImAxis arg0){{return ImPlot::SetupAxis(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2,3");
 }
 int lua_ImPlot_setupAxisFormat(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setupAxisFormat");
-	LUA_TRY_INVOKE(2, [](ImAxis arg0,ImPlotFormatter arg1){{return ImPlot::SetupAxisFormat(std::move(arg0),std::move(arg1));}});
-	LUA_TRY_INVOKE(2, static_cast<void(*)(ImAxis, const char*)>(&ImPlot::SetupAxisFormat));
+	LUA_TRY_INVOKE(2, (static_cast<void(*)(ImAxis, const char*)>(&ImPlot::SetupAxisFormat)));
 	LUA_GINVOKE_FOOTER("2");
 }
 int lua_ImPlot_setupAxisLimits(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setupAxisLimits");
-	LUA_TRY_INVOKE(4, static_cast<void(*)(ImAxis, double, double, ImPlotCond)>(&ImPlot::SetupAxisLimits));
-	LUA_TRY_INVOKE(3, [](ImAxis arg0,double arg1,double arg2){{return ImPlot::SetupAxisLimits(std::move(arg0),std::move(arg1),std::move(arg2));}});
+	LUA_TRY_INVOKE(4, &ImPlot::SetupAxisLimits);
+	LUA_TRY_INVOKE(3, ([](ImAxis arg0,double arg1,double arg2){{return ImPlot::SetupAxisLimits(std::move(arg0),std::move(arg1),std::move(arg2));}}));
 	LUA_GINVOKE_FOOTER("3,4");
 }
 int lua_ImPlot_setupAxisLimitsConstraints(lua_State* lua_S)
@@ -1608,9 +1542,8 @@ int lua_ImPlot_setupAxisLimitsConstraints(lua_State* lua_S)
 int lua_ImPlot_setupAxisScale(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setupAxisScale");
-	LUA_TRY_INVOKE(3, [](ImAxis arg0,ImPlotTransform arg1,ImPlotTransform arg2){{return ImPlot::SetupAxisScale(std::move(arg0),std::move(arg1),std::move(arg2));}});
-	LUA_TRY_INVOKE(2, static_cast<void(*)(ImAxis, ImPlotScale)>(&ImPlot::SetupAxisScale));
-	LUA_GINVOKE_FOOTER("2,3");
+	LUA_TRY_INVOKE(2, (static_cast<void(*)(ImAxis, ImPlotScale)>(&ImPlot::SetupAxisScale)));
+	LUA_GINVOKE_FOOTER("2");
 }
 int lua_ImPlot_setupAxisZoomConstraints(lua_State* lua_S)
 {
@@ -1627,14 +1560,14 @@ int lua_ImPlot_setupFinish(lua_State* lua_S)
 int lua_ImPlot_setupLegend(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setupLegend");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(ImPlotLocation, ImPlotLegendFlags)>(&ImPlot::SetupLegend));
+	LUA_TRY_INVOKE(2, &ImPlot::SetupLegend);
 	LUA_TRY_INVOKE(1, [](ImPlotLocation arg0){{return ImPlot::SetupLegend(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImPlot_setupMouseText(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.setupMouseText");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(ImPlotLocation, ImPlotMouseTextFlags)>(&ImPlot::SetupMouseText));
+	LUA_TRY_INVOKE(2, &ImPlot::SetupMouseText);
 	LUA_TRY_INVOKE(1, [](ImPlotLocation arg0){{return ImPlot::SetupMouseText(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -1653,7 +1586,7 @@ int lua_ImPlot_showInputMapSelector(lua_State* lua_S)
 int lua_ImPlot_showStyleEditor(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.showStyleEditor");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(ImPlotStyle*)>(&ImPlot::ShowStyleEditor));
+	LUA_TRY_INVOKE(1, &ImPlot::ShowStyleEditor);
 	LUA_TRY_INVOKE(0, [](){{return ImPlot::ShowStyleEditor();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -1672,28 +1605,28 @@ int lua_ImPlot_showUserGuide(lua_State* lua_S)
 int lua_ImPlot_styleColorsAuto(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.styleColorsAuto");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(ImPlotStyle*)>(&ImPlot::StyleColorsAuto));
+	LUA_TRY_INVOKE(1, &ImPlot::StyleColorsAuto);
 	LUA_TRY_INVOKE(0, [](){{return ImPlot::StyleColorsAuto();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImPlot_styleColorsClassic(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.styleColorsClassic");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(ImPlotStyle*)>(&ImPlot::StyleColorsClassic));
+	LUA_TRY_INVOKE(1, &ImPlot::StyleColorsClassic);
 	LUA_TRY_INVOKE(0, [](){{return ImPlot::StyleColorsClassic();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImPlot_styleColorsDark(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.styleColorsDark");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(ImPlotStyle*)>(&ImPlot::StyleColorsDark));
+	LUA_TRY_INVOKE(1, &ImPlot::StyleColorsDark);
 	LUA_TRY_INVOKE(0, [](){{return ImPlot::StyleColorsDark();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImPlot_styleColorsLight(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.styleColorsLight");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(ImPlotStyle*)>(&ImPlot::StyleColorsLight));
+	LUA_TRY_INVOKE(1, &ImPlot::StyleColorsLight);
 	LUA_TRY_INVOKE(0, [](){{return ImPlot::StyleColorsLight();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -1709,7 +1642,6 @@ int luaReg_implot_implot_global_functions(lua_State* lua_S)
 	LUA_METHOD("beginDragDropTargetPlot", lua_ImPlot_beginDragDropTargetPlot);
 	LUA_METHOD("beginLegendPopup", lua_ImPlot_beginLegendPopup);
 	LUA_METHOD("beginPlot", lua_ImPlot_beginPlot);
-	LUA_METHOD("beginSubplots", lua_ImPlot_beginSubplots);
 	LUA_METHOD("cancelPlotSelection", lua_ImPlot_cancelPlotSelection);
 	LUA_METHOD("colormapButton", lua_ImPlot_colormapButton);
 	LUA_METHOD("colormapIcon", lua_ImPlot_colormapIcon);
@@ -1736,11 +1668,14 @@ int luaReg_implot_implot_global_functions(lua_State* lua_S)
 	LUA_METHOD("getStyleColorName", lua_ImPlot_getStyleColorName);
 	LUA_METHOD("hideNextItem", lua_ImPlot_hideNextItem);
 	LUA_METHOD("isAxisHovered", lua_ImPlot_isAxisHovered);
+	LUA_METHOD("isItemHidden", lua_ImPlot_isItemHidden);
+	LUA_METHOD("isLastItemHidden", lua_ImPlot_isLastItemHidden);
 	LUA_METHOD("isLegendEntryHovered", lua_ImPlot_isLegendEntryHovered);
 	LUA_METHOD("isPlotHovered", lua_ImPlot_isPlotHovered);
 	LUA_METHOD("isPlotSelected", lua_ImPlot_isPlotSelected);
 	LUA_METHOD("isSubplotsHovered", lua_ImPlot_isSubplotsHovered);
 	LUA_METHOD("nextColormapColor", lua_ImPlot_nextColormapColor);
+	LUA_METHOD("nextMarker", lua_ImPlot_nextMarker);
 	LUA_METHOD("pixelsToPlot", lua_ImPlot_pixelsToPlot);
 	LUA_METHOD("plotDummy", lua_ImPlot_plotDummy);
 	LUA_METHOD("plotText", lua_ImPlot_plotText);
@@ -1757,10 +1692,6 @@ int luaReg_implot_implot_global_functions(lua_State* lua_S)
 	LUA_METHOD("setNextAxesToFit", lua_ImPlot_setNextAxesToFit);
 	LUA_METHOD("setNextAxisLimits", lua_ImPlot_setNextAxisLimits);
 	LUA_METHOD("setNextAxisToFit", lua_ImPlot_setNextAxisToFit);
-	LUA_METHOD("setNextErrorBarStyle", lua_ImPlot_setNextErrorBarStyle);
-	LUA_METHOD("setNextFillStyle", lua_ImPlot_setNextFillStyle);
-	LUA_METHOD("setNextLineStyle", lua_ImPlot_setNextLineStyle);
-	LUA_METHOD("setNextMarkerStyle", lua_ImPlot_setNextMarkerStyle);
 	LUA_METHOD("setupAxes", lua_ImPlot_setupAxes);
 	LUA_METHOD("setupAxesLimits", lua_ImPlot_setupAxesLimits);
 	LUA_METHOD("setupAxis", lua_ImPlot_setupAxis);

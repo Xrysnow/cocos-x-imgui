@@ -1,19 +1,18 @@
 ------------------------------
 --- Tag: imguiColorTextEdit
---- Date: 2023-03-10
 ------------------------------
 
 
----@class imgui.ColorTextEdit:cc.Node
+---@class imgui.ColorTextEdit:imgui.cocos2d.Node
 local ColorTextEdit = {}
 imgui.ColorTextEdit = ColorTextEdit
 
----@param identifiers table<string, string> @(std::unordered_map<std::basic_string<char>, std::basic_string<char>>)
+---@param identifiers table<string,string> @(std::unordered_map<std::string, std::string>)
 ---@return nil @(void)
 function ColorTextEdit:addLanguageIdentifier(identifiers)
 end
 
----@param identifiers table<string, string> @(std::unordered_map<std::basic_string<char>, std::basic_string<char>>)
+---@param identifiers table<string,string> @(std::unordered_map<std::string, std::string>)
 ---@return nil @(void)
 function ColorTextEdit:addLanguagePreprocIdentifier(identifiers)
 end
@@ -78,7 +77,7 @@ end
 function ColorTextEdit:getText()
 end
 
----@return string[] @(std::vector<std::basic_string<char>>)
+---@return string[] @(std::vector<std::string>)
 function ColorTextEdit:getTextLines()
 end
 
@@ -309,7 +308,7 @@ end
 function ColorTextEdit:setCursorPosition(line, column)
 end
 
----@param markers table<number, string> @(TextEditor::ErrorMarkers)
+---@param markers table<number,string> @(TextEditor::ErrorMarkers)
 ---@return nil @(void)
 function ColorTextEdit:setErrorMarkers(markers)
 end
@@ -342,10 +341,10 @@ function ColorTextEdit:setLanguageCPlusPlus()
 end
 
 ---@param name string @(std::string)
----@param keywords string[] @(std::unordered_set<std::basic_string<char>>)
----@param identifiers table<string, string> @(std::unordered_map<std::basic_string<char>, std::basic_string<char>>)
----@param preprocIdentifiers table<string, string> @(std::unordered_map<std::basic_string<char>, std::basic_string<char>>)
----@param tokenRegexStrings table[] @(std::vector<std::pair<std::basic_string<char>, ImGui::ColorTextEdit::PaletteIndex>>)
+---@param keywords string[] @(std::unordered_set<std::string>)
+---@param identifiers table<string,string> @(std::unordered_map<std::string, std::string>)
+---@param preprocIdentifiers table<string,string> @(std::unordered_map<std::string, std::string>)
+---@param tokenRegexStrings table[] @(std::vector<std::pair<std::string, ImGui::ColorTextEdit::PaletteIndex>>)
 ---@param commentStart string @(std::string)
 ---@param commentEnd string @(std::string)
 ---@param singleLineComment string @(std::string)
@@ -357,10 +356,10 @@ function ColorTextEdit:setLanguageDefinition(name, keywords, identifiers, prepro
 end
 
 ---@param name string @(std::string)
----@param keywords string[] @(std::unordered_set<std::basic_string<char>>)
----@param identifiers table<string, string> @(std::unordered_map<std::basic_string<char>, std::basic_string<char>>)
----@param preprocIdentifiers table<string, string> @(std::unordered_map<std::basic_string<char>, std::basic_string<char>>)
----@param tokenRegexStrings table[] @(std::vector<std::pair<std::basic_string<char>, ImGui::ColorTextEdit::PaletteIndex>>)
+---@param keywords string[] @(std::unordered_set<std::string>)
+---@param identifiers table<string,string> @(std::unordered_map<std::string, std::string>)
+---@param preprocIdentifiers table<string,string> @(std::unordered_map<std::string, std::string>)
+---@param tokenRegexStrings table[] @(std::vector<std::pair<std::string, ImGui::ColorTextEdit::PaletteIndex>>)
 ---@param commentStart string @(std::string)
 ---@param commentEnd string @(std::string)
 ---@param singleLineComment string @(std::string)
@@ -371,10 +370,10 @@ function ColorTextEdit:setLanguageDefinition(name, keywords, identifiers, prepro
 end
 
 ---@param name string @(std::string)
----@param keywords string[] @(std::unordered_set<std::basic_string<char>>)
----@param identifiers table<string, string> @(std::unordered_map<std::basic_string<char>, std::basic_string<char>>)
----@param preprocIdentifiers table<string, string> @(std::unordered_map<std::basic_string<char>, std::basic_string<char>>)
----@param tokenRegexStrings table[] @(std::vector<std::pair<std::basic_string<char>, ImGui::ColorTextEdit::PaletteIndex>>)
+---@param keywords string[] @(std::unordered_set<std::string>)
+---@param identifiers table<string,string> @(std::unordered_map<std::string, std::string>)
+---@param preprocIdentifiers table<string,string> @(std::unordered_map<std::string, std::string>)
+---@param tokenRegexStrings table[] @(std::vector<std::pair<std::string, ImGui::ColorTextEdit::PaletteIndex>>)
 ---@param commentStart string @(std::string)
 ---@param commentEnd string @(std::string)
 ---@param singleLineComment string @(std::string)
@@ -384,10 +383,10 @@ function ColorTextEdit:setLanguageDefinition(name, keywords, identifiers, prepro
 end
 
 ---@param name string @(std::string)
----@param keywords string[] @(std::unordered_set<std::basic_string<char>>)
----@param identifiers table<string, string> @(std::unordered_map<std::basic_string<char>, std::basic_string<char>>)
----@param preprocIdentifiers table<string, string> @(std::unordered_map<std::basic_string<char>, std::basic_string<char>>)
----@param tokenRegexStrings table[] @(std::vector<std::pair<std::basic_string<char>, ImGui::ColorTextEdit::PaletteIndex>>)
+---@param keywords string[] @(std::unordered_set<std::string>)
+---@param identifiers table<string,string> @(std::unordered_map<std::string, std::string>)
+---@param preprocIdentifiers table<string,string> @(std::unordered_map<std::string, std::string>)
+---@param tokenRegexStrings table[] @(std::vector<std::pair<std::string, ImGui::ColorTextEdit::PaletteIndex>>)
 ---@param commentStart string @(std::string)
 ---@param commentEnd string @(std::string)
 ---@param singleLineComment string @(std::string)
@@ -482,7 +481,7 @@ end
 function ColorTextEdit:setText(text)
 end
 
----@param lines string[] @(std::vector<std::basic_string<char>>)
+---@param lines string[] @(std::vector<std::string>)
 ---@return nil @(void)
 function ColorTextEdit:setTextLines(lines)
 end

@@ -1,6 +1,5 @@
 ------------------------------
 --- Tag: imgui
---- Date: 2023-03-10
 ------------------------------
 
 ---@class imgui
@@ -28,50 +27,85 @@ local ImGuiWindowFlags = {
 	NoBringToFrontOnFocus = 8192,
 	AlwaysVerticalScrollbar = 16384,
 	AlwaysHorizontalScrollbar = 32768,
-	AlwaysUseWindowPadding = 65536,
-	NoNavInputs = 262144,
-	NoNavFocus = 524288,
-	UnsavedDocument = 1048576,
-	NoDocking = 2097152,
-	NoNav = 786432,
+	NoNavInputs = 65536,
+	NoNavFocus = 131072,
+	UnsavedDocument = 262144,
+	NoDocking = 524288,
+	NoNav = 196608,
 	NoDecoration = 43,
-	NoInputs = 786944,
-	NavFlattened = 8388608,
+	NoInputs = 197120,
+	DockNodeHost = 8388608,
 	ChildWindow = 16777216,
 	Tooltip = 33554432,
 	Popup = 67108864,
 	Modal = 134217728,
 	ChildMenu = 268435456,
-	DockNodeHost = 536870912,
 }
 ---
 ---@class imgui.ImGuiWindowFlags
 imgui.ImGuiWindowFlags = ImGuiWindowFlags
 
+local ImGuiChildFlags = {
+	ImGuiChildFlags_None = 0,
+	ImGuiChildFlags_Borders = 1,
+	ImGuiChildFlags_AlwaysUseWindowPadding = 2,
+	ImGuiChildFlags_ResizeX = 4,
+	ImGuiChildFlags_ResizeY = 8,
+	ImGuiChildFlags_AutoResizeX = 16,
+	ImGuiChildFlags_AutoResizeY = 32,
+	ImGuiChildFlags_AlwaysAutoResize = 64,
+	ImGuiChildFlags_FrameStyle = 128,
+	ImGuiChildFlags_NavFlattened = 256,
+}
+---
+---@class imgui.ImGuiChildFlags
+imgui.ImGuiChildFlags = ImGuiChildFlags
+
+local ImGuiItemFlags = {
+	ImGuiItemFlags_None = 0,
+	ImGuiItemFlags_NoTabStop = 1,
+	ImGuiItemFlags_NoNav = 2,
+	ImGuiItemFlags_NoNavDefaultFocus = 4,
+	ImGuiItemFlags_ButtonRepeat = 8,
+	ImGuiItemFlags_AutoClosePopups = 16,
+	ImGuiItemFlags_AllowDuplicateId = 32,
+	ImGuiItemFlags_Disabled = 64,
+	ImGuiItemFlags_LiveEditOnInputText = 128,
+	ImGuiItemFlags_LiveEditOnInputScalar = 256,
+	ImGuiItemFlags_LiveEditOnInput = 384,
+	ImGuiItemFlags_MixedValue = 512,
+}
+---
+---@class imgui.ImGuiItemFlags
+imgui.ImGuiItemFlags = ImGuiItemFlags
+
 local ImGuiInputTextFlags = {
 	None = 0,
 	CharsDecimal = 1,
 	CharsHexadecimal = 2,
-	CharsUppercase = 4,
-	CharsNoBlank = 8,
-	AutoSelectAll = 16,
-	EnterReturnsTrue = 32,
-	CallbackCompletion = 64,
-	CallbackHistory = 128,
-	CallbackAlways = 256,
-	CallbackCharFilter = 512,
-	AllowTabInput = 1024,
-	CtrlEnterForNewLine = 2048,
-	NoHorizontalScroll = 4096,
-	AlwaysOverwrite = 8192,
-	ReadOnly = 16384,
-	Password = 32768,
+	CharsScientific = 4,
+	CharsUppercase = 8,
+	CharsNoBlank = 16,
+	AllowTabInput = 32,
+	EnterReturnsTrue = 64,
+	EscapeClearsAll = 128,
+	CtrlEnterForNewLine = 256,
+	ReadOnly = 512,
+	Password = 1024,
+	AlwaysOverwrite = 2048,
+	AutoSelectAll = 4096,
+	ParseEmptyRefVal = 8192,
+	DisplayEmptyRefVal = 16384,
+	NoHorizontalScroll = 32768,
 	NoUndoRedo = 65536,
-	CharsScientific = 131072,
-	CallbackResize = 262144,
-	CallbackEdit = 524288,
-	EscapeClearsAll = 1048576,
-	AlwaysInsertMode = 8192,
+	ElideLeft = 131072,
+	CallbackCompletion = 262144,
+	CallbackHistory = 524288,
+	CallbackAlways = 1048576,
+	CallbackCharFilter = 2097152,
+	CallbackResize = 4194304,
+	CallbackEdit = 8388608,
+	WordWrap = 16777216,
 }
 ---
 ---@class imgui.ImGuiInputTextFlags
@@ -81,7 +115,7 @@ local ImGuiTreeNodeFlags = {
 	None = 0,
 	Selected = 1,
 	Framed = 2,
-	AllowItemOverlap = 4,
+	AllowOverlap = 4,
 	NoTreePushOnOpen = 8,
 	NoAutoOpenOnLog = 16,
 	DefaultOpen = 32,
@@ -92,8 +126,14 @@ local ImGuiTreeNodeFlags = {
 	FramePadding = 1024,
 	SpanAvailWidth = 2048,
 	SpanFullWidth = 4096,
-	NavLeftJumpsBackHere = 8192,
+	SpanLabelWidth = 8192,
+	SpanAllColumns = 16384,
+	LabelSpanAllColumns = 32768,
+	NavLeftJumpsToParent = 131072,
 	CollapsingHeader = 26,
+	DrawLinesNone = 262144,
+	DrawLinesFull = 524288,
+	DrawLinesToNodes = 1048576,
 }
 ---
 ---@class imgui.ImGuiTreeNodeFlags
@@ -101,16 +141,18 @@ imgui.ImGuiTreeNodeFlags = ImGuiTreeNodeFlags
 
 local ImGuiPopupFlags = {
 	None = 0,
-	MouseButtonLeft = 0,
-	MouseButtonRight = 1,
-	MouseButtonMiddle = 2,
-	MouseButtonMask_ = 31,
-	MouseButtonDefault_ = 1,
-	NoOpenOverExistingPopup = 32,
-	NoOpenOverItems = 64,
-	AnyPopupId = 128,
-	AnyPopupLevel = 256,
-	AnyPopup = 384,
+	MouseButtonLeft = 4,
+	MouseButtonRight = 8,
+	MouseButtonMiddle = 12,
+	NoReopen = 32,
+	NoOpenOverExistingPopup = 128,
+	NoOpenOverItems = 256,
+	AnyPopupId = 1024,
+	AnyPopupLevel = 2048,
+	AnyPopup = 3072,
+	MouseButtonShift_ = 2,
+	MouseButtonMask_ = 12,
+	InvalidMask_ = 3,
 }
 ---
 ---@class imgui.ImGuiPopupFlags
@@ -118,11 +160,13 @@ imgui.ImGuiPopupFlags = ImGuiPopupFlags
 
 local ImGuiSelectableFlags = {
 	None = 0,
-	DontClosePopups = 1,
+	NoAutoClosePopups = 1,
 	SpanAllColumns = 2,
 	AllowDoubleClick = 4,
 	Disabled = 8,
-	AllowItemOverlap = 16,
+	AllowOverlap = 16,
+	Highlight = 32,
+	SelectOnNav = 64,
 }
 ---
 ---@class imgui.ImGuiSelectableFlags
@@ -137,6 +181,7 @@ local ImGuiComboFlags = {
 	HeightLargest = 16,
 	NoArrowButton = 32,
 	NoPreview = 64,
+	WidthFitPreview = 128,
 	HeightMask_ = 30,
 }
 ---
@@ -151,10 +196,12 @@ local ImGuiTabBarFlags = {
 	NoCloseWithMiddleMouseButton = 8,
 	NoTabListScrollingButtons = 16,
 	NoTooltip = 32,
-	FittingPolicyResizeDown = 64,
-	FittingPolicyScroll = 128,
-	FittingPolicyMask_ = 192,
-	FittingPolicyDefault_ = 64,
+	DrawSelectedOverline = 64,
+	FittingPolicyMixed = 128,
+	FittingPolicyShrink = 256,
+	FittingPolicyScroll = 512,
+	FittingPolicyMask_ = 896,
+	FittingPolicyDefault_ = 128,
 }
 ---
 ---@class imgui.ImGuiTabBarFlags
@@ -170,103 +217,11 @@ local ImGuiTabItemFlags = {
 	NoReorder = 32,
 	Leading = 64,
 	Trailing = 128,
+	NoAssumedClosure = 256,
 }
 ---
 ---@class imgui.ImGuiTabItemFlags
 imgui.ImGuiTabItemFlags = ImGuiTabItemFlags
-
-local ImGuiTableFlags = {
-	None = 0,
-	Resizable = 1,
-	Reorderable = 2,
-	Hideable = 4,
-	Sortable = 8,
-	NoSavedSettings = 16,
-	ContextMenuInBody = 32,
-	RowBg = 64,
-	BordersInnerH = 128,
-	BordersOuterH = 256,
-	BordersInnerV = 512,
-	BordersOuterV = 1024,
-	BordersH = 384,
-	BordersV = 1536,
-	BordersInner = 640,
-	BordersOuter = 1280,
-	Borders = 1920,
-	NoBordersInBody = 2048,
-	NoBordersInBodyUntilResize = 4096,
-	SizingFixedFit = 8192,
-	SizingFixedSame = 16384,
-	SizingStretchProp = 24576,
-	SizingStretchSame = 32768,
-	NoHostExtendX = 65536,
-	NoHostExtendY = 131072,
-	NoKeepColumnsVisible = 262144,
-	PreciseWidths = 524288,
-	NoClip = 1048576,
-	PadOuterX = 2097152,
-	NoPadOuterX = 4194304,
-	NoPadInnerX = 8388608,
-	ScrollX = 16777216,
-	ScrollY = 33554432,
-	SortMulti = 67108864,
-	SortTristate = 134217728,
-	SizingMask_ = 57344,
-}
----
----@class imgui.ImGuiTableFlags
-imgui.ImGuiTableFlags = ImGuiTableFlags
-
-local ImGuiTableColumnFlags = {
-	None = 0,
-	Disabled = 1,
-	DefaultHide = 2,
-	DefaultSort = 4,
-	WidthStretch = 8,
-	WidthFixed = 16,
-	NoResize = 32,
-	NoReorder = 64,
-	NoHide = 128,
-	NoClip = 256,
-	NoSort = 512,
-	NoSortAscending = 1024,
-	NoSortDescending = 2048,
-	NoHeaderLabel = 4096,
-	NoHeaderWidth = 8192,
-	PreferSortAscending = 16384,
-	PreferSortDescending = 32768,
-	IndentEnable = 65536,
-	IndentDisable = 131072,
-	IsEnabled = 16777216,
-	IsVisible = 33554432,
-	IsSorted = 67108864,
-	IsHovered = 134217728,
-	WidthMask_ = 24,
-	IndentMask_ = 196608,
-	StatusMask_ = 251658240,
-	NoDirectResize_ = 1073741824,
-}
----
----@class imgui.ImGuiTableColumnFlags
-imgui.ImGuiTableColumnFlags = ImGuiTableColumnFlags
-
-local ImGuiTableRowFlags = {
-	None = 0,
-	Headers = 1,
-}
----
----@class imgui.ImGuiTableRowFlags
-imgui.ImGuiTableRowFlags = ImGuiTableRowFlags
-
-local ImGuiTableBgTarget = {
-	None = 0,
-	RowBg0 = 1,
-	RowBg1 = 2,
-	CellBg = 3,
-}
----
----@class imgui.ImGuiTableBgTarget
-imgui.ImGuiTableBgTarget = ImGuiTableBgTarget
 
 local ImGuiFocusedFlags = {
 	None = 0,
@@ -290,14 +245,19 @@ local ImGuiHoveredFlags = {
 	DockHierarchy = 16,
 	AllowWhenBlockedByPopup = 32,
 	AllowWhenBlockedByActiveItem = 128,
-	AllowWhenOverlapped = 256,
-	AllowWhenDisabled = 512,
-	NoNavOverride = 1024,
-	RectOnly = 416,
+	AllowWhenOverlappedByItem = 256,
+	AllowWhenOverlappedByWindow = 512,
+	AllowWhenDisabled = 1024,
+	NoNavOverride = 2048,
+	AllowWhenOverlapped = 768,
+	RectOnly = 928,
 	RootAndChildWindows = 3,
-	DelayNormal = 2048,
-	DelayShort = 4096,
-	NoSharedDelay = 8192,
+	ForTooltip = 4096,
+	Stationary = 8192,
+	DelayNone = 16384,
+	DelayShort = 32768,
+	DelayNormal = 65536,
+	NoSharedDelay = 131072,
 }
 ---
 ---@class imgui.ImGuiHoveredFlags
@@ -306,11 +266,12 @@ imgui.ImGuiHoveredFlags = ImGuiHoveredFlags
 local ImGuiDockNodeFlags = {
 	None = 0,
 	KeepAliveOnly = 1,
-	NoDockingInCentralNode = 4,
+	NoDockingOverCentralNode = 4,
 	PassthruCentralNode = 8,
-	NoSplit = 16,
+	NoDockingSplit = 16,
 	NoResize = 32,
 	AutoHideTabBar = 64,
+	NoUndocking = 128,
 }
 ---
 ---@class imgui.ImGuiDockNodeFlags
@@ -323,10 +284,13 @@ local ImGuiDragDropFlags = {
 	SourceNoHoldToOpenOthers = 4,
 	SourceAllowNullID = 8,
 	SourceExtern = 16,
-	SourceAutoExpirePayload = 32,
+	PayloadAutoExpire = 32,
+	PayloadNoCrossContext = 64,
+	PayloadNoCrossProcess = 128,
 	AcceptBeforeDelivery = 1024,
 	AcceptNoDrawDefaultRect = 2048,
 	AcceptNoPreviewTooltip = 4096,
+	AcceptDrawAsHovered = 8192,
 	AcceptPeekOnly = 3072,
 }
 ---
@@ -344,7 +308,9 @@ local ImGuiDataType = {
 	U64 = 7,
 	Float = 8,
 	Double = 9,
-	COUNT = 10,
+	Bool = 10,
+	String = 11,
+	COUNT = 12,
 }
 ---
 ---@class imgui.ImGuiDataType
@@ -373,6 +339,7 @@ imgui.ImGuiSortDirection = ImGuiSortDirection
 
 local ImGuiKey = {
 	None = 0,
+	NamedKey_BEGIN = 512,
 	Tab = 512,
 	LeftArrow = 513,
 	RightArrow = 514,
@@ -445,132 +412,128 @@ local ImGuiKey = {
 	F10 = 581,
 	F11 = 582,
 	F12 = 583,
-	Apostrophe = 584,
-	Comma = 585,
-	Minus = 586,
-	Period = 587,
-	Slash = 588,
-	Semicolon = 589,
-	Equal = 590,
-	LeftBracket = 591,
-	Backslash = 592,
-	RightBracket = 593,
-	GraveAccent = 594,
-	CapsLock = 595,
-	ScrollLock = 596,
-	NumLock = 597,
-	PrintScreen = 598,
-	Pause = 599,
-	Keypad0 = 600,
-	Keypad1 = 601,
-	Keypad2 = 602,
-	Keypad3 = 603,
-	Keypad4 = 604,
-	Keypad5 = 605,
-	Keypad6 = 606,
-	Keypad7 = 607,
-	Keypad8 = 608,
-	Keypad9 = 609,
-	KeypadDecimal = 610,
-	KeypadDivide = 611,
-	KeypadMultiply = 612,
-	KeypadSubtract = 613,
-	KeypadAdd = 614,
-	KeypadEnter = 615,
-	KeypadEqual = 616,
-	GamepadStart = 617,
-	GamepadBack = 618,
-	GamepadFaceLeft = 619,
-	GamepadFaceRight = 620,
-	GamepadFaceUp = 621,
-	GamepadFaceDown = 622,
-	GamepadDpadLeft = 623,
-	GamepadDpadRight = 624,
-	GamepadDpadUp = 625,
-	GamepadDpadDown = 626,
-	GamepadL1 = 627,
-	GamepadR1 = 628,
-	GamepadL2 = 629,
-	GamepadR2 = 630,
-	GamepadL3 = 631,
-	GamepadR3 = 632,
-	GamepadLStickLeft = 633,
-	GamepadLStickRight = 634,
-	GamepadLStickUp = 635,
-	GamepadLStickDown = 636,
-	GamepadRStickLeft = 637,
-	GamepadRStickRight = 638,
-	GamepadRStickUp = 639,
-	GamepadRStickDown = 640,
-	MouseLeft = 641,
-	MouseRight = 642,
-	MouseMiddle = 643,
-	MouseX1 = 644,
-	MouseX2 = 645,
-	MouseWheelX = 646,
-	MouseWheelY = 647,
-	ReservedForModCtrl = 648,
-	ReservedForModShift = 649,
-	ReservedForModAlt = 650,
-	ReservedForModSuper = 651,
-	COUNT = 652,
+	F13 = 584,
+	F14 = 585,
+	F15 = 586,
+	F16 = 587,
+	F17 = 588,
+	F18 = 589,
+	F19 = 590,
+	F20 = 591,
+	F21 = 592,
+	F22 = 593,
+	F23 = 594,
+	F24 = 595,
+	Apostrophe = 596,
+	Comma = 597,
+	Minus = 598,
+	Period = 599,
+	Slash = 600,
+	Semicolon = 601,
+	Equal = 602,
+	LeftBracket = 603,
+	Backslash = 604,
+	RightBracket = 605,
+	GraveAccent = 606,
+	CapsLock = 607,
+	ScrollLock = 608,
+	NumLock = 609,
+	PrintScreen = 610,
+	Pause = 611,
+	Keypad0 = 612,
+	Keypad1 = 613,
+	Keypad2 = 614,
+	Keypad3 = 615,
+	Keypad4 = 616,
+	Keypad5 = 617,
+	Keypad6 = 618,
+	Keypad7 = 619,
+	Keypad8 = 620,
+	Keypad9 = 621,
+	KeypadDecimal = 622,
+	KeypadDivide = 623,
+	KeypadMultiply = 624,
+	KeypadSubtract = 625,
+	KeypadAdd = 626,
+	KeypadEnter = 627,
+	KeypadEqual = 628,
+	AppBack = 629,
+	AppForward = 630,
+	Oem102 = 631,
+	GamepadStart = 632,
+	GamepadBack = 633,
+	GamepadFaceLeft = 634,
+	GamepadFaceRight = 635,
+	GamepadFaceUp = 636,
+	GamepadFaceDown = 637,
+	GamepadDpadLeft = 638,
+	GamepadDpadRight = 639,
+	GamepadDpadUp = 640,
+	GamepadDpadDown = 641,
+	GamepadL1 = 642,
+	GamepadR1 = 643,
+	GamepadL2 = 644,
+	GamepadR2 = 645,
+	GamepadL3 = 646,
+	GamepadR3 = 647,
+	GamepadLStickLeft = 648,
+	GamepadLStickRight = 649,
+	GamepadLStickUp = 650,
+	GamepadLStickDown = 651,
+	GamepadRStickLeft = 652,
+	GamepadRStickRight = 653,
+	GamepadRStickUp = 654,
+	GamepadRStickDown = 655,
+	MouseLeft = 656,
+	MouseRight = 657,
+	MouseMiddle = 658,
+	MouseX1 = 659,
+	MouseX2 = 660,
+	MouseWheelX = 661,
+	MouseWheelY = 662,
+	ReservedForModCtrl = 663,
+	ReservedForModShift = 664,
+	ReservedForModAlt = 665,
+	ReservedForModSuper = 666,
+	NamedKey_END = 667,
+	NamedKey_COUNT = 155,
 	ImGuiMod_None = 0,
 	ImGuiMod_Ctrl = 4096,
 	ImGuiMod_Shift = 8192,
 	ImGuiMod_Alt = 16384,
 	ImGuiMod_Super = 32768,
-	ImGuiMod_Shortcut = 2048,
-	ImGuiMod_Mask_ = 63488,
-	NamedKey_BEGIN = 512,
-	NamedKey_END = 652,
-	NamedKey_COUNT = 140,
-	KeysData_SIZE = 652,
-	KeysData_OFFSET = 0,
-	ModCtrl = 4096,
-	ModShift = 8192,
-	ModAlt = 16384,
-	ModSuper = 32768,
-	KeyPadEnter = 615,
+	ImGuiMod_Mask_ = 61440,
 }
 ---
 ---@class imgui.ImGuiKey
 imgui.ImGuiKey = ImGuiKey
 
-local ImGuiNavInput = {
-	ImGuiNavInput_Activate = 0,
-	ImGuiNavInput_Cancel = 1,
-	ImGuiNavInput_Input = 2,
-	ImGuiNavInput_Menu = 3,
-	ImGuiNavInput_DpadLeft = 4,
-	ImGuiNavInput_DpadRight = 5,
-	ImGuiNavInput_DpadUp = 6,
-	ImGuiNavInput_DpadDown = 7,
-	ImGuiNavInput_LStickLeft = 8,
-	ImGuiNavInput_LStickRight = 9,
-	ImGuiNavInput_LStickUp = 10,
-	ImGuiNavInput_LStickDown = 11,
-	ImGuiNavInput_FocusPrev = 12,
-	ImGuiNavInput_FocusNext = 13,
-	ImGuiNavInput_TweakSlow = 14,
-	ImGuiNavInput_TweakFast = 15,
-	ImGuiNavInput_COUNT = 16,
+local ImGuiInputFlags = {
+	ImGuiInputFlags_None = 0,
+	ImGuiInputFlags_Repeat = 1,
+	ImGuiInputFlags_RouteActive = 1024,
+	ImGuiInputFlags_RouteFocused = 2048,
+	ImGuiInputFlags_RouteGlobal = 4096,
+	ImGuiInputFlags_RouteAlways = 8192,
+	ImGuiInputFlags_RouteOverFocused = 16384,
+	ImGuiInputFlags_RouteOverActive = 32768,
+	ImGuiInputFlags_RouteUnlessBgFocused = 65536,
+	ImGuiInputFlags_RouteFromRootWindow = 131072,
+	ImGuiInputFlags_Tooltip = 262144,
 }
 ---
----@class imgui.ImGuiNavInput
-imgui.ImGuiNavInput = ImGuiNavInput
+---@class imgui.ImGuiInputFlags
+imgui.ImGuiInputFlags = ImGuiInputFlags
 
 local ImGuiConfigFlags = {
 	None = 0,
 	NavEnableKeyboard = 1,
 	NavEnableGamepad = 2,
-	NavEnableSetMousePos = 4,
-	NavNoCaptureKeyboard = 8,
 	NoMouse = 16,
 	NoMouseCursorChange = 32,
-	DockingEnable = 64,
+	NoKeyboard = 64,
+	DockingEnable = 128,
 	ViewportsEnable = 1024,
-	DpiEnableScaleViewports = 16384,
-	DpiEnableScaleFonts = 32768,
 	IsSRGB = 1048576,
 	IsTouchScreen = 2097152,
 }
@@ -584,9 +547,11 @@ local ImGuiBackendFlags = {
 	HasMouseCursors = 2,
 	HasSetMousePos = 4,
 	RendererHasVtxOffset = 8,
-	PlatformHasViewports = 1024,
-	HasMouseHoveredViewport = 2048,
-	RendererHasViewports = 4096,
+	RendererHasTextures = 16,
+	RendererHasViewports = 1024,
+	PlatformHasViewports = 2048,
+	HasMouseHoveredViewport = 4096,
+	HasParentViewport = 8192,
 }
 ---
 ---@class imgui.ImGuiBackendFlags
@@ -612,43 +577,51 @@ local ImGuiCol = {
 	ScrollbarGrabHovered = 16,
 	ScrollbarGrabActive = 17,
 	CheckMark = 18,
-	SliderGrab = 19,
-	SliderGrabActive = 20,
-	Button = 21,
-	ButtonHovered = 22,
-	ButtonActive = 23,
-	Header = 24,
-	HeaderHovered = 25,
-	HeaderActive = 26,
-	Separator = 27,
-	SeparatorHovered = 28,
-	SeparatorActive = 29,
-	ResizeGrip = 30,
-	ResizeGripHovered = 31,
-	ResizeGripActive = 32,
-	Tab = 33,
-	TabHovered = 34,
-	TabActive = 35,
-	TabUnfocused = 36,
-	TabUnfocusedActive = 37,
-	DockingPreview = 38,
-	DockingEmptyBg = 39,
-	PlotLines = 40,
-	PlotLinesHovered = 41,
-	PlotHistogram = 42,
-	PlotHistogramHovered = 43,
-	TableHeaderBg = 44,
-	TableBorderStrong = 45,
-	TableBorderLight = 46,
-	TableRowBg = 47,
-	TableRowBgAlt = 48,
-	TextSelectedBg = 49,
-	DragDropTarget = 50,
-	NavHighlight = 51,
-	NavWindowingHighlight = 52,
-	NavWindowingDimBg = 53,
-	ModalWindowDimBg = 54,
-	COUNT = 55,
+	CheckboxSelectedBg = 19,
+	SliderGrab = 20,
+	SliderGrabActive = 21,
+	Button = 22,
+	ButtonHovered = 23,
+	ButtonActive = 24,
+	Header = 25,
+	HeaderHovered = 26,
+	HeaderActive = 27,
+	Separator = 28,
+	SeparatorHovered = 29,
+	SeparatorActive = 30,
+	ResizeGrip = 31,
+	ResizeGripHovered = 32,
+	ResizeGripActive = 33,
+	InputTextCursor = 34,
+	TabHovered = 35,
+	Tab = 36,
+	TabSelected = 37,
+	TabSelectedOverline = 38,
+	TabDimmed = 39,
+	TabDimmedSelected = 40,
+	TabDimmedSelectedOverline = 41,
+	DockingPreview = 42,
+	DockingEmptyBg = 43,
+	PlotLines = 44,
+	PlotLinesHovered = 45,
+	PlotHistogram = 46,
+	PlotHistogramHovered = 47,
+	TableHeaderBg = 48,
+	TableBorderStrong = 49,
+	TableBorderLight = 50,
+	TableRowBg = 51,
+	TableRowBgAlt = 52,
+	TextLink = 53,
+	TextSelectedBg = 54,
+	TreeLines = 55,
+	DragDropTarget = 56,
+	DragDropTargetBg = 57,
+	UnsavedMarker = 58,
+	NavCursor = 59,
+	NavWindowingHighlight = 60,
+	NavWindowingDimBg = 61,
+	ModalWindowDimBg = 62,
+	COUNT = 63,
 }
 ---
 ---@class imgui.ImGuiCol
@@ -675,15 +648,32 @@ local ImGuiStyleVar = {
 	CellPadding = 17,
 	ScrollbarSize = 18,
 	ScrollbarRounding = 19,
-	GrabMinSize = 20,
-	GrabRounding = 21,
-	TabRounding = 22,
-	ButtonTextAlign = 23,
-	SelectableTextAlign = 24,
-	SeparatorTextBorderSize = 25,
-	SeparatorTextAlign = 26,
-	SeparatorTextPadding = 27,
-	COUNT = 28,
+	ScrollbarPadding = 20,
+	GrabMinSize = 21,
+	GrabRounding = 22,
+	ImageRounding = 23,
+	ImageBorderSize = 24,
+	TabRounding = 25,
+	TabBorderSize = 26,
+	TabMinWidthBase = 27,
+	TabMinWidthShrink = 28,
+	TabBarBorderSize = 29,
+	TabBarOverlineSize = 30,
+	TableAngledHeadersAngle = 31,
+	TableAngledHeadersTextAlign = 32,
+	TreeLinesSize = 33,
+	TreeLinesRounding = 34,
+	MenuItemRounding = 35,
+	SelectableRounding = 36,
+	DragDropTargetRounding = 37,
+	ButtonTextAlign = 38,
+	SelectableTextAlign = 39,
+	SeparatorSize = 40,
+	SeparatorTextBorderSize = 41,
+	SeparatorTextAlign = 42,
+	SeparatorTextPadding = 43,
+	DockingSeparatorSize = 44,
+	COUNT = 45,
 }
 ---
 ---@class imgui.ImGuiStyleVar
@@ -695,7 +685,8 @@ local ImGuiButtonFlags = {
 	MouseButtonRight = 2,
 	MouseButtonMiddle = 4,
 	MouseButtonMask_ = 7,
-	MouseButtonDefault_ = 1,
+	EnableNav = 8,
+	AllowOverlap = 4096,
 }
 ---
 ---@class imgui.ImGuiButtonFlags
@@ -713,9 +704,11 @@ local ImGuiColorEditFlags = {
 	NoSidePreview = 256,
 	NoDragDrop = 512,
 	NoBorder = 1024,
-	AlphaBar = 65536,
-	AlphaPreview = 131072,
-	AlphaPreviewHalf = 262144,
+	NoColorMarkers = 2048,
+	AlphaOpaque = 4096,
+	AlphaNoBg = 8192,
+	AlphaPreviewHalf = 16384,
+	AlphaBar = 262144,
 	HDR = 524288,
 	DisplayRGB = 1048576,
 	DisplayHSV = 2097152,
@@ -724,13 +717,15 @@ local ImGuiColorEditFlags = {
 	Float = 16777216,
 	PickerHueBar = 33554432,
 	PickerHueWheel = 67108864,
-	InputRGB = 134217728,
-	InputHSV = 268435456,
-	DefaultOptions_ = 177209344,
+	PickerNoRotate = 134217728,
+	InputRGB = 268435456,
+	InputHSV = 536870912,
+	DefaultOptions_ = 311427072,
+	AlphaMask_ = 28674,
 	DisplayMask_ = 7340032,
 	DataTypeMask_ = 25165824,
 	PickerMask_ = 100663296,
-	InputMask_ = 402653184,
+	InputMask_ = 805306368,
 }
 ---
 ---@class imgui.ImGuiColorEditFlags
@@ -738,12 +733,16 @@ imgui.ImGuiColorEditFlags = ImGuiColorEditFlags
 
 local ImGuiSliderFlags = {
 	None = 0,
-	AlwaysClamp = 16,
 	Logarithmic = 32,
 	NoRoundToFormat = 64,
 	NoInput = 128,
+	WrapAround = 256,
+	ClampOnInput = 512,
+	ClampZeroRange = 1024,
+	NoSpeedTweaks = 2048,
+	ColorMarkers = 4096,
+	AlwaysClamp = 1536,
 	InvalidMask_ = 1879048207,
-	ClampOnInput = 16,
 }
 ---
 ---@class imgui.ImGuiSliderFlags
@@ -769,12 +768,24 @@ local ImGuiMouseCursor = {
 	ResizeNESW = 5,
 	ResizeNWSE = 6,
 	Hand = 7,
-	NotAllowed = 8,
-	COUNT = 9,
+	Wait = 8,
+	Progress = 9,
+	NotAllowed = 10,
+	COUNT = 11,
 }
 ---
 ---@class imgui.ImGuiMouseCursor
 imgui.ImGuiMouseCursor = ImGuiMouseCursor
+
+local ImGuiMouseSource = {
+	ImGuiMouseSource_Mouse = 0,
+	ImGuiMouseSource_TouchScreen = 1,
+	ImGuiMouseSource_Pen = 2,
+	ImGuiMouseSource_COUNT = 3,
+}
+---
+---@class imgui.ImGuiMouseSource
+imgui.ImGuiMouseSource = ImGuiMouseSource
 
 local ImGuiCond = {
 	None = 0,
@@ -787,31 +798,172 @@ local ImGuiCond = {
 ---@class imgui.ImGuiCond
 imgui.ImGuiCond = ImGuiCond
 
---- vertically align upcoming text baseline to FramePadding.y so that it will align properly to regularly framed items (call if you have text on a line before a framed item)
+local ImGuiTableFlags = {
+	None = 0,
+	Resizable = 1,
+	Reorderable = 2,
+	Hideable = 4,
+	Sortable = 8,
+	NoSavedSettings = 16,
+	ContextMenuInBody = 32,
+	RowBg = 64,
+	BordersInnerH = 128,
+	BordersOuterH = 256,
+	BordersInnerV = 512,
+	BordersOuterV = 1024,
+	BordersH = 384,
+	BordersV = 1536,
+	BordersInner = 640,
+	BordersOuter = 1280,
+	Borders = 1920,
+	NoBordersInBody = 2048,
+	NoBordersInBodyUntilResize = 4096,
+	SizingFixedFit = 8192,
+	SizingFixedSame = 16384,
+	SizingStretchProp = 24576,
+	SizingStretchSame = 32768,
+	NoHostExtendX = 65536,
+	NoHostExtendY = 131072,
+	NoKeepColumnsVisible = 262144,
+	PreciseWidths = 524288,
+	NoClip = 1048576,
+	PadOuterX = 2097152,
+	NoPadOuterX = 4194304,
+	NoPadInnerX = 8388608,
+	ScrollX = 16777216,
+	ScrollY = 33554432,
+	SortMulti = 67108864,
+	SortTristate = 134217728,
+	HighlightHoveredColumn = 268435456,
+	SizingMask_ = 57344,
+}
+---
+---@class imgui.ImGuiTableFlags
+imgui.ImGuiTableFlags = ImGuiTableFlags
+
+local ImGuiTableColumnFlags = {
+	None = 0,
+	Disabled = 1,
+	DefaultHide = 2,
+	DefaultSort = 4,
+	WidthStretch = 8,
+	WidthFixed = 16,
+	NoResize = 32,
+	NoReorder = 64,
+	NoHide = 128,
+	NoClip = 256,
+	NoSort = 512,
+	NoSortAscending = 1024,
+	NoSortDescending = 2048,
+	NoHeaderLabel = 4096,
+	NoHeaderWidth = 8192,
+	PreferSortAscending = 16384,
+	PreferSortDescending = 32768,
+	IndentEnable = 65536,
+	IndentDisable = 131072,
+	AngledHeader = 262144,
+	IsEnabled = 16777216,
+	IsVisible = 33554432,
+	IsSorted = 67108864,
+	IsHovered = 134217728,
+	WidthMask_ = 24,
+	IndentMask_ = 196608,
+	StatusMask_ = 251658240,
+	NoDirectResize_ = 1073741824,
+}
+---
+---@class imgui.ImGuiTableColumnFlags
+imgui.ImGuiTableColumnFlags = ImGuiTableColumnFlags
+
+local ImGuiTableRowFlags = {
+	None = 0,
+	Headers = 1,
+}
+---
+---@class imgui.ImGuiTableRowFlags
+imgui.ImGuiTableRowFlags = ImGuiTableRowFlags
+
+local ImGuiTableBgTarget = {
+	None = 0,
+	RowBg0 = 1,
+	RowBg1 = 2,
+	CellBg = 3,
+}
+---
+---@class imgui.ImGuiTableBgTarget
+imgui.ImGuiTableBgTarget = ImGuiTableBgTarget
+
+local ImGuiListClipperFlags = {
+	ImGuiListClipperFlags_None = 0,
+	ImGuiListClipperFlags_NoSetTableRowCounters = 1,
+}
+---
+---@class imgui.ImGuiListClipperFlags
+imgui.ImGuiListClipperFlags = ImGuiListClipperFlags
+
+local ImGuiMultiSelectFlags = {
+	ImGuiMultiSelectFlags_None = 0,
+	ImGuiMultiSelectFlags_SingleSelect = 1,
+	ImGuiMultiSelectFlags_NoSelectAll = 2,
+	ImGuiMultiSelectFlags_NoRangeSelect = 4,
+	ImGuiMultiSelectFlags_NoAutoSelect = 8,
+	ImGuiMultiSelectFlags_NoAutoClear = 16,
+	ImGuiMultiSelectFlags_NoAutoClearOnReselect = 32,
+	ImGuiMultiSelectFlags_BoxSelect1d = 64,
+	ImGuiMultiSelectFlags_BoxSelect2d = 128,
+	ImGuiMultiSelectFlags_BoxSelectNoScroll = 256,
+	ImGuiMultiSelectFlags_ClearOnEscape = 512,
+	ImGuiMultiSelectFlags_ClearOnClickVoid = 1024,
+	ImGuiMultiSelectFlags_ScopeWindow = 2048,
+	ImGuiMultiSelectFlags_ScopeRect = 4096,
+	ImGuiMultiSelectFlags_SelectOnAuto = 8192,
+	ImGuiMultiSelectFlags_SelectOnClickAlways = 16384,
+	ImGuiMultiSelectFlags_SelectOnClickRelease = 32768,
+	ImGuiMultiSelectFlags_NavWrapX = 65536,
+	ImGuiMultiSelectFlags_NoSelectOnRightClick = 131072,
+	ImGuiMultiSelectFlags_SelectOnMask_ = 57344,
+	ImGuiMultiSelectFlags_CheckboxMode_ = 1048576,
+}
+---
+---@class imgui.ImGuiMultiSelectFlags
+imgui.ImGuiMultiSelectFlags = ImGuiMultiSelectFlags
+
+local ImGuiSelectionRequestType = {
+	ImGuiSelectionRequestType_None = 0,
+	ImGuiSelectionRequestType_SetAll = 1,
+	ImGuiSelectionRequestType_SetRange = 2,
+}
+---
+---@class imgui.ImGuiSelectionRequestType
+imgui.ImGuiSelectionRequestType = ImGuiSelectionRequestType
+
+local ImTextureFormat = {
+	ImTextureFormat_RGBA32 = 0,
+	ImTextureFormat_Alpha8 = 1,
+}
+---
+---@class imgui.ImTextureFormat
+imgui.ImTextureFormat = ImTextureFormat
+
+local ImTextureStatus = {
+	ImTextureStatus_OK = 0,
+	ImTextureStatus_Destroyed = 1,
+	ImTextureStatus_WantCreate = 2,
+	ImTextureStatus_WantUpdates = 3,
+	ImTextureStatus_WantDestroy = 4,
+}
+---
+---@class imgui.ImTextureStatus
+imgui.ImTextureStatus = ImTextureStatus
+
 ---@return nil @(void)
 function imgui.alignTextToFramePadding()
 end
 
---- square button with an arrow shape
 ---@param str_id string @(const char*)
----@param dir number @(ImGuiDir)
+---@param dir imgui.ImGuiDir @(ImGuiDir)
 ---@return boolean @(bool)
 function imgui.arrowButton(str_id, dir)
-end
-
---- helper to create a child window scrolling region that looks like a normal widget frame
----@param id number @(ImGuiID)
----@param size ImVec2 @(ImVec2)
----@param flags number @(ImGuiWindowFlags)
----@return boolean @(bool)
-function imgui.beginChildFrame(id, size, flags)
-end
-
---- helper to create a child window scrolling region that looks like a normal widget frame
----@param id number @(ImGuiID)
----@param size ImVec2 @(ImVec2)
----@return boolean @(bool)
-function imgui.beginChildFrame(id, size)
 end
 
 ---@param label string @(const char*)
@@ -836,213 +988,213 @@ end
 function imgui.beginDisabled()
 end
 
---- call after submitting an item which may be dragged. when this return true, you can call SetDragDropPayload() + EndDragDropSource()
 ---@param flags number @(ImGuiDragDropFlags)
 ---@return boolean @(bool)
 function imgui.beginDragDropSource(flags)
 end
 
---- call after submitting an item which may be dragged. when this return true, you can call SetDragDropPayload() + EndDragDropSource()
 ---@return boolean @(bool)
 function imgui.beginDragDropSource()
 end
 
---- call after submitting an item that may receive a payload. If this returns true, you can call AcceptDragDropPayload() + EndDragDropTarget()
 ---@return boolean @(bool)
 function imgui.beginDragDropTarget()
 end
 
---- lock horizontal starting position
 ---@return nil @(void)
 function imgui.beginGroup()
 end
 
---- open a framed scrolling region
+---@return boolean @(bool)
+function imgui.beginItemTooltip()
+end
+
 ---@param label string @(const char*)
 ---@param size ImVec2 @(ImVec2)
 ---@return boolean @(bool)
 function imgui.beginListBox(label, size)
 end
 
---- open a framed scrolling region
 ---@param label string @(const char*)
 ---@return boolean @(bool)
 function imgui.beginListBox(label)
 end
 
---- create and append to a full screen menu-bar.
 ---@return boolean @(bool)
 function imgui.beginMainMenuBar()
 end
 
---- create a sub-menu entry. only call EndMenu() if this returns true!
 ---@param label string @(const char*)
 ---@param enabled boolean @(bool)
 ---@return boolean @(bool)
 function imgui.beginMenu(label, enabled)
 end
 
---- create a sub-menu entry. only call EndMenu() if this returns true!
 ---@param label string @(const char*)
 ---@return boolean @(bool)
 function imgui.beginMenu(label)
 end
 
---- append to menu-bar of current window (requires ImGuiWindowFlags_MenuBar flag set on parent window).
 ---@return boolean @(bool)
 function imgui.beginMenuBar()
 end
 
---- return true if the popup is open, and you can start outputting to it.
+---@param flags number @(ImGuiMultiSelectFlags)
+---@param selection_size number @(int) Defaults to -1 when omitted (unknown size).
+---@param items_count number @(int) Defaults to -1 when omitted (unknown count).
+--- Borrowed IO; invalidated by the next beginMultiSelect()/endMultiSelect() or next frame.
+--- Read and apply Begin's Requests before submitting any items; item submission may clear or replace them.
+--- Also read and apply End's Requests immediately after endMultiSelect(); request snapshots are independent.
+---@return imgui.ImGuiMultiSelectIO @(ImGuiMultiSelectIO*)
+function imgui.beginMultiSelect(flags, selection_size, items_count)
+end
+
+---@param flags number @(ImGuiMultiSelectFlags)
+---@param selection_size number @(int) Defaults to -1 when omitted (unknown size).
+--- Borrowed IO; invalidated by the next beginMultiSelect()/endMultiSelect() or next frame.
+--- Read and apply Begin's Requests before submitting any items; item submission may clear or replace them.
+--- Also read and apply End's Requests immediately after endMultiSelect(); request snapshots are independent.
+---@return imgui.ImGuiMultiSelectIO @(ImGuiMultiSelectIO*)
+function imgui.beginMultiSelect(flags, selection_size)
+end
+
+---@param flags number @(ImGuiMultiSelectFlags)
+--- Borrowed IO; invalidated by the next beginMultiSelect()/endMultiSelect() or next frame.
+--- Read and apply Begin's Requests before submitting any items; item submission may clear or replace them.
+--- Also read and apply End's Requests immediately after endMultiSelect(); request snapshots are independent.
+---@return imgui.ImGuiMultiSelectIO @(ImGuiMultiSelectIO*)
+function imgui.beginMultiSelect(flags)
+end
+
 ---@param str_id string @(const char*)
 ---@param flags number @(ImGuiWindowFlags)
 ---@return boolean @(bool)
 function imgui.beginPopup(str_id, flags)
 end
 
---- return true if the popup is open, and you can start outputting to it.
 ---@param str_id string @(const char*)
 ---@return boolean @(bool)
 function imgui.beginPopup(str_id)
 end
 
---- open+begin popup when clicked on last item. Use str_id==NULL to associate the popup to previous item. If you want to use that on a non-interactive item such as Text() you need to pass in an explicit ID here. read comments in .cpp!
 ---@param str_id string @(const char*)
 ---@param popup_flags number @(ImGuiPopupFlags)
 ---@return boolean @(bool)
 function imgui.beginPopupContextItem(str_id, popup_flags)
 end
 
---- open+begin popup when clicked on last item. Use str_id==NULL to associate the popup to previous item. If you want to use that on a non-interactive item such as Text() you need to pass in an explicit ID here. read comments in .cpp!
 ---@param str_id string @(const char*)
 ---@return boolean @(bool)
 function imgui.beginPopupContextItem(str_id)
 end
 
---- open+begin popup when clicked on last item. Use str_id==NULL to associate the popup to previous item. If you want to use that on a non-interactive item such as Text() you need to pass in an explicit ID here. read comments in .cpp!
 ---@return boolean @(bool)
 function imgui.beginPopupContextItem()
 end
 
---- open+begin popup when clicked in void (where there are no windows).
 ---@param str_id string @(const char*)
 ---@param popup_flags number @(ImGuiPopupFlags)
 ---@return boolean @(bool)
 function imgui.beginPopupContextVoid(str_id, popup_flags)
 end
 
---- open+begin popup when clicked in void (where there are no windows).
 ---@param str_id string @(const char*)
 ---@return boolean @(bool)
 function imgui.beginPopupContextVoid(str_id)
 end
 
---- open+begin popup when clicked in void (where there are no windows).
 ---@return boolean @(bool)
 function imgui.beginPopupContextVoid()
 end
 
---- open+begin popup when clicked on current window.
 ---@param str_id string @(const char*)
 ---@param popup_flags number @(ImGuiPopupFlags)
 ---@return boolean @(bool)
 function imgui.beginPopupContextWindow(str_id, popup_flags)
 end
 
---- open+begin popup when clicked on current window.
 ---@param str_id string @(const char*)
 ---@return boolean @(bool)
 function imgui.beginPopupContextWindow(str_id)
 end
 
---- open+begin popup when clicked on current window.
 ---@return boolean @(bool)
 function imgui.beginPopupContextWindow()
 end
 
---- create and append into a TabBar
 ---@param str_id string @(const char*)
 ---@param flags number @(ImGuiTabBarFlags)
 ---@return boolean @(bool)
 function imgui.beginTabBar(str_id, flags)
 end
 
---- create and append into a TabBar
 ---@param str_id string @(const char*)
 ---@return boolean @(bool)
 function imgui.beginTabBar(str_id)
 end
 
 ---@param str_id string @(const char*)
----@param column number @(int)
+---@param columns number @(int)
 ---@param flags number @(ImGuiTableFlags)
 ---@param outer_size ImVec2 @(ImVec2)
 ---@param inner_width number @(float)
 ---@return boolean @(bool)
-function imgui.beginTable(str_id, column, flags, outer_size, inner_width)
+function imgui.beginTable(str_id, columns, flags, outer_size, inner_width)
 end
 
 ---@param str_id string @(const char*)
----@param column number @(int)
+---@param columns number @(int)
 ---@param flags number @(ImGuiTableFlags)
 ---@param outer_size ImVec2 @(ImVec2)
 ---@return boolean @(bool)
-function imgui.beginTable(str_id, column, flags, outer_size)
+function imgui.beginTable(str_id, columns, flags, outer_size)
 end
 
 ---@param str_id string @(const char*)
----@param column number @(int)
+---@param columns number @(int)
 ---@param flags number @(ImGuiTableFlags)
 ---@return boolean @(bool)
-function imgui.beginTable(str_id, column, flags)
+function imgui.beginTable(str_id, columns, flags)
 end
 
 ---@param str_id string @(const char*)
----@param column number @(int)
+---@param columns number @(int)
 ---@return boolean @(bool)
-function imgui.beginTable(str_id, column)
+function imgui.beginTable(str_id, columns)
 end
 
---- beginappend a tooltip window. to create full-featured tooltip (with any kind of items).
----@return nil @(void)
+---@return boolean @(bool)
 function imgui.beginTooltip()
 end
 
---- draw a small circle + keep the cursor on the same line. advance cursor x position by GetTreeNodeToLabelSpacing(), same distance that TreeNode() uses
 ---@return nil @(void)
 function imgui.bullet()
 end
 
---- shortcut for Bullet()+Text()
 ---@param fmt string @(const char*)
 ---@return nil @(void)
 function imgui.bulletText(fmt)
 end
 
---- button
 ---@param label string @(const char*)
 ---@param size ImVec2 @(ImVec2)
 ---@return boolean @(bool)
 function imgui.button(label, size)
 end
 
---- button
 ---@param label string @(const char*)
 ---@return boolean @(bool)
 function imgui.button(label)
 end
 
---- width of item given pushed settings and current cursor position. NOT necessarily the width of last item unlike most 'Item' functions.
 ---@return number @(float)
 function imgui.calcItemWidth()
 end
 
---- manually close the popup we have begin-ed into.
 ---@return nil @(void)
 function imgui.closeCurrentPopup()
 end
 
---- display a color squarebutton, hover for details, return true when pressed.
 ---@param desc_id string @(const char*)
 ---@param col ImVec4 @(ImVec4)
 ---@param flags number @(ImGuiColorEditFlags)
@@ -1051,7 +1203,6 @@ end
 function imgui.colorButton(desc_id, col, flags, size)
 end
 
---- display a color squarebutton, hover for details, return true when pressed.
 ---@param desc_id string @(const char*)
 ---@param col ImVec4 @(ImVec4)
 ---@param flags number @(ImGuiColorEditFlags)
@@ -1059,7 +1210,6 @@ end
 function imgui.colorButton(desc_id, col, flags)
 end
 
---- display a color squarebutton, hover for details, return true when pressed.
 ---@param desc_id string @(const char*)
 ---@param col ImVec4 @(ImVec4)
 ---@return boolean @(bool)
@@ -1078,9 +1228,9 @@ end
 
 ---@param count number @(int)
 ---@param id string @(const char*)
----@param border boolean @(bool)
+---@param borders boolean @(bool)
 ---@return nil @(void)
-function imgui.columns(count, id, border)
+function imgui.columns(count, id, borders)
 end
 
 ---@param count number @(int)
@@ -1098,7 +1248,6 @@ end
 function imgui.columns()
 end
 
---- This is called by IMGUI_CHECKVERSION() macro.
 ---@param version_str string @(const char*)
 ---@param sz_io number @(size_t)
 ---@param sz_style number @(size_t)
@@ -1110,76 +1259,34 @@ end
 function imgui.debugCheckVersionAndDataLayout(version_str, sz_io, sz_style, sz_vec2, sz_vec4, sz_drawvert, sz_drawidx)
 end
 
+---@param idx number @(ImGuiCol)
+---@return nil @(void)
+function imgui.debugFlashStyleColor(idx)
+end
+
+---@param fmt string @(const char*)
+---@return nil @(void)
+function imgui.debugLog(fmt)
+end
+
+---@return nil @(void)
+function imgui.debugStartItemPicker()
+end
+
 ---@param text string @(const char*)
 ---@return nil @(void)
 function imgui.debugTextEncoding(text)
 end
 
---- call DestroyWindow platform functions for all viewports. call from backend Shutdown() if you need to close platform windows before imgui shutdown. otherwise will be called by DestroyContext().
 ---@return nil @(void)
 function imgui.destroyPlatformWindows()
 end
 
----@param id number @(ImGuiID)
----@param size ImVec2 @(ImVec2)
----@param flags number @(ImGuiDockNodeFlags)
----@param window_class ImGuiWindowClass @(const ImGuiWindowClass*)
----@return number @(ImGuiID)
-function imgui.dockSpace(id, size, flags, window_class)
-end
-
----@param id number @(ImGuiID)
----@param size ImVec2 @(ImVec2)
----@param flags number @(ImGuiDockNodeFlags)
----@return number @(ImGuiID)
-function imgui.dockSpace(id, size, flags)
-end
-
----@param id number @(ImGuiID)
----@param size ImVec2 @(ImVec2)
----@return number @(ImGuiID)
-function imgui.dockSpace(id, size)
-end
-
----@param id number @(ImGuiID)
----@return number @(ImGuiID)
-function imgui.dockSpace(id)
-end
-
----@param viewport ImGuiViewport @(const ImGuiViewport*)
----@param flags number @(ImGuiDockNodeFlags)
----@param window_class ImGuiWindowClass @(const ImGuiWindowClass*)
----@return number @(ImGuiID)
-function imgui.dockSpaceOverViewport(viewport, flags, window_class)
-end
-
----@param viewport ImGuiViewport @(const ImGuiViewport*)
----@param flags number @(ImGuiDockNodeFlags)
----@return number @(ImGuiID)
-function imgui.dockSpaceOverViewport(viewport, flags)
-end
-
----@param viewport ImGuiViewport @(const ImGuiViewport*)
----@return number @(ImGuiID)
-function imgui.dockSpaceOverViewport(viewport)
-end
-
----@return number @(ImGuiID)
-function imgui.dockSpaceOverViewport()
-end
-
---- add a dummy item of given size. unlike InvisibleButton(), Dummy() won't take the mouse click or be navigable into.
 ---@param size ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.dummy(size)
 end
 
---- always call EndChildFrame() regardless of BeginChildFrame() return values (which indicates a collapsedclipped window)
----@return nil @(void)
-function imgui.endChildFrame()
-end
-
---- only call EndCombo() if BeginCombo() returns true!
 ---@return nil @(void)
 function imgui.endCombo()
 end
@@ -1188,62 +1295,57 @@ end
 function imgui.endDisabled()
 end
 
---- only call EndDragDropSource() if BeginDragDropSource() returns true!
 ---@return nil @(void)
 function imgui.endDragDropSource()
 end
 
---- only call EndDragDropTarget() if BeginDragDropTarget() returns true!
 ---@return nil @(void)
 function imgui.endDragDropTarget()
 end
 
---- ends the Dear ImGui frame. automatically called by Render(). If you don't need to render data (skipping rendering) you may call EndFrame() without Render()... but you'll have wasted CPU already! If you don't need to render, better to not create any windows and not call NewFrame() at all!
 ---@return nil @(void)
 function imgui.endFrame()
 end
 
---- unlock horizontal starting position + capture the whole group bounding box into one "item" (so you can use IsItemHovered() or layout primitives such as SameLine() on whole group, etc.)
 ---@return nil @(void)
 function imgui.endGroup()
 end
 
---- only call EndListBox() if BeginListBox() returned true!
 ---@return nil @(void)
 function imgui.endListBox()
 end
 
---- only call EndMainMenuBar() if BeginMainMenuBar() returns true!
 ---@return nil @(void)
 function imgui.endMainMenuBar()
 end
 
---- only call EndMenu() if BeginMenu() returns true!
 ---@return nil @(void)
 function imgui.endMenu()
 end
 
---- only call EndMenuBar() if BeginMenuBar() returns true!
 ---@return nil @(void)
 function imgui.endMenuBar()
 end
 
---- only call EndPopup() if BeginPopupXXX() returns true!
+--- Borrowed IO; invalidated by the next beginMultiSelect()/endMultiSelect() or next frame.
+--- Read and apply Begin's Requests before submitting any items; item submission may clear or replace them.
+--- Also read and apply End's Requests immediately after endMultiSelect(); request snapshots are independent.
+---@return imgui.ImGuiMultiSelectIO @(ImGuiMultiSelectIO*)
+function imgui.endMultiSelect()
+end
+
 ---@return nil @(void)
 function imgui.endPopup()
 end
 
---- only call EndTabBar() if BeginTabBar() returns true!
 ---@return nil @(void)
 function imgui.endTabBar()
 end
 
---- only call EndTabItem() if BeginTabItem() returns true!
 ---@return nil @(void)
 function imgui.endTabItem()
 end
 
---- only call EndTable() if BeginTable() returns true!
 ---@return nil @(void)
 function imgui.endTable()
 end
@@ -1252,19 +1354,16 @@ end
 function imgui.endTooltip()
 end
 
---- this is a helper for backends.
----@param id number @(ImGuiID)
+---@param viewport_id number @(ImGuiID)
 ---@return ImGuiViewport @(ImGuiViewport*)
-function imgui.findViewportByID(id)
+function imgui.findViewportByID(viewport_id)
 end
 
---- get background draw list for the given viewport. this draw list will be the first rendering one. Useful to quickly draw shapestext behind dear imgui contents.
 ---@param viewport ImGuiViewport @(ImGuiViewport*)
 ---@return ImDrawList @(ImDrawList*)
 function imgui.getBackgroundDrawList(viewport)
 end
 
---- get background draw list for the viewport associated to the current window. this draw list will be the first rendering one. Useful to quickly draw shapestext behind dear imgui contents.
 ---@return ImDrawList @(ImDrawList*)
 function imgui.getBackgroundDrawList()
 end
@@ -1273,29 +1372,24 @@ end
 function imgui.getClipboardText()
 end
 
---- get current column index
 ---@return number @(int)
 function imgui.getColumnIndex()
 end
 
---- get position of column line (in pixels, from the left side of the contents region). pass -1 to use current column, otherwise 0..GetColumnsCount() inclusive. column 0 is typically 0.0f
 ---@param column_index number @(int)
 ---@return number @(float)
 function imgui.getColumnOffset(column_index)
 end
 
---- get position of column line (in pixels, from the left side of the contents region). pass -1 to use current column, otherwise 0..GetColumnsCount() inclusive. column 0 is typically 0.0f
 ---@return number @(float)
 function imgui.getColumnOffset()
 end
 
---- get column width (in pixels). pass -1 to use current column
 ---@param column_index number @(int)
 ---@return number @(float)
 function imgui.getColumnWidth(column_index)
 end
 
---- get column width (in pixels). pass -1 to use current column
 ---@return number @(float)
 function imgui.getColumnWidth()
 end
@@ -1304,73 +1398,59 @@ end
 function imgui.getColumnsCount()
 end
 
---- == GetContentRegionMax() - GetCursorPos()
 ---@return ImVec2 @(ImVec2)
 function imgui.getContentRegionAvail()
 end
 
---- current content boundaries (typically window boundaries including scrolling, or current column boundaries), in windows coordinates
----@return ImVec2 @(ImVec2)
-function imgui.getContentRegionMax()
-end
-
---- cursor position in window coordinates (relative to window position)
 ---@return ImVec2 @(ImVec2)
 function imgui.getCursorPos()
 end
 
---- (some functions are using window-relative coordinates, such as: GetCursorPos, GetCursorStartPos, GetContentRegionMax, GetWindowContentRegion* etc.
 ---@return number @(float)
 function imgui.getCursorPosX()
 end
 
---- other functions such as GetCursorScreenPos or everything in ImDrawList::
 ---@return number @(float)
 function imgui.getCursorPosY()
 end
 
---- cursor position in absolute coordinates (useful to work with ImDrawList API). generally top-left == GetMainViewport()->Pos == (0,0) in single viewport mode, and bottom-right == GetMainViewport()->Pos+Size == io.DisplaySize in single-viewport mode.
 ---@return ImVec2 @(ImVec2)
 function imgui.getCursorScreenPos()
 end
 
---- initial cursor position in window coordinates
 ---@return ImVec2 @(ImVec2)
 function imgui.getCursorStartPos()
 end
 
---- get current font size (= height in pixels) of current font with current scale applied
+---@return imgui.ImFontBaked|nil @(ImFontBaked*)
+function imgui.getFontBaked()
+end
+
 ---@return number @(float)
 function imgui.getFontSize()
 end
 
---- get UV coordinate for a while pixel, useful to draw custom shapes via the ImDrawList API
 ---@return ImVec2 @(ImVec2)
 function imgui.getFontTexUvWhitePixel()
 end
 
---- get foreground draw list for the given viewport. this draw list will be the last rendered one. Useful to quickly draw shapestext over dear imgui contents.
 ---@param viewport ImGuiViewport @(ImGuiViewport*)
 ---@return ImDrawList @(ImDrawList*)
 function imgui.getForegroundDrawList(viewport)
 end
 
---- get foreground draw list for the viewport associated to the current window. this draw list will be the last rendered one. Useful to quickly draw shapestext over dear imgui contents.
 ---@return ImDrawList @(ImDrawList*)
 function imgui.getForegroundDrawList()
 end
 
---- get global imgui frame count. incremented by 1 every frame.
 ---@return number @(int)
 function imgui.getFrameCount()
 end
 
---- ~ FontSize + style.FramePadding.y * 2
 ---@return number @(float)
 function imgui.getFrameHeight()
 end
 
---- ~ FontSize + style.FramePadding.y * 2 + style.ItemSpacing.y (distance in pixels between 2 consecutive lines of framed widgets)
 ---@return number @(float)
 function imgui.getFrameHeightWithSpacing()
 end
@@ -1381,39 +1461,56 @@ end
 function imgui.getID(str_id_begin, str_id_end)
 end
 
---- calculate unique ID (hash of whole ID stack + given parameter). e.g. if you want to query into ImGuiStorage yourself
+---@param int_id number @(int)
+---@return number @(ImGuiID)
+function imgui.getID(int_id)
+end
+
 ---@param str_id string @(const char*)
 ---@return number @(ImGuiID)
 function imgui.getID(str_id)
 end
 
---- get ID of last item (~~ often same ImGui::GetID(label) beforehand)
+---@param mouse_button number @(ImGuiMouseButton)
+---@param delay number @(float)
+---@return number @(int)
+function imgui.getItemClickedCountWithSingleClickDelay(mouse_button, delay)
+end
+
+---@param mouse_button number @(ImGuiMouseButton)
+---@return number @(int)
+function imgui.getItemClickedCountWithSingleClickDelay(mouse_button)
+end
+
+---@return number @(int)
+function imgui.getItemClickedCountWithSingleClickDelay()
+end
+
+---@return number @(ImGuiItemFlags)
+function imgui.getItemFlags()
+end
+
 ---@return number @(ImGuiID)
 function imgui.getItemID()
 end
 
---- get lower-right bounding rectangle of the last item (screen space)
 ---@return ImVec2 @(ImVec2)
 function imgui.getItemRectMax()
 end
 
---- get upper-left bounding rectangle of the last item (screen space)
 ---@return ImVec2 @(ImVec2)
 function imgui.getItemRectMin()
 end
 
---- get size of last item
 ---@return ImVec2 @(ImVec2)
 function imgui.getItemRectSize()
 end
 
---- [DEBUG] returns English name of the key. Those names a provided for debugging purpose and are not meant to be saved persistently not compared.
 ---@param key imgui.ImGuiKey @(ImGuiKey)
 ---@return string @(const char*)
 function imgui.getKeyName(key)
 end
 
---- uses provided repeat ratedelay. return a count, most often 0 or 1 but might be >1 if RepeatRate is small enough that DeltaTime > RepeatRate
 ---@param key imgui.ImGuiKey @(ImGuiKey)
 ---@param repeat_delay number @(float)
 ---@param rate number @(float)
@@ -1421,168 +1518,129 @@ end
 function imgui.getKeyPressedAmount(key, repeat_delay, rate)
 end
 
---- return primarydefault viewport. This can never be NULL.
 ---@return ImGuiViewport @(ImGuiViewport*)
 function imgui.getMainViewport()
 end
 
---- return the number of successive mouse-clicks at the time where a click happen (otherwise 0).
 ---@param button number @(ImGuiMouseButton)
 ---@return number @(int)
 function imgui.getMouseClickedCount(button)
 end
 
---- get desired mouse cursor shape. Important: reset in ImGui::NewFrame(), this is updated during the frame. valid before Render(). If you use software rendering by setting io.MouseDrawCursor ImGui will render those for you
 ---@return number @(ImGuiMouseCursor)
 function imgui.getMouseCursor()
 end
 
---- return the delta from the initial clicking position while the mouse button is pressed or was just released. This is locked and return 0.0f until the mouse moves past a distance threshold at least once (if lock_threshold < -1.0f, uses io.MouseDraggingThreshold)
 ---@param button number @(ImGuiMouseButton)
 ---@param lock_threshold number @(float)
 ---@return ImVec2 @(ImVec2)
 function imgui.getMouseDragDelta(button, lock_threshold)
 end
 
---- return the delta from the initial clicking position while the mouse button is pressed or was just released. This is locked and return 0.0f until the mouse moves past a distance threshold at least once (if lock_threshold < -1.0f, uses io.MouseDraggingThreshold)
 ---@param button number @(ImGuiMouseButton)
 ---@return ImVec2 @(ImVec2)
 function imgui.getMouseDragDelta(button)
 end
 
---- return the delta from the initial clicking position while the mouse button is pressed or was just released. This is locked and return 0.0f until the mouse moves past a distance threshold at least once (if lock_threshold < -1.0f, uses io.MouseDraggingThreshold)
 ---@return ImVec2 @(ImVec2)
 function imgui.getMouseDragDelta()
 end
 
---- shortcut to ImGui::GetIO().MousePos provided by user, to be consistent with other calls
 ---@return ImVec2 @(ImVec2)
 function imgui.getMousePos()
 end
 
---- retrieve mouse position at the time of opening popup we have BeginPopup() into (helper to avoid user backing that value themselves)
 ---@return ImVec2 @(ImVec2)
 function imgui.getMousePosOnOpeningCurrentPopup()
 end
 
---- get maximum scrolling amount ~~ ContentSize.x - WindowSize.x - DecorationsSize.x
 ---@return number @(float)
 function imgui.getScrollMaxX()
 end
 
---- get maximum scrolling amount ~~ ContentSize.y - WindowSize.y - DecorationsSize.y
 ---@return number @(float)
 function imgui.getScrollMaxY()
 end
 
---- get scrolling amount [0 .. GetScrollMaxX()]
 ---@return number @(float)
 function imgui.getScrollX()
 end
 
---- get scrolling amount [0 .. GetScrollMaxY()]
 ---@return number @(float)
 function imgui.getScrollY()
 end
 
---- get a string corresponding to the enum value (for display, saving, etc.).
 ---@param idx number @(ImGuiCol)
 ---@return string @(const char*)
 function imgui.getStyleColorName(idx)
 end
 
---- retrieve style color as stored in ImGuiStyle structure. use to feed back into PushStyleColor(), otherwise use GetColorU32() to get style color with style alpha baked in.
 ---@param idx number @(ImGuiCol)
 ---@return ImVec4 @(const ImVec4&)
 function imgui.getStyleColorVec4(idx)
 end
 
---- ~ FontSize
 ---@return number @(float)
 function imgui.getTextLineHeight()
 end
 
---- ~ FontSize + style.ItemSpacing.y (distance in pixels between 2 consecutive lines of text)
 ---@return number @(float)
 function imgui.getTextLineHeightWithSpacing()
 end
 
---- get global imgui time. incremented by io.DeltaTime every frame.
 ---@return number @(double)
 function imgui.getTime()
 end
 
---- horizontal distance preceding label when using TreeNode*() or Bullet() == (g.FontSize + style.FramePadding.x*2) for a regular unframed TreeNode
 ---@return number @(float)
 function imgui.getTreeNodeToLabelSpacing()
 end
 
---- get the compiled version string e.g. "1.80 WIP" (essentially the value for IMGUI_VERSION from the compiled version of imgui.cpp)
 ---@return string @(const char*)
 function imgui.getVersion()
-end
-
---- content boundaries max for the full window (roughly (0,0)+Size-Scroll) where Size can be overridden with SetNextWindowContentSize(), in window coordinates
----@return ImVec2 @(ImVec2)
-function imgui.getWindowContentRegionMax()
-end
-
---- content boundaries min for the full window (roughly (0,0)-Scroll), in window coordinates
----@return ImVec2 @(ImVec2)
-function imgui.getWindowContentRegionMin()
 end
 
 ---@return number @(ImGuiID)
 function imgui.getWindowDockID()
 end
 
---- get DPI scale currently associated to the current window's viewport.
 ---@return number @(float)
 function imgui.getWindowDpiScale()
 end
 
---- get draw list associated to the current window, to append your own drawing primitives
 ---@return ImDrawList @(ImDrawList*)
 function imgui.getWindowDrawList()
 end
 
---- get current window height (shortcut for GetWindowSize().y)
 ---@return number @(float)
 function imgui.getWindowHeight()
 end
 
---- get current window position in screen space (useful if you want to do your own drawing via the DrawList API)
 ---@return ImVec2 @(ImVec2)
 function imgui.getWindowPos()
 end
 
---- get current window size
 ---@return ImVec2 @(ImVec2)
 function imgui.getWindowSize()
 end
 
---- get viewport currently associated to the current window.
 ---@return ImGuiViewport @(ImGuiViewport*)
 function imgui.getWindowViewport()
 end
 
---- get current window width (shortcut for GetWindowSize().x)
 ---@return number @(float)
 function imgui.getWindowWidth()
 end
 
---- move content position toward the right, by indent_w, or style.IndentSpacing if indent_w <= 0
 ---@param indent_w number @(float)
 ---@return nil @(void)
 function imgui.indent(indent_w)
 end
 
---- move content position toward the right, by indent_w, or style.IndentSpacing if indent_w <= 0
 ---@return nil @(void)
 function imgui.indent()
 end
 
---- flexible button behavior without the visuals, frequently useful to build custom behaviors using the public api (along with IsItemActive, IsItemHovered, etc.)
 ---@param str_id string @(const char*)
 ---@param size ImVec2 @(ImVec2)
 ---@param flags number @(ImGuiButtonFlags)
@@ -1590,159 +1648,140 @@ end
 function imgui.invisibleButton(str_id, size, flags)
 end
 
---- flexible button behavior without the visuals, frequently useful to build custom behaviors using the public api (along with IsItemActive, IsItemHovered, etc.)
 ---@param str_id string @(const char*)
 ---@param size ImVec2 @(ImVec2)
 ---@return boolean @(bool)
 function imgui.invisibleButton(str_id, size)
 end
 
---- is any item active?
 ---@return boolean @(bool)
 function imgui.isAnyItemActive()
 end
 
---- is any item focused?
 ---@return boolean @(bool)
 function imgui.isAnyItemFocused()
 end
 
---- is any item hovered?
 ---@return boolean @(bool)
 function imgui.isAnyItemHovered()
 end
 
---- [WILL OBSOLETE] is any mouse button held? This was designed for backends, but prefer having backend maintain a mask of held mouse buttons, because upcoming input queue system will make this invalid.
 ---@return boolean @(bool)
 function imgui.isAnyMouseDown()
 end
 
---- was the last item just made active (item was previously inactive).
 ---@return boolean @(bool)
 function imgui.isItemActivated()
 end
 
---- is the last item active? (e.g. button being held, text field being edited. This will continuously return true while holding mouse button on an item. Items that don't interact will always return false)
 ---@return boolean @(bool)
 function imgui.isItemActive()
 end
 
---- is the last item hovered and mouse clicked on? (**)  == IsMouseClicked(mouse_button) && IsItemHovered()Important. (**) this is NOT equivalent to the behavior of e.g. Button(). Read comments in function definition.
 ---@param mouse_button number @(ImGuiMouseButton)
 ---@return boolean @(bool)
 function imgui.isItemClicked(mouse_button)
 end
 
---- is the last item hovered and mouse clicked on? (**)  == IsMouseClicked(mouse_button) && IsItemHovered()Important. (**) this is NOT equivalent to the behavior of e.g. Button(). Read comments in function definition.
 ---@return boolean @(bool)
 function imgui.isItemClicked()
 end
 
---- was the last item just made inactive (item was previously active). Useful for UndoRedo patterns with widgets that require continuous editing.
 ---@return boolean @(bool)
 function imgui.isItemDeactivated()
 end
 
---- was the last item just made inactive and made a value change when it was active? (e.g. SliderDrag moved). Useful for UndoRedo patterns with widgets that require continuous editing. Note that you may get false positives (some widgets such as Combo()ListBox()Selectable() will return true even when clicking an already selected item).
 ---@return boolean @(bool)
 function imgui.isItemDeactivatedAfterEdit()
 end
 
---- did the last item modify its underlying value this frame? or was pressed? This is generally the same as the "bool" return value of many widgets.
 ---@return boolean @(bool)
 function imgui.isItemEdited()
 end
 
---- is the last item focused for keyboardgamepad navigation?
 ---@return boolean @(bool)
 function imgui.isItemFocused()
 end
 
---- is the last item hovered? (and usable, aka not blocked by a popup, etc.). See ImGuiHoveredFlags for more options.
 ---@param flags number @(ImGuiHoveredFlags)
 ---@return boolean @(bool)
 function imgui.isItemHovered(flags)
 end
 
---- is the last item hovered? (and usable, aka not blocked by a popup, etc.). See ImGuiHoveredFlags for more options.
 ---@return boolean @(bool)
 function imgui.isItemHovered()
 end
 
---- was the last item open state toggled? set by TreeNode().
 ---@return boolean @(bool)
 function imgui.isItemToggledOpen()
 end
 
---- is the last item visible? (items may be out of sight because of clippingscrolling)
+---@return boolean @(bool)
+function imgui.isItemToggledSelection()
+end
+
 ---@return boolean @(bool)
 function imgui.isItemVisible()
 end
 
---- is key being held.
+---@param key_chord number @(ImGuiKeyChord)
+---@return boolean @(bool)
+function imgui.isKeyChordPressed(key_chord)
+end
+
 ---@param key imgui.ImGuiKey @(ImGuiKey)
 ---@return boolean @(bool)
 function imgui.isKeyDown(key)
 end
 
---- was key pressed (went from !Down to Down)? if repeat=true, uses io.KeyRepeatDelay KeyRepeatRate
 ---@param key imgui.ImGuiKey @(ImGuiKey)
 ---@param repeat_ boolean @(bool)
 ---@return boolean @(bool)
 function imgui.isKeyPressed(key, repeat_)
 end
 
---- was key pressed (went from !Down to Down)? if repeat=true, uses io.KeyRepeatDelay KeyRepeatRate
 ---@param key imgui.ImGuiKey @(ImGuiKey)
 ---@return boolean @(bool)
 function imgui.isKeyPressed(key)
 end
 
---- was key released (went from Down to !Down)?
 ---@param key imgui.ImGuiKey @(ImGuiKey)
 ---@return boolean @(bool)
 function imgui.isKeyReleased(key)
 end
 
---- did mouse button clicked? (went from !Down to Down). Same as GetMouseClickedCount() == 1.
 ---@param button number @(ImGuiMouseButton)
 ---@param repeat_ boolean @(bool)
 ---@return boolean @(bool)
 function imgui.isMouseClicked(button, repeat_)
 end
 
---- did mouse button clicked? (went from !Down to Down). Same as GetMouseClickedCount() == 1.
 ---@param button number @(ImGuiMouseButton)
 ---@return boolean @(bool)
 function imgui.isMouseClicked(button)
 end
 
---- did mouse button double-clicked? Same as GetMouseClickedCount() == 2. (note that a double-click will also report IsMouseClicked() == true)
 ---@param button number @(ImGuiMouseButton)
 ---@return boolean @(bool)
 function imgui.isMouseDoubleClicked(button)
 end
 
---- is mouse button held?
 ---@param button number @(ImGuiMouseButton)
 ---@return boolean @(bool)
 function imgui.isMouseDown(button)
 end
 
---- is mouse dragging? (if lock_threshold < -1.0f, uses io.MouseDraggingThreshold)
 ---@param button number @(ImGuiMouseButton)
 ---@param lock_threshold number @(float)
 ---@return boolean @(bool)
 function imgui.isMouseDragging(button, lock_threshold)
 end
 
---- is mouse dragging? (if lock_threshold < -1.0f, uses io.MouseDraggingThreshold)
 ---@param button number @(ImGuiMouseButton)
 ---@return boolean @(bool)
 function imgui.isMouseDragging(button)
 end
 
---- is mouse hovering given bounding rect (in screen space). clipped by current clipping settings, but disregarding of other consideration of focuswindow orderingpopup-block.
 ---@param r_min ImVec2 @(ImVec2)
 ---@param r_max ImVec2 @(ImVec2)
 ---@param clip boolean @(bool)
@@ -1750,40 +1789,45 @@ end
 function imgui.isMouseHoveringRect(r_min, r_max, clip)
 end
 
---- is mouse hovering given bounding rect (in screen space). clipped by current clipping settings, but disregarding of other consideration of focuswindow orderingpopup-block.
 ---@param r_min ImVec2 @(ImVec2)
 ---@param r_max ImVec2 @(ImVec2)
 ---@return boolean @(bool)
 function imgui.isMouseHoveringRect(r_min, r_max)
 end
 
---- did mouse button released? (went from Down to !Down)
 ---@param button number @(ImGuiMouseButton)
 ---@return boolean @(bool)
 function imgui.isMouseReleased(button)
 end
 
---- return true if the popup is open.
+---@param button number @(ImGuiMouseButton)
+---@param delay number @(float)
+---@return boolean @(bool)
+function imgui.isMouseReleasedWithDelay(button, delay)
+end
+
+---@param button number @(ImGuiMouseButton)
+---@return boolean @(bool)
+function imgui.isMouseReleasedWithDelay(button)
+end
+
 ---@param str_id string @(const char*)
 ---@param flags number @(ImGuiPopupFlags)
 ---@return boolean @(bool)
 function imgui.isPopupOpen(str_id, flags)
 end
 
---- return true if the popup is open.
 ---@param str_id string @(const char*)
 ---@return boolean @(bool)
 function imgui.isPopupOpen(str_id)
 end
 
---- test if rectangle (in screen space) is visible not clipped. to perform coarse clipping on user's side.
 ---@param rect_min ImVec2 @(ImVec2)
 ---@param rect_max ImVec2 @(ImVec2)
 ---@return boolean @(bool)
 function imgui.isRectVisible(rect_min, rect_max)
 end
 
---- test if rectangle (of given size, starting from cursor position) is visible not clipped.
 ---@param size ImVec2 @(ImVec2)
 ---@return boolean @(bool)
 function imgui.isRectVisible(size)
@@ -1797,180 +1841,143 @@ end
 function imgui.isWindowCollapsed()
 end
 
---- is current window docked into another window?
 ---@return boolean @(bool)
 function imgui.isWindowDocked()
 end
 
---- is current window focused? or its rootchild, depending on flags. see flags for options.
 ---@param flags number @(ImGuiFocusedFlags)
 ---@return boolean @(bool)
 function imgui.isWindowFocused(flags)
 end
 
---- is current window focused? or its rootchild, depending on flags. see flags for options.
 ---@return boolean @(bool)
 function imgui.isWindowFocused()
 end
 
---- is current window hovered (and typically: not blocked by a popupmodal)? see flags for options. NB: If you are trying to check whether your mouse should be dispatched to imgui or to your app, you should use the 'io.WantCaptureMouse' boolean for that! Please read the FAQ!
 ---@param flags number @(ImGuiHoveredFlags)
 ---@return boolean @(bool)
 function imgui.isWindowHovered(flags)
 end
 
---- is current window hovered (and typically: not blocked by a popupmodal)? see flags for options. NB: If you are trying to check whether your mouse should be dispatched to imgui or to your app, you should use the 'io.WantCaptureMouse' boolean for that! Please read the FAQ!
 ---@return boolean @(bool)
 function imgui.isWindowHovered()
 end
 
---- display text+label aligned the same way as value+label widgets
 ---@param label string @(const char*)
 ---@param fmt string @(const char*)
 ---@return nil @(void)
 function imgui.labelText(label, fmt)
 end
 
---- call after CreateContext() and before the first call to NewFrame(). NewFrame() automatically calls LoadIniSettingsFromDisk(io.IniFilename).
 ---@param ini_filename string @(const char*)
 ---@return nil @(void)
 function imgui.loadIniSettingsFromDisk(ini_filename)
 end
 
---- call after CreateContext() and before the first call to NewFrame() to provide .ini data from your own data source.
 ---@param ini_data string @(const char*)
 ---@param ini_size number @(size_t)
 ---@return nil @(void)
 function imgui.loadIniSettingsFromMemory(ini_data, ini_size)
 end
 
---- call after CreateContext() and before the first call to NewFrame() to provide .ini data from your own data source.
 ---@param ini_data string @(const char*)
 ---@return nil @(void)
 function imgui.loadIniSettingsFromMemory(ini_data)
 end
 
---- helper to display buttons for logging to ttyfileclipboard
 ---@return nil @(void)
 function imgui.logButtons()
 end
 
---- stop logging (close file, etc.)
 ---@return nil @(void)
 function imgui.logFinish()
 end
 
---- pass text data straight to log (without being displayed)
 ---@param fmt string @(const char*)
 ---@return nil @(void)
 function imgui.logText(fmt)
 end
 
---- start logging to OS clipboard
 ---@param auto_open_depth number @(int)
 ---@return nil @(void)
 function imgui.logToClipboard(auto_open_depth)
 end
 
---- start logging to OS clipboard
 ---@return nil @(void)
 function imgui.logToClipboard()
 end
 
---- start logging to file
 ---@param auto_open_depth number @(int)
 ---@param filename string @(const char*)
 ---@return nil @(void)
 function imgui.logToFile(auto_open_depth, filename)
 end
 
---- start logging to file
 ---@param auto_open_depth number @(int)
 ---@return nil @(void)
 function imgui.logToFile(auto_open_depth)
 end
 
---- start logging to file
 ---@return nil @(void)
 function imgui.logToFile()
 end
 
---- start logging to tty (stdout)
 ---@param auto_open_depth number @(int)
 ---@return nil @(void)
 function imgui.logToTTY(auto_open_depth)
 end
 
---- start logging to tty (stdout)
 ---@return nil @(void)
 function imgui.logToTTY()
 end
 
---- start a new Dear ImGui frame, you can submit any command from this point until Render()EndFrame().
 ---@return nil @(void)
 function imgui.newFrame()
 end
 
---- undo a SameLine() or force a new line when in a horizontal-layout context.
 ---@return nil @(void)
 function imgui.newLine()
 end
 
---- next column, defaults to current row or next row if the current row is finished
 ---@return nil @(void)
 function imgui.nextColumn()
 end
 
---- id overload to facilitate calling from nested stacks
 ---@param id number @(ImGuiID)
 ---@param popup_flags number @(ImGuiPopupFlags)
----@return nil @(void)
+---@return boolean @(bool)
 function imgui.openPopup(id, popup_flags)
 end
 
---- call to mark popup as open (don't call every frame!).
 ---@param str_id string @(const char*)
 ---@param popup_flags number @(ImGuiPopupFlags)
----@return nil @(void)
+---@return boolean @(bool)
 function imgui.openPopup(str_id, popup_flags)
 end
 
---- id overload to facilitate calling from nested stacks
 ---@param id number @(ImGuiID)
----@return nil @(void)
+---@return boolean @(bool)
 function imgui.openPopup(id)
 end
 
---- call to mark popup as open (don't call every frame!).
 ---@param str_id string @(const char*)
----@return nil @(void)
+---@return boolean @(bool)
 function imgui.openPopup(str_id)
 end
 
---- helper to open popup when clicked on last item. Default to ImGuiPopupFlags_MouseButtonRight == 1. (note: actually triggers on the mouse _released_ event to be consistent with popup behaviors)
 ---@param str_id string @(const char*)
 ---@param popup_flags number @(ImGuiPopupFlags)
----@return nil @(void)
+---@return boolean @(bool)
 function imgui.openPopupOnItemClick(str_id, popup_flags)
 end
 
---- helper to open popup when clicked on last item. Default to ImGuiPopupFlags_MouseButtonRight == 1. (note: actually triggers on the mouse _released_ event to be consistent with popup behaviors)
 ---@param str_id string @(const char*)
----@return nil @(void)
+---@return boolean @(bool)
 function imgui.openPopupOnItemClick(str_id)
 end
 
---- helper to open popup when clicked on last item. Default to ImGuiPopupFlags_MouseButtonRight == 1. (note: actually triggers on the mouse _released_ event to be consistent with popup behaviors)
----@return nil @(void)
+---@return boolean @(bool)
 function imgui.openPopupOnItemClick()
-end
-
----@return nil @(void)
-function imgui.popAllowKeyboardFocus()
-end
-
----@return nil @(void)
-function imgui.popButtonRepeat()
 end
 
 ---@return nil @(void)
@@ -1981,9 +1988,12 @@ end
 function imgui.popFont()
 end
 
---- pop from the ID stack.
 ---@return nil @(void)
 function imgui.popID()
+end
+
+---@return nil @(void)
+function imgui.popItemFlag()
 end
 
 ---@return nil @(void)
@@ -2030,18 +2040,6 @@ end
 function imgui.progressBar(fraction)
 end
 
---- == tab stop enable. Allow focusing using TABShift-TAB, enabled by default but you can disable it for certain widgets
----@param allow_keyboard_focus boolean @(bool)
----@return nil @(void)
-function imgui.pushAllowKeyboardFocus(allow_keyboard_focus)
-end
-
---- in 'repeat' mode, Button*() functions return repeated true in a typematic manner (using io.KeyRepeatDelayio.KeyRepeatRate setting). Note that you can call IsItemActive() after any Button() to tell if the button is held in the current frame.
----@param repeat_ boolean @(bool)
----@return nil @(void)
-function imgui.pushButtonRepeat(repeat_)
-end
-
 ---@param clip_rect_min ImVec2 @(ImVec2)
 ---@param clip_rect_max ImVec2 @(ImVec2)
 ---@param intersect_with_current_clip_rect boolean @(bool)
@@ -2049,74 +2047,79 @@ end
 function imgui.pushClipRect(clip_rect_min, clip_rect_max, intersect_with_current_clip_rect)
 end
 
---- push width of items for common large "item+label" widgets. >0.0f: width in pixels, <0.0f align xx pixels to the right of window (so -FLT_MIN always align width to the right side).
+---@param option number @(ImGuiItemFlags)
+---@param enabled boolean @(bool)
+---@return nil @(void)
+function imgui.pushItemFlag(option, enabled)
+end
+
 ---@param item_width number @(float)
 ---@return nil @(void)
 function imgui.pushItemWidth(item_width)
 end
 
---- push word-wrapping position for Text*() commands. < 0.0f: no wrapping; 0.0f: wrap to end of window (or column); > 0.0f: wrap at 'wrap_pos_x' position in window local space
+---@param idx number @(ImGuiStyleVar)
+---@param val_x number @(float)
+---@return nil @(void)
+function imgui.pushStyleVarX(idx, val_x)
+end
+
+---@param idx number @(ImGuiStyleVar)
+---@param val_y number @(float)
+---@return nil @(void)
+function imgui.pushStyleVarY(idx, val_y)
+end
+
 ---@param wrap_local_pos_x number @(float)
 ---@return nil @(void)
 function imgui.pushTextWrapPos(wrap_local_pos_x)
 end
 
---- push word-wrapping position for Text*() commands. < 0.0f: no wrapping; 0.0f: wrap to end of window (or column); > 0.0f: wrap at 'wrap_pos_x' position in window local space
 ---@return nil @(void)
 function imgui.pushTextWrapPos()
 end
 
---- ends the Dear ImGui frame, finalize the draw data. You can then get call GetDrawData().
 ---@return nil @(void)
 function imgui.render()
 end
 
---- call in main loop. will call RenderWindowSwapBuffers platform functions for each secondary viewport which doesn't have the ImGuiViewportFlags_Minimized flag set. May be reimplemented by user for custom rendering needs.
 ---@return nil @(void)
 function imgui.renderPlatformWindowsDefault()
 end
 
---- 
 ---@param button number @(ImGuiMouseButton)
 ---@return nil @(void)
 function imgui.resetMouseDragDelta(button)
 end
 
---- 
 ---@return nil @(void)
 function imgui.resetMouseDragDelta()
 end
 
---- call between widgets or groups to layout them horizontally. X position given in window coordinates.
 ---@param offset_from_start_x number @(float)
 ---@param spacing number @(float)
 ---@return nil @(void)
 function imgui.sameLine(offset_from_start_x, spacing)
 end
 
---- call between widgets or groups to layout them horizontally. X position given in window coordinates.
 ---@param offset_from_start_x number @(float)
 ---@return nil @(void)
 function imgui.sameLine(offset_from_start_x)
 end
 
---- call between widgets or groups to layout them horizontally. X position given in window coordinates.
 ---@return nil @(void)
 function imgui.sameLine()
 end
 
---- this is automatically called (if io.IniFilename is not empty) a few seconds after any modification that should be reflected in the .ini file (and also by DestroyContext).
 ---@param ini_filename string @(const char*)
 ---@return nil @(void)
 function imgui.saveIniSettingsToDisk(ini_filename)
 end
 
---- separator, generally horizontal. inside a menu bar or in horizontal layout mode, this becomes a vertical separator.
 ---@return nil @(void)
 function imgui.separator()
 end
 
---- currently: formatted text with an horizontal line
 ---@param label string @(const char*)
 ---@return nil @(void)
 function imgui.separatorText(label)
@@ -2127,152 +2130,153 @@ end
 function imgui.setClipboardText(text)
 end
 
---- initialize current options (generally on application startup) if you want to select a default format, picker type, etc. User will be able to change many settings, unless you pass the _NoOptions flag to your calls.
----@param flags number @(ImGuiColorEditFlags)
----@return nil @(void)
-function imgui.setColorEditOptions(flags)
-end
-
---- set position of column line (in pixels, from the left side of the contents region). pass -1 to use current column
 ---@param column_index number @(int)
 ---@param offset_x number @(float)
 ---@return nil @(void)
 function imgui.setColumnOffset(column_index, offset_x)
 end
 
---- set column width (in pixels). pass -1 to use current column
 ---@param column_index number @(int)
 ---@param width number @(float)
 ---@return nil @(void)
 function imgui.setColumnWidth(column_index, width)
 end
 
---- are using the main, absolute coordinate system.
 ---@param local_pos ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.setCursorPos(local_pos)
 end
 
---- GetWindowPos() + GetCursorPos() == GetCursorScreenPos() etc.)
 ---@param local_x number @(float)
 ---@return nil @(void)
 function imgui.setCursorPosX(local_x)
 end
 
---- 
 ---@param local_y number @(float)
 ---@return nil @(void)
 function imgui.setCursorPosY(local_y)
 end
 
---- cursor position in absolute coordinates
 ---@param pos ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.setCursorScreenPos(pos)
 end
 
---- allow last item to be overlapped by a subsequent item. sometimes useful with invisible buttons, selectables, etc. to catch unused area.
----@return nil @(void)
-function imgui.setItemAllowOverlap()
-end
-
---- make last item the default focused item of a window.
 ---@return nil @(void)
 function imgui.setItemDefaultFocus()
 end
 
---- focus keyboard on the next widget. Use positive 'offset' to access sub components of a multiple component widget. Use -1 to access previous widget.
+---@param key imgui.ImGuiKey @(ImGuiKey)
+---@return boolean @(bool)
+function imgui.setItemKeyOwner(key)
+end
+
+---@param fmt string @(const char*)
+---@return nil @(void)
+function imgui.setItemTooltip(fmt)
+end
+
 ---@param offset number @(int)
 ---@return nil @(void)
 function imgui.setKeyboardFocusHere(offset)
 end
 
---- focus keyboard on the next widget. Use positive 'offset' to access sub components of a multiple component widget. Use -1 to access previous widget.
 ---@return nil @(void)
 function imgui.setKeyboardFocusHere()
 end
 
---- set desired mouse cursor shape
 ---@param cursor_type number @(ImGuiMouseCursor)
 ---@return nil @(void)
 function imgui.setMouseCursor(cursor_type)
 end
 
---- Override io.WantCaptureKeyboard flag next frame (said flag is left for your application to handle, typically when true it instructs your app to ignore inputs). e.g. force capture keyboard when your widget is being hovered. This is equivalent to setting "io.WantCaptureKeyboard = want_capture_keyboard"; after the next NewFrame() call.
+---@param visible boolean @(bool)
+---@return nil @(void)
+function imgui.setNavCursorVisible(visible)
+end
+
 ---@param want_capture_keyboard boolean @(bool)
 ---@return nil @(void)
 function imgui.setNextFrameWantCaptureKeyboard(want_capture_keyboard)
 end
 
---- Override io.WantCaptureMouse flag next frame (said flag is left for your application to handle, typical when true it instucts your app to ignore inputs). This is equivalent to setting "io.WantCaptureMouse = want_capture_mouse;" after the next NewFrame() call.
 ---@param want_capture_mouse boolean @(bool)
 ---@return nil @(void)
 function imgui.setNextFrameWantCaptureMouse(want_capture_mouse)
 end
 
---- set next TreeNodeCollapsingHeader open state.
+---@return nil @(void)
+function imgui.setNextItemAllowOverlap()
+end
+
 ---@param is_open boolean @(bool)
 ---@param cond number @(ImGuiCond)
 ---@return nil @(void)
 function imgui.setNextItemOpen(is_open, cond)
 end
 
---- set next TreeNodeCollapsingHeader open state.
 ---@param is_open boolean @(bool)
 ---@return nil @(void)
 function imgui.setNextItemOpen(is_open)
 end
 
---- set width of the _next_ common large "item+label" widget. >0.0f: width in pixels, <0.0f align xx pixels to the right of window (so -FLT_MIN always align width to the right side)
+---@param key_chord number @(ImGuiKeyChord)
+---@param flags number @(ImGuiInputFlags)
+---@return nil @(void)
+function imgui.setNextItemShortcut(key_chord, flags)
+end
+
+---@param key_chord number @(ImGuiKeyChord)
+---@return nil @(void)
+function imgui.setNextItemShortcut(key_chord)
+end
+
+---@param storage_id number @(ImGuiID)
+---@return nil @(void)
+function imgui.setNextItemStorageID(storage_id)
+end
+
 ---@param item_width number @(float)
 ---@return nil @(void)
 function imgui.setNextItemWidth(item_width)
 end
 
---- set next window background color alpha. helper to easily override the Alpha component of ImGuiCol_WindowBgChildBgPopupBg. you may also use ImGuiWindowFlags_NoBackground.
 ---@param alpha number @(float)
 ---@return nil @(void)
 function imgui.setNextWindowBgAlpha(alpha)
 end
 
---- set next window collapsed state. call before Begin()
 ---@param collapsed boolean @(bool)
 ---@param cond number @(ImGuiCond)
 ---@return nil @(void)
 function imgui.setNextWindowCollapsed(collapsed, cond)
 end
 
---- set next window collapsed state. call before Begin()
 ---@param collapsed boolean @(bool)
 ---@return nil @(void)
 function imgui.setNextWindowCollapsed(collapsed)
 end
 
---- set next window content size (~ scrollable client area, which enforce the range of scrollbars). Not including window decorations (title bar, menu bar, etc.) nor WindowPadding. set an axis to 0.0f to leave it automatic. call before Begin()
 ---@param size ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.setNextWindowContentSize(size)
 end
 
---- set next window dock id
 ---@param dock_id number @(ImGuiID)
 ---@param cond number @(ImGuiCond)
 ---@return nil @(void)
 function imgui.setNextWindowDockID(dock_id, cond)
 end
 
---- set next window dock id
 ---@param dock_id number @(ImGuiID)
 ---@return nil @(void)
 function imgui.setNextWindowDockID(dock_id)
 end
 
---- set next window to be focused top-most. call before Begin()
 ---@return nil @(void)
 function imgui.setNextWindowFocus()
 end
 
---- set next window position. call before Begin(). use pivot=(0.5f,0.5f) to center on given point, etc.
 ---@param pos ImVec2 @(ImVec2)
 ---@param cond number @(ImGuiCond)
 ---@param pivot ImVec2 @(ImVec2)
@@ -2280,132 +2284,104 @@ end
 function imgui.setNextWindowPos(pos, cond, pivot)
 end
 
---- set next window position. call before Begin(). use pivot=(0.5f,0.5f) to center on given point, etc.
 ---@param pos ImVec2 @(ImVec2)
 ---@param cond number @(ImGuiCond)
 ---@return nil @(void)
 function imgui.setNextWindowPos(pos, cond)
 end
 
---- set next window position. call before Begin(). use pivot=(0.5f,0.5f) to center on given point, etc.
 ---@param pos ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.setNextWindowPos(pos)
 end
 
---- set next window scrolling value (use < 0.0f to not affect a given axis).
 ---@param scroll ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.setNextWindowScroll(scroll)
 end
 
---- set next window size. set axis to 0.0f to force an auto-fit on this axis. call before Begin()
 ---@param size ImVec2 @(ImVec2)
 ---@param cond number @(ImGuiCond)
 ---@return nil @(void)
 function imgui.setNextWindowSize(size, cond)
 end
 
---- set next window size. set axis to 0.0f to force an auto-fit on this axis. call before Begin()
 ---@param size ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.setNextWindowSize(size)
 end
 
---- set next window size limits. use -1,-1 on either XY axis to preserve the current size. Sizes will be rounded down. Use callback to apply non-trivial programmatic constraints.
----@param size_min ImVec2 @(ImVec2)
----@param size_max ImVec2 @(ImVec2)
----@param custom_callback void ()(ImGuiSizeCallbackData ) @(ImGuiSizeCallback)
----@return nil @(void)
-function imgui.setNextWindowSizeConstraints(size_min, size_max, custom_callback)
-end
-
---- set next window size limits. use -1,-1 on either XY axis to preserve the current size. Sizes will be rounded down. Use callback to apply non-trivial programmatic constraints.
 ---@param size_min ImVec2 @(ImVec2)
 ---@param size_max ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.setNextWindowSizeConstraints(size_min, size_max)
 end
 
---- set next window viewport
 ---@param viewport_id number @(ImGuiID)
 ---@return nil @(void)
 function imgui.setNextWindowViewport(viewport_id)
 end
 
---- adjust scrolling amount to make given position visible. Generally GetCursorStartPos() + offset to compute a valid position.
 ---@param local_x number @(float)
 ---@param center_x_ratio number @(float)
 ---@return nil @(void)
 function imgui.setScrollFromPosX(local_x, center_x_ratio)
 end
 
---- adjust scrolling amount to make given position visible. Generally GetCursorStartPos() + offset to compute a valid position.
 ---@param local_x number @(float)
 ---@return nil @(void)
 function imgui.setScrollFromPosX(local_x)
 end
 
---- adjust scrolling amount to make given position visible. Generally GetCursorStartPos() + offset to compute a valid position.
 ---@param local_y number @(float)
 ---@param center_y_ratio number @(float)
 ---@return nil @(void)
 function imgui.setScrollFromPosY(local_y, center_y_ratio)
 end
 
---- adjust scrolling amount to make given position visible. Generally GetCursorStartPos() + offset to compute a valid position.
 ---@param local_y number @(float)
 ---@return nil @(void)
 function imgui.setScrollFromPosY(local_y)
 end
 
---- adjust scrolling amount to make current cursor position visible. center_x_ratio=0.0: left, 0.5: center, 1.0: right. When using to make a "defaultcurrent item" visible, consider using SetItemDefaultFocus() instead.
 ---@param center_x_ratio number @(float)
 ---@return nil @(void)
 function imgui.setScrollHereX(center_x_ratio)
 end
 
---- adjust scrolling amount to make current cursor position visible. center_x_ratio=0.0: left, 0.5: center, 1.0: right. When using to make a "defaultcurrent item" visible, consider using SetItemDefaultFocus() instead.
 ---@return nil @(void)
 function imgui.setScrollHereX()
 end
 
---- adjust scrolling amount to make current cursor position visible. center_y_ratio=0.0: top, 0.5: center, 1.0: bottom. When using to make a "defaultcurrent item" visible, consider using SetItemDefaultFocus() instead.
 ---@param center_y_ratio number @(float)
 ---@return nil @(void)
 function imgui.setScrollHereY(center_y_ratio)
 end
 
---- adjust scrolling amount to make current cursor position visible. center_y_ratio=0.0: top, 0.5: center, 1.0: bottom. When using to make a "defaultcurrent item" visible, consider using SetItemDefaultFocus() instead.
 ---@return nil @(void)
 function imgui.setScrollHereY()
 end
 
---- set scrolling amount [0 .. GetScrollMaxX()]
 ---@param scroll_x number @(float)
 ---@return nil @(void)
 function imgui.setScrollX(scroll_x)
 end
 
---- set scrolling amount [0 .. GetScrollMaxY()]
 ---@param scroll_y number @(float)
 ---@return nil @(void)
 function imgui.setScrollY(scroll_y)
 end
 
---- notify TabBar or Docking system of a closed tabwindow ahead (useful to reduce visual flicker on reorderable tab bars). For tab-bar: call after BeginTabBar() and before Tab submissions. Otherwise call with a window name.
 ---@param tab_or_docked_window_label string @(const char*)
 ---@return nil @(void)
 function imgui.setTabItemClosed(tab_or_docked_window_label)
 end
 
---- set a text-only tooltip, typically use with ImGui::IsItemHovered(). override any previous call to SetTooltip().
 ---@param fmt string @(const char*)
 ---@return nil @(void)
 function imgui.setTooltip(fmt)
 end
 
---- set named window collapsed state
 ---@param name string @(const char*)
 ---@param collapsed boolean @(bool)
 ---@param cond number @(ImGuiCond)
@@ -2413,44 +2389,32 @@ end
 function imgui.setWindowCollapsed(name, collapsed, cond)
 end
 
---- set named window collapsed state
 ---@param name string @(const char*)
 ---@param collapsed boolean @(bool)
 ---@return nil @(void)
 function imgui.setWindowCollapsed(name, collapsed)
 end
 
---- (not recommended) set current window collapsed state. prefer using SetNextWindowCollapsed().
 ---@param collapsed boolean @(bool)
 ---@param cond number @(ImGuiCond)
 ---@return nil @(void)
 function imgui.setWindowCollapsed(collapsed, cond)
 end
 
---- (not recommended) set current window collapsed state. prefer using SetNextWindowCollapsed().
 ---@param collapsed boolean @(bool)
 ---@return nil @(void)
 function imgui.setWindowCollapsed(collapsed)
 end
 
---- set named window to be focused top-most. use NULL to remove focus.
 ---@param name string @(const char*)
 ---@return nil @(void)
 function imgui.setWindowFocus(name)
 end
 
---- (not recommended) set current window to be focused top-most. prefer using SetNextWindowFocus().
 ---@return nil @(void)
 function imgui.setWindowFocus()
 end
 
---- [OBSOLETE] set font scale. Adjust IO.FontGlobalScale if you want to scale all windows. This is an old API! For correct scaling, prefer to reload font + rebuild ImFontAtlas + call style.ScaleAllSizes().
----@param scale number @(float)
----@return nil @(void)
-function imgui.setWindowFontScale(scale)
-end
-
---- set named window position.
 ---@param name string @(const char*)
 ---@param pos ImVec2 @(ImVec2)
 ---@param cond number @(ImGuiCond)
@@ -2458,27 +2422,23 @@ end
 function imgui.setWindowPos(name, pos, cond)
 end
 
---- set named window position.
 ---@param name string @(const char*)
 ---@param pos ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.setWindowPos(name, pos)
 end
 
---- (not recommended) set current window position - call within Begin()End(). prefer using SetNextWindowPos(), as this may incur tearing and side-effects.
 ---@param pos ImVec2 @(ImVec2)
 ---@param cond number @(ImGuiCond)
 ---@return nil @(void)
 function imgui.setWindowPos(pos, cond)
 end
 
---- (not recommended) set current window position - call within Begin()End(). prefer using SetNextWindowPos(), as this may incur tearing and side-effects.
 ---@param pos ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.setWindowPos(pos)
 end
 
---- set named window size. set axis to 0.0f to force an auto-fit on this axis.
 ---@param name string @(const char*)
 ---@param size ImVec2 @(ImVec2)
 ---@param cond number @(ImGuiCond)
@@ -2486,139 +2446,142 @@ end
 function imgui.setWindowSize(name, size, cond)
 end
 
---- set named window size. set axis to 0.0f to force an auto-fit on this axis.
 ---@param name string @(const char*)
 ---@param size ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.setWindowSize(name, size)
 end
 
---- (not recommended) set current window size - call within Begin()End(). set to ImVec2(0, 0) to force an auto-fit. prefer using SetNextWindowSize(), as this may incur tearing and minor side-effects.
 ---@param size ImVec2 @(ImVec2)
 ---@param cond number @(ImGuiCond)
 ---@return nil @(void)
 function imgui.setWindowSize(size, cond)
 end
 
---- (not recommended) set current window size - call within Begin()End(). set to ImVec2(0, 0) to force an auto-fit. prefer using SetNextWindowSize(), as this may incur tearing and minor side-effects.
 ---@param size ImVec2 @(ImVec2)
 ---@return nil @(void)
 function imgui.setWindowSize(size)
 end
 
---- add font selector block (not a window), essentially a combo listing the loaded fonts.
+---@param key_chord number @(ImGuiKeyChord)
+---@param flags number @(ImGuiInputFlags)
+---@return boolean @(bool)
+function imgui.shortcut(key_chord, flags)
+end
+
+---@param key_chord number @(ImGuiKeyChord)
+---@return boolean @(bool)
+function imgui.shortcut(key_chord)
+end
+
+---@return nil @(void)
+function imgui.showDebugLogWindow()
+end
+
 ---@param label string @(const char*)
 ---@return nil @(void)
 function imgui.showFontSelector(label)
 end
 
---- add style selector block (not a window), essentially a combo listing the default styles.
+---@return nil @(void)
+function imgui.showIDStackToolWindow()
+end
+
 ---@param label string @(const char*)
 ---@return boolean @(bool)
 function imgui.showStyleSelector(label)
 end
 
---- add basic helpinfo block (not a window): how to manipulate ImGui as an end-user (mousekeyboard controls).
 ---@return nil @(void)
 function imgui.showUserGuide()
 end
 
---- button with FramePadding=(0,0) to easily embed within text
 ---@param label string @(const char*)
 ---@return boolean @(bool)
 function imgui.smallButton(label)
 end
 
---- add vertical spacing.
 ---@return nil @(void)
 function imgui.spacing()
 end
 
---- create a Tab behaving like a button. return true when clicked. cannot be selected in the tab bar.
 ---@param label string @(const char*)
 ---@param flags number @(ImGuiTabItemFlags)
 ---@return boolean @(bool)
 function imgui.tabItemButton(label, flags)
 end
 
---- create a Tab behaving like a button. return true when clicked. cannot be selected in the tab bar.
 ---@param label string @(const char*)
 ---@return boolean @(bool)
 function imgui.tabItemButton(label)
 end
 
---- return number of columns (value passed to BeginTable)
+---@return nil @(void)
+function imgui.tableAngledHeadersRow()
+end
+
 ---@return number @(int)
 function imgui.tableGetColumnCount()
 end
 
---- return column flags so you can query their EnabledVisibleSortedHovered status flags. Pass -1 to use current column.
 ---@param column_n number @(int)
 ---@return number @(ImGuiTableColumnFlags)
 function imgui.tableGetColumnFlags(column_n)
 end
 
---- return column flags so you can query their EnabledVisibleSortedHovered status flags. Pass -1 to use current column.
 ---@return number @(ImGuiTableColumnFlags)
 function imgui.tableGetColumnFlags()
 end
 
---- return current column index.
 ---@return number @(int)
 function imgui.tableGetColumnIndex()
 end
 
---- return "" if column didn't have a name declared by TableSetupColumn(). Pass -1 to use current column.
 ---@param column_n number @(int)
 ---@return string @(const char*)
 function imgui.tableGetColumnName(column_n)
 end
 
---- return "" if column didn't have a name declared by TableSetupColumn(). Pass -1 to use current column.
 ---@return string @(const char*)
 function imgui.tableGetColumnName()
 end
 
---- return current row index.
+---@return number @(int)
+function imgui.tableGetHoveredColumn()
+end
+
 ---@return number @(int)
 function imgui.tableGetRowIndex()
 end
 
---- submit one header cell manually (rarely used)
 ---@param label string @(const char*)
 ---@return nil @(void)
 function imgui.tableHeader(label)
 end
 
---- submit all headers cells based on data provided to TableSetupColumn() + submit context menu
 ---@return nil @(void)
 function imgui.tableHeadersRow()
 end
 
---- append into the next column (or first column of next row if currently in last column). Return true when column is visible.
 ---@return boolean @(bool)
 function imgui.tableNextColumn()
 end
 
---- append into the first cell of a new row.
 ---@param row_flags number @(ImGuiTableRowFlags)
 ---@param min_row_height number @(float)
 ---@return nil @(void)
 function imgui.tableNextRow(row_flags, min_row_height)
 end
 
---- append into the first cell of a new row.
 ---@param row_flags number @(ImGuiTableRowFlags)
 ---@return nil @(void)
 function imgui.tableNextRow(row_flags)
 end
 
---- append into the first cell of a new row.
 ---@return nil @(void)
 function imgui.tableNextRow()
 end
 
---- change the color of a cell, row, or column. See ImGuiTableBgTarget_ flags for details.
 ---@param target number @(ImGuiTableBgTarget)
 ---@param color number @(ImU32)
 ---@param column_n number @(int)
@@ -2626,21 +2589,18 @@ end
 function imgui.tableSetBgColor(target, color, column_n)
 end
 
---- change the color of a cell, row, or column. See ImGuiTableBgTarget_ flags for details.
 ---@param target number @(ImGuiTableBgTarget)
 ---@param color number @(ImU32)
 ---@return nil @(void)
 function imgui.tableSetBgColor(target, color)
 end
 
---- change user accessible enableddisabled state of a column. Set to false to hide the column. User can use the context menu to change this themselves (right-click in headers, or right-click in columns body with ImGuiTableFlags_ContextMenuInBody)
 ---@param column_n number @(int)
 ---@param v boolean @(bool)
 ---@return nil @(void)
 function imgui.tableSetColumnEnabled(column_n, v)
 end
 
---- append into the specified column. Return true when column is visible.
 ---@param column_n number @(int)
 ---@return boolean @(bool)
 function imgui.tableSetColumnIndex(column_n)
@@ -2649,9 +2609,9 @@ end
 ---@param label string @(const char*)
 ---@param flags number @(ImGuiTableColumnFlags)
 ---@param init_width_or_weight number @(float)
----@param user_id number @(ImGuiID)
+---@param user_data number @(ImGuiID)
 ---@return nil @(void)
-function imgui.tableSetupColumn(label, flags, init_width_or_weight, user_id)
+function imgui.tableSetupColumn(label, flags, init_width_or_weight, user_data)
 end
 
 ---@param label string @(const char*)
@@ -2672,52 +2632,60 @@ end
 function imgui.tableSetupColumn(label)
 end
 
---- lock columnsrows so they stay visible when scrolled.
 ---@param cols number @(int)
 ---@param rows number @(int)
 ---@return nil @(void)
 function imgui.tableSetupScrollFreeze(cols, rows)
 end
 
---- formatted text
 ---@param fmt string @(const char*)
 ---@return nil @(void)
 function imgui.text(fmt)
 end
 
---- shortcut for PushStyleColor(ImGuiCol_Text, col); Text(fmt, ...); PopStyleColor();
 ---@param col ImVec4 @(ImVec4)
 ---@param fmt string @(const char*)
 ---@return nil @(void)
 function imgui.textColored(col, fmt)
 end
 
---- shortcut for PushStyleColor(ImGuiCol_Text, style.Colors[ImGuiCol_TextDisabled]); Text(fmt, ...); PopStyleColor();
 ---@param fmt string @(const char*)
 ---@return nil @(void)
 function imgui.textDisabled(fmt)
 end
 
---- raw text without formatting. Roughly equivalent to Text("%s", text) but: A) doesn't require null terminated string if 'text_end' is specified, B) it's faster, no memory copy is done, no buffer size limits, recommended for long chunks of text.
+---@param label string @(const char*)
+---@return boolean @(bool)
+function imgui.textLink(label)
+end
+
+---@param label string @(const char*)
+---@param url string @(const char*)
+---@return boolean @(bool)
+function imgui.textLinkOpenURL(label, url)
+end
+
+---@param label string @(const char*)
+---@return boolean @(bool)
+function imgui.textLinkOpenURL(label)
+end
+
 ---@param text string @(const char*)
 ---@param text_end string @(const char*)
 ---@return nil @(void)
 function imgui.textUnformatted(text, text_end)
 end
 
---- raw text without formatting. Roughly equivalent to Text("%s", text) but: A) doesn't require null terminated string if 'text_end' is specified, B) it's faster, no memory copy is done, no buffer size limits, recommended for long chunks of text.
 ---@param text string @(const char*)
 ---@return nil @(void)
 function imgui.textUnformatted(text)
 end
 
---- shortcut for PushTextWrapPos(0.0f); Text(fmt, ...); PopTextWrapPos();. Note that this won't work on an auto-resizing window if there's no other widgets to extend the window width, yoy may need to set a size using SetNextWindowSize().
 ---@param fmt string @(const char*)
 ---@return nil @(void)
 function imgui.textWrapped(fmt)
 end
 
---- helper variation to easily decorelate the id from the displayed string. Read the FAQ about why and how to use ID. to align arbitrary text at the same level as a TreeNode() you can use Bullet().
 ---@param str_id string @(const char*)
 ---@param fmt string @(const char*)
 ---@return boolean @(bool)
@@ -2747,29 +2715,29 @@ end
 function imgui.treeNodeEx(label)
 end
 
---- ~ Unindent()+PopId()
+---@param storage_id number @(ImGuiID)
+---@return boolean @(bool)
+function imgui.treeNodeGetOpen(storage_id)
+end
+
 ---@return nil @(void)
 function imgui.treePop()
 end
 
---- ~ Indent()+PushId(). Already called by TreeNode() when returning true, but you can call TreePushTreePop yourself if desired.
 ---@param str_id string @(const char*)
 ---@return nil @(void)
 function imgui.treePush(str_id)
 end
 
---- move content position back to the left, by indent_w, or style.IndentSpacing if indent_w <= 0
 ---@param indent_w number @(float)
 ---@return nil @(void)
 function imgui.unindent(indent_w)
 end
 
---- move content position back to the left, by indent_w, or style.IndentSpacing if indent_w <= 0
 ---@return nil @(void)
 function imgui.unindent()
 end
 
---- call in main loop. will call CreateWindowResizeWindowetc. platform functions for each secondary viewport, and DestroyWindow for each inactive viewport.
 ---@return nil @(void)
 function imgui.updatePlatformWindows()
 end

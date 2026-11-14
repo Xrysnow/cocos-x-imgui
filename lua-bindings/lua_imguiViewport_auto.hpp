@@ -1,6 +1,6 @@
 #pragma once
 #include "base/ccConfig.h"
-#include "lua_conversion.hpp"
+#include "imgui_lua.hpp"
 
 extern int luaReg_imguiViewport_imguiImGuiViewportFlags(lua_State* lua_S);
 extern int luaReg_imguiViewport_imguiImGuiViewport(lua_State* lua_S);

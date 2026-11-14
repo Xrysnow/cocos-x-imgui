@@ -1,4 +1,4 @@
-#include "lua_imguiColorTextEdit_auto.hpp"
+#include "lua_ImGuiColorTextEdit_auto.hpp"
 #include "../CCImGuiColorTextEdit.h"
 #include "imgui_lua.hpp"
 
@@ -78,7 +78,7 @@ int lua_ImGui_ColorTextEdit_cut(lua_State* lua_S)
 int lua_ImGui_ColorTextEdit_delete(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:delete");
-	LUA_TRY_INVOKE(0, &ImGui::ColorTextEdit::delete_);
+	LUA_TRY_INVOKE(0, static_cast<void(ImGui::ColorTextEdit::*)()>(&ImGui::ColorTextEdit::delete_));
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_ImGui_ColorTextEdit_getCurrentLineText(lua_State* lua_S)
@@ -234,62 +234,62 @@ int lua_ImGui_ColorTextEdit_isTextChanged(lua_State* lua_S)
 int lua_ImGui_ColorTextEdit_moveBottom(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:moveBottom");
-	LUA_TRY_INVOKE(1, static_cast<void(ImGui::ColorTextEdit::*)(bool)>(&ImGui::ColorTextEdit::moveBottom));
+	LUA_TRY_INVOKE(1, &ImGui::ColorTextEdit::moveBottom);
 	LUA_TRY_INVOKE(0, [](ImGui::ColorTextEdit* obj){{return obj->moveBottom();}});
 	LUA_INVOKE_FOOTER("0,1");
 }
 int lua_ImGui_ColorTextEdit_moveDown(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:moveDown");
-	LUA_TRY_INVOKE(2, static_cast<void(ImGui::ColorTextEdit::*)(int, bool)>(&ImGui::ColorTextEdit::moveDown));
-	LUA_TRY_INVOKE(1, [](ImGui::ColorTextEdit* obj,int arg0){{return obj->moveDown(std::move(arg0));}});
+	LUA_TRY_INVOKE(2, &ImGui::ColorTextEdit::moveDown);
+	LUA_TRY_INVOKE(1, ([](ImGui::ColorTextEdit* obj,int arg0){{return obj->moveDown(std::move(arg0));}}));
 	LUA_TRY_INVOKE(0, [](ImGui::ColorTextEdit* obj){{return obj->moveDown();}});
 	LUA_INVOKE_FOOTER("0,1,2");
 }
 int lua_ImGui_ColorTextEdit_moveEnd(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:moveEnd");
-	LUA_TRY_INVOKE(1, static_cast<void(ImGui::ColorTextEdit::*)(bool)>(&ImGui::ColorTextEdit::moveEnd));
+	LUA_TRY_INVOKE(1, &ImGui::ColorTextEdit::moveEnd);
 	LUA_TRY_INVOKE(0, [](ImGui::ColorTextEdit* obj){{return obj->moveEnd();}});
 	LUA_INVOKE_FOOTER("0,1");
 }
 int lua_ImGui_ColorTextEdit_moveHome(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:moveHome");
-	LUA_TRY_INVOKE(1, static_cast<void(ImGui::ColorTextEdit::*)(bool)>(&ImGui::ColorTextEdit::moveHome));
+	LUA_TRY_INVOKE(1, &ImGui::ColorTextEdit::moveHome);
 	LUA_TRY_INVOKE(0, [](ImGui::ColorTextEdit* obj){{return obj->moveHome();}});
 	LUA_INVOKE_FOOTER("0,1");
 }
 int lua_ImGui_ColorTextEdit_moveLeft(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:moveLeft");
-	LUA_TRY_INVOKE(3, static_cast<void(ImGui::ColorTextEdit::*)(int, bool, bool)>(&ImGui::ColorTextEdit::moveLeft));
-	LUA_TRY_INVOKE(2, [](ImGui::ColorTextEdit* obj,int arg0,bool arg1){{return obj->moveLeft(std::move(arg0),std::move(arg1));}});
-	LUA_TRY_INVOKE(1, [](ImGui::ColorTextEdit* obj,int arg0){{return obj->moveLeft(std::move(arg0));}});
+	LUA_TRY_INVOKE(3, &ImGui::ColorTextEdit::moveLeft);
+	LUA_TRY_INVOKE(2, ([](ImGui::ColorTextEdit* obj,int arg0,bool arg1){{return obj->moveLeft(std::move(arg0),std::move(arg1));}}));
+	LUA_TRY_INVOKE(1, ([](ImGui::ColorTextEdit* obj,int arg0){{return obj->moveLeft(std::move(arg0));}}));
 	LUA_TRY_INVOKE(0, [](ImGui::ColorTextEdit* obj){{return obj->moveLeft();}});
 	LUA_INVOKE_FOOTER("0,1,2,3");
 }
 int lua_ImGui_ColorTextEdit_moveRight(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:moveRight");
-	LUA_TRY_INVOKE(3, static_cast<void(ImGui::ColorTextEdit::*)(int, bool, bool)>(&ImGui::ColorTextEdit::moveRight));
-	LUA_TRY_INVOKE(2, [](ImGui::ColorTextEdit* obj,int arg0,bool arg1){{return obj->moveRight(std::move(arg0),std::move(arg1));}});
-	LUA_TRY_INVOKE(1, [](ImGui::ColorTextEdit* obj,int arg0){{return obj->moveRight(std::move(arg0));}});
+	LUA_TRY_INVOKE(3, &ImGui::ColorTextEdit::moveRight);
+	LUA_TRY_INVOKE(2, ([](ImGui::ColorTextEdit* obj,int arg0,bool arg1){{return obj->moveRight(std::move(arg0),std::move(arg1));}}));
+	LUA_TRY_INVOKE(1, ([](ImGui::ColorTextEdit* obj,int arg0){{return obj->moveRight(std::move(arg0));}}));
 	LUA_TRY_INVOKE(0, [](ImGui::ColorTextEdit* obj){{return obj->moveRight();}});
 	LUA_INVOKE_FOOTER("0,1,2,3");
 }
 int lua_ImGui_ColorTextEdit_moveTop(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:moveTop");
-	LUA_TRY_INVOKE(1, static_cast<void(ImGui::ColorTextEdit::*)(bool)>(&ImGui::ColorTextEdit::moveTop));
+	LUA_TRY_INVOKE(1, &ImGui::ColorTextEdit::moveTop);
 	LUA_TRY_INVOKE(0, [](ImGui::ColorTextEdit* obj){{return obj->moveTop();}});
 	LUA_INVOKE_FOOTER("0,1");
 }
 int lua_ImGui_ColorTextEdit_moveUp(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:moveUp");
-	LUA_TRY_INVOKE(2, static_cast<void(ImGui::ColorTextEdit::*)(int, bool)>(&ImGui::ColorTextEdit::moveUp));
-	LUA_TRY_INVOKE(1, [](ImGui::ColorTextEdit* obj,int arg0){{return obj->moveUp(std::move(arg0));}});
+	LUA_TRY_INVOKE(2, &ImGui::ColorTextEdit::moveUp);
+	LUA_TRY_INVOKE(1, ([](ImGui::ColorTextEdit* obj,int arg0){{return obj->moveUp(std::move(arg0));}}));
 	LUA_TRY_INVOKE(0, [](ImGui::ColorTextEdit* obj){{return obj->moveUp();}});
 	LUA_INVOKE_FOOTER("0,1,2");
 }
@@ -302,16 +302,16 @@ int lua_ImGui_ColorTextEdit_paste(lua_State* lua_S)
 int lua_ImGui_ColorTextEdit_redo(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:redo");
-	LUA_TRY_INVOKE(1, static_cast<void(ImGui::ColorTextEdit::*)(int)>(&ImGui::ColorTextEdit::redo));
+	LUA_TRY_INVOKE(1, &ImGui::ColorTextEdit::redo);
 	LUA_TRY_INVOKE(0, [](ImGui::ColorTextEdit* obj){{return obj->redo();}});
 	LUA_INVOKE_FOOTER("0,1");
 }
 int lua_ImGui_ColorTextEdit_render(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:render");
-	LUA_TRY_INVOKE(3, static_cast<void(ImGui::ColorTextEdit::*)(const char*, const cocos2d::Vec2&, bool)>(&ImGui::ColorTextEdit::render));
-	LUA_TRY_INVOKE(2, [](ImGui::ColorTextEdit* obj,const char* arg0,const cocos2d::Vec2& arg1){{return obj->render(arg0,arg1);}});
-	LUA_TRY_INVOKE(1, [](ImGui::ColorTextEdit* obj,const char* arg0){{return obj->render(arg0);}});
+	LUA_TRY_INVOKE(3, &ImGui::ColorTextEdit::render);
+	LUA_TRY_INVOKE(2, ([](ImGui::ColorTextEdit* obj,const char* arg0,const cocos2d::Vec2& arg1){{return obj->render(arg0,arg1);}}));
+	LUA_TRY_INVOKE(1, ([](ImGui::ColorTextEdit* obj,const char* arg0){{return obj->render(arg0);}}));
 	LUA_INVOKE_FOOTER("1,2,3");
 }
 int lua_ImGui_ColorTextEdit_selectAll(lua_State* lua_S)
@@ -395,10 +395,10 @@ int lua_ImGui_ColorTextEdit_setLanguageCPlusPlus(lua_State* lua_S)
 int lua_ImGui_ColorTextEdit_setLanguageDefinition(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:setLanguageDefinition");
-	LUA_TRY_INVOKE(11, static_cast<void(ImGui::ColorTextEdit::*)(const std::string&, const std::unordered_set<std::basic_string<char>>&, const std::unordered_map<std::basic_string<char>, std::basic_string<char>>&, const std::unordered_map<std::basic_string<char>, std::basic_string<char>>&, const std::vector<std::pair<std::basic_string<char>, ImGui::ColorTextEdit::PaletteIndex>>&, const std::string&, const std::string&, const std::string&, const std::string&, bool, bool)>(&ImGui::ColorTextEdit::setLanguageDefinition));
-	LUA_TRY_INVOKE(10, [](ImGui::ColorTextEdit* obj,const std::string& arg0,const std::unordered_set<std::basic_string<char>>& arg1,const std::unordered_map<std::basic_string<char>, std::basic_string<char>>& arg2,const std::unordered_map<std::basic_string<char>, std::basic_string<char>>& arg3,const std::vector<std::pair<std::basic_string<char>, ImGui::ColorTextEdit::PaletteIndex>>& arg4,const std::string& arg5,const std::string& arg6,const std::string& arg7,const std::string& arg8,bool arg9){{return obj->setLanguageDefinition(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,std::move(arg9));}});
-	LUA_TRY_INVOKE(9, [](ImGui::ColorTextEdit* obj,const std::string& arg0,const std::unordered_set<std::basic_string<char>>& arg1,const std::unordered_map<std::basic_string<char>, std::basic_string<char>>& arg2,const std::unordered_map<std::basic_string<char>, std::basic_string<char>>& arg3,const std::vector<std::pair<std::basic_string<char>, ImGui::ColorTextEdit::PaletteIndex>>& arg4,const std::string& arg5,const std::string& arg6,const std::string& arg7,const std::string& arg8){{return obj->setLanguageDefinition(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8);}});
-	LUA_TRY_INVOKE(8, [](ImGui::ColorTextEdit* obj,const std::string& arg0,const std::unordered_set<std::basic_string<char>>& arg1,const std::unordered_map<std::basic_string<char>, std::basic_string<char>>& arg2,const std::unordered_map<std::basic_string<char>, std::basic_string<char>>& arg3,const std::vector<std::pair<std::basic_string<char>, ImGui::ColorTextEdit::PaletteIndex>>& arg4,const std::string& arg5,const std::string& arg6,const std::string& arg7){{return obj->setLanguageDefinition(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);}});
+	LUA_TRY_INVOKE(11, &ImGui::ColorTextEdit::setLanguageDefinition);
+	LUA_TRY_INVOKE(10, ([](ImGui::ColorTextEdit* obj,const std::string& arg0,const std::unordered_set<std::string>& arg1,const std::unordered_map<std::string, std::string>& arg2,const std::unordered_map<std::string, std::string>& arg3,const std::vector<std::pair<std::string, ImGui::ColorTextEdit::PaletteIndex>>& arg4,const std::string& arg5,const std::string& arg6,const std::string& arg7,const std::string& arg8,bool arg9){{return obj->setLanguageDefinition(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,std::move(arg9));}}));
+	LUA_TRY_INVOKE(9, ([](ImGui::ColorTextEdit* obj,const std::string& arg0,const std::unordered_set<std::string>& arg1,const std::unordered_map<std::string, std::string>& arg2,const std::unordered_map<std::string, std::string>& arg3,const std::vector<std::pair<std::string, ImGui::ColorTextEdit::PaletteIndex>>& arg4,const std::string& arg5,const std::string& arg6,const std::string& arg7,const std::string& arg8){{return obj->setLanguageDefinition(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8);}}));
+	LUA_TRY_INVOKE(8, ([](ImGui::ColorTextEdit* obj,const std::string& arg0,const std::unordered_set<std::string>& arg1,const std::unordered_map<std::string, std::string>& arg2,const std::unordered_map<std::string, std::string>& arg3,const std::vector<std::pair<std::string, ImGui::ColorTextEdit::PaletteIndex>>& arg4,const std::string& arg5,const std::string& arg6,const std::string& arg7){{return obj->setLanguageDefinition(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7);}}));
 	LUA_INVOKE_FOOTER("10,11,8,9");
 }
 int lua_ImGui_ColorTextEdit_setLanguageGLSL(lua_State* lua_S)
@@ -458,8 +458,8 @@ int lua_ImGui_ColorTextEdit_setReadOnly(lua_State* lua_S)
 int lua_ImGui_ColorTextEdit_setSelection(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:setSelection");
-	LUA_TRY_INVOKE(5, static_cast<void(ImGui::ColorTextEdit::*)(int, int, int, int, ImGui::ColorTextEdit::SelectionMode)>(&ImGui::ColorTextEdit::setSelection));
-	LUA_TRY_INVOKE(4, [](ImGui::ColorTextEdit* obj,int arg0,int arg1,int arg2,int arg3){{return obj->setSelection(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}});
+	LUA_TRY_INVOKE(5, &ImGui::ColorTextEdit::setSelection);
+	LUA_TRY_INVOKE(4, ([](ImGui::ColorTextEdit* obj,int arg0,int arg1,int arg2,int arg3){{return obj->setSelection(std::move(arg0),std::move(arg1),std::move(arg2),std::move(arg3));}}));
 	LUA_INVOKE_FOOTER("4,5");
 }
 int lua_ImGui_ColorTextEdit_setSelectionEnd(lua_State* lua_S)
@@ -507,7 +507,7 @@ int lua_ImGui_ColorTextEdit_setTextLines(lua_State* lua_S)
 int lua_ImGui_ColorTextEdit_undo(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:undo");
-	LUA_TRY_INVOKE(1, static_cast<void(ImGui::ColorTextEdit::*)(int)>(&ImGui::ColorTextEdit::undo));
+	LUA_TRY_INVOKE(1, &ImGui::ColorTextEdit::undo);
 	LUA_TRY_INVOKE(0, [](ImGui::ColorTextEdit* obj){{return obj->undo();}});
 	LUA_INVOKE_FOOTER("0,1");
 }

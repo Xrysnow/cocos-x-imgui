@@ -1,8 +1,11 @@
 #pragma once
 #include "base/ccConfig.h"
-#include "lua_conversion.hpp"
+#include "imgui_lua.hpp"
 
+extern int luaReg_implot_implotIMPLOT_AUTO(lua_State* lua_S);
+extern int luaReg_implot_implotIMPLOT_AUTO_COL(lua_State* lua_S);
 extern int luaReg_implot_implotImAxis(lua_State* lua_S);
+extern int luaReg_implot_implotImPlotProp(lua_State* lua_S);
 extern int luaReg_implot_implotImPlotFlags(lua_State* lua_S);
 extern int luaReg_implot_implotImPlotAxisFlags(lua_State* lua_S);
 extern int luaReg_implot_implotImPlotSubplotFlags(lua_State* lua_S);
@@ -13,6 +16,8 @@ extern int luaReg_implot_implotImPlotColormapScaleFlags(lua_State* lua_S);
 extern int luaReg_implot_implotImPlotItemFlags(lua_State* lua_S);
 extern int luaReg_implot_implotImPlotLineFlags(lua_State* lua_S);
 extern int luaReg_implot_implotImPlotScatterFlags(lua_State* lua_S);
+extern int luaReg_implot_implotImPlotBubblesFlags(lua_State* lua_S);
+extern int luaReg_implot_implotImPlotPolygonFlags(lua_State* lua_S);
 extern int luaReg_implot_implotImPlotStairsFlags(lua_State* lua_S);
 extern int luaReg_implot_implotImPlotShadedFlags(lua_State* lua_S);
 extern int luaReg_implot_implotImPlotBarsFlags(lua_State* lua_S);
@@ -41,7 +46,10 @@ extern int luaReg_implot_implot_global_functions(lua_State* lua_S);
 
 inline int luaReg_implot(lua_State* lua_S)
 {
+	luaReg_implot_implotIMPLOT_AUTO(lua_S);
+	luaReg_implot_implotIMPLOT_AUTO_COL(lua_S);
 	luaReg_implot_implotImAxis(lua_S);
+	luaReg_implot_implotImPlotProp(lua_S);
 	luaReg_implot_implotImPlotFlags(lua_S);
 	luaReg_implot_implotImPlotAxisFlags(lua_S);
 	luaReg_implot_implotImPlotSubplotFlags(lua_S);
@@ -52,6 +60,8 @@ inline int luaReg_implot(lua_State* lua_S)
 	luaReg_implot_implotImPlotItemFlags(lua_S);
 	luaReg_implot_implotImPlotLineFlags(lua_S);
 	luaReg_implot_implotImPlotScatterFlags(lua_S);
+	luaReg_implot_implotImPlotBubblesFlags(lua_S);
+	luaReg_implot_implotImPlotPolygonFlags(lua_S);
 	luaReg_implot_implotImPlotStairsFlags(lua_S);
 	luaReg_implot_implotImPlotShadedFlags(lua_S);
 	luaReg_implot_implotImPlotBarsFlags(lua_S);

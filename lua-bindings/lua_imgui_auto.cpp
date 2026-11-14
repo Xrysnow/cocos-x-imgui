@@ -23,7 +23,6 @@ int luaReg_imgui_imguiImGuiWindowFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("NoBringToFrontOnFocus", ImGuiWindowFlags_::ImGuiWindowFlags_NoBringToFrontOnFocus);
 	LUA_ENUM_ENTRY("AlwaysVerticalScrollbar", ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysVerticalScrollbar);
 	LUA_ENUM_ENTRY("AlwaysHorizontalScrollbar", ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysHorizontalScrollbar);
-	LUA_ENUM_ENTRY("AlwaysUseWindowPadding", ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysUseWindowPadding);
 	LUA_ENUM_ENTRY("NoNavInputs", ImGuiWindowFlags_::ImGuiWindowFlags_NoNavInputs);
 	LUA_ENUM_ENTRY("NoNavFocus", ImGuiWindowFlags_::ImGuiWindowFlags_NoNavFocus);
 	LUA_ENUM_ENTRY("UnsavedDocument", ImGuiWindowFlags_::ImGuiWindowFlags_UnsavedDocument);
@@ -31,13 +30,50 @@ int luaReg_imgui_imguiImGuiWindowFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("NoNav", ImGuiWindowFlags_::ImGuiWindowFlags_NoNav);
 	LUA_ENUM_ENTRY("NoDecoration", ImGuiWindowFlags_::ImGuiWindowFlags_NoDecoration);
 	LUA_ENUM_ENTRY("NoInputs", ImGuiWindowFlags_::ImGuiWindowFlags_NoInputs);
-	LUA_ENUM_ENTRY("NavFlattened", ImGuiWindowFlags_::ImGuiWindowFlags_NavFlattened);
+	LUA_ENUM_ENTRY("DockNodeHost", ImGuiWindowFlags_::ImGuiWindowFlags_DockNodeHost);
 	LUA_ENUM_ENTRY("ChildWindow", ImGuiWindowFlags_::ImGuiWindowFlags_ChildWindow);
 	LUA_ENUM_ENTRY("Tooltip", ImGuiWindowFlags_::ImGuiWindowFlags_Tooltip);
 	LUA_ENUM_ENTRY("Popup", ImGuiWindowFlags_::ImGuiWindowFlags_Popup);
 	LUA_ENUM_ENTRY("Modal", ImGuiWindowFlags_::ImGuiWindowFlags_Modal);
 	LUA_ENUM_ENTRY("ChildMenu", ImGuiWindowFlags_::ImGuiWindowFlags_ChildMenu);
-	LUA_ENUM_ENTRY("DockNodeHost", ImGuiWindowFlags_::ImGuiWindowFlags_DockNodeHost);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_imgui_imguiImGuiChildFlags(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImGuiChildFlags");
+	LUA_ENUM_ENTRY("ImGuiChildFlags_None", ImGuiChildFlags_::ImGuiChildFlags_None);
+	LUA_ENUM_ENTRY("ImGuiChildFlags_Borders", ImGuiChildFlags_::ImGuiChildFlags_Borders);
+	LUA_ENUM_ENTRY("ImGuiChildFlags_AlwaysUseWindowPadding", ImGuiChildFlags_::ImGuiChildFlags_AlwaysUseWindowPadding);
+	LUA_ENUM_ENTRY("ImGuiChildFlags_ResizeX", ImGuiChildFlags_::ImGuiChildFlags_ResizeX);
+	LUA_ENUM_ENTRY("ImGuiChildFlags_ResizeY", ImGuiChildFlags_::ImGuiChildFlags_ResizeY);
+	LUA_ENUM_ENTRY("ImGuiChildFlags_AutoResizeX", ImGuiChildFlags_::ImGuiChildFlags_AutoResizeX);
+	LUA_ENUM_ENTRY("ImGuiChildFlags_AutoResizeY", ImGuiChildFlags_::ImGuiChildFlags_AutoResizeY);
+	LUA_ENUM_ENTRY("ImGuiChildFlags_AlwaysAutoResize", ImGuiChildFlags_::ImGuiChildFlags_AlwaysAutoResize);
+	LUA_ENUM_ENTRY("ImGuiChildFlags_FrameStyle", ImGuiChildFlags_::ImGuiChildFlags_FrameStyle);
+	LUA_ENUM_ENTRY("ImGuiChildFlags_NavFlattened", ImGuiChildFlags_::ImGuiChildFlags_NavFlattened);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_imgui_imguiImGuiItemFlags(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImGuiItemFlags");
+	LUA_ENUM_ENTRY("ImGuiItemFlags_None", ImGuiItemFlags_::ImGuiItemFlags_None);
+	LUA_ENUM_ENTRY("ImGuiItemFlags_NoTabStop", ImGuiItemFlags_::ImGuiItemFlags_NoTabStop);
+	LUA_ENUM_ENTRY("ImGuiItemFlags_NoNav", ImGuiItemFlags_::ImGuiItemFlags_NoNav);
+	LUA_ENUM_ENTRY("ImGuiItemFlags_NoNavDefaultFocus", ImGuiItemFlags_::ImGuiItemFlags_NoNavDefaultFocus);
+	LUA_ENUM_ENTRY("ImGuiItemFlags_ButtonRepeat", ImGuiItemFlags_::ImGuiItemFlags_ButtonRepeat);
+	LUA_ENUM_ENTRY("ImGuiItemFlags_AutoClosePopups", ImGuiItemFlags_::ImGuiItemFlags_AutoClosePopups);
+	LUA_ENUM_ENTRY("ImGuiItemFlags_AllowDuplicateId", ImGuiItemFlags_::ImGuiItemFlags_AllowDuplicateId);
+	LUA_ENUM_ENTRY("ImGuiItemFlags_Disabled", ImGuiItemFlags_::ImGuiItemFlags_Disabled);
+	LUA_ENUM_ENTRY("ImGuiItemFlags_LiveEditOnInputText", ImGuiItemFlags_::ImGuiItemFlags_LiveEditOnInputText);
+	LUA_ENUM_ENTRY("ImGuiItemFlags_LiveEditOnInputScalar", ImGuiItemFlags_::ImGuiItemFlags_LiveEditOnInputScalar);
+	LUA_ENUM_ENTRY("ImGuiItemFlags_LiveEditOnInput", ImGuiItemFlags_::ImGuiItemFlags_LiveEditOnInput);
+	LUA_ENUM_ENTRY("ImGuiItemFlags_MixedValue", ImGuiItemFlags_::ImGuiItemFlags_MixedValue);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -49,26 +85,29 @@ int luaReg_imgui_imguiImGuiInputTextFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("None", ImGuiInputTextFlags_::ImGuiInputTextFlags_None);
 	LUA_ENUM_ENTRY("CharsDecimal", ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsDecimal);
 	LUA_ENUM_ENTRY("CharsHexadecimal", ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsHexadecimal);
+	LUA_ENUM_ENTRY("CharsScientific", ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsScientific);
 	LUA_ENUM_ENTRY("CharsUppercase", ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsUppercase);
 	LUA_ENUM_ENTRY("CharsNoBlank", ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsNoBlank);
-	LUA_ENUM_ENTRY("AutoSelectAll", ImGuiInputTextFlags_::ImGuiInputTextFlags_AutoSelectAll);
+	LUA_ENUM_ENTRY("AllowTabInput", ImGuiInputTextFlags_::ImGuiInputTextFlags_AllowTabInput);
 	LUA_ENUM_ENTRY("EnterReturnsTrue", ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue);
+	LUA_ENUM_ENTRY("EscapeClearsAll", ImGuiInputTextFlags_::ImGuiInputTextFlags_EscapeClearsAll);
+	LUA_ENUM_ENTRY("CtrlEnterForNewLine", ImGuiInputTextFlags_::ImGuiInputTextFlags_CtrlEnterForNewLine);
+	LUA_ENUM_ENTRY("ReadOnly", ImGuiInputTextFlags_::ImGuiInputTextFlags_ReadOnly);
+	LUA_ENUM_ENTRY("Password", ImGuiInputTextFlags_::ImGuiInputTextFlags_Password);
+	LUA_ENUM_ENTRY("AlwaysOverwrite", ImGuiInputTextFlags_::ImGuiInputTextFlags_AlwaysOverwrite);
+	LUA_ENUM_ENTRY("AutoSelectAll", ImGuiInputTextFlags_::ImGuiInputTextFlags_AutoSelectAll);
+	LUA_ENUM_ENTRY("ParseEmptyRefVal", ImGuiInputTextFlags_::ImGuiInputTextFlags_ParseEmptyRefVal);
+	LUA_ENUM_ENTRY("DisplayEmptyRefVal", ImGuiInputTextFlags_::ImGuiInputTextFlags_DisplayEmptyRefVal);
+	LUA_ENUM_ENTRY("NoHorizontalScroll", ImGuiInputTextFlags_::ImGuiInputTextFlags_NoHorizontalScroll);
+	LUA_ENUM_ENTRY("NoUndoRedo", ImGuiInputTextFlags_::ImGuiInputTextFlags_NoUndoRedo);
+	LUA_ENUM_ENTRY("ElideLeft", ImGuiInputTextFlags_::ImGuiInputTextFlags_ElideLeft);
 	LUA_ENUM_ENTRY("CallbackCompletion", ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackCompletion);
 	LUA_ENUM_ENTRY("CallbackHistory", ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackHistory);
 	LUA_ENUM_ENTRY("CallbackAlways", ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackAlways);
 	LUA_ENUM_ENTRY("CallbackCharFilter", ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackCharFilter);
-	LUA_ENUM_ENTRY("AllowTabInput", ImGuiInputTextFlags_::ImGuiInputTextFlags_AllowTabInput);
-	LUA_ENUM_ENTRY("CtrlEnterForNewLine", ImGuiInputTextFlags_::ImGuiInputTextFlags_CtrlEnterForNewLine);
-	LUA_ENUM_ENTRY("NoHorizontalScroll", ImGuiInputTextFlags_::ImGuiInputTextFlags_NoHorizontalScroll);
-	LUA_ENUM_ENTRY("AlwaysOverwrite", ImGuiInputTextFlags_::ImGuiInputTextFlags_AlwaysOverwrite);
-	LUA_ENUM_ENTRY("ReadOnly", ImGuiInputTextFlags_::ImGuiInputTextFlags_ReadOnly);
-	LUA_ENUM_ENTRY("Password", ImGuiInputTextFlags_::ImGuiInputTextFlags_Password);
-	LUA_ENUM_ENTRY("NoUndoRedo", ImGuiInputTextFlags_::ImGuiInputTextFlags_NoUndoRedo);
-	LUA_ENUM_ENTRY("CharsScientific", ImGuiInputTextFlags_::ImGuiInputTextFlags_CharsScientific);
 	LUA_ENUM_ENTRY("CallbackResize", ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackResize);
 	LUA_ENUM_ENTRY("CallbackEdit", ImGuiInputTextFlags_::ImGuiInputTextFlags_CallbackEdit);
-	LUA_ENUM_ENTRY("EscapeClearsAll", ImGuiInputTextFlags_::ImGuiInputTextFlags_EscapeClearsAll);
-	LUA_ENUM_ENTRY("AlwaysInsertMode", ImGuiInputTextFlags_::ImGuiInputTextFlags_AlwaysInsertMode);
+	LUA_ENUM_ENTRY("WordWrap", ImGuiInputTextFlags_::ImGuiInputTextFlags_WordWrap);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -80,7 +119,7 @@ int luaReg_imgui_imguiImGuiTreeNodeFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("None", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_None);
 	LUA_ENUM_ENTRY("Selected", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Selected);
 	LUA_ENUM_ENTRY("Framed", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Framed);
-	LUA_ENUM_ENTRY("AllowItemOverlap", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_AllowItemOverlap);
+	LUA_ENUM_ENTRY("AllowOverlap", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_AllowOverlap);
 	LUA_ENUM_ENTRY("NoTreePushOnOpen", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_NoTreePushOnOpen);
 	LUA_ENUM_ENTRY("NoAutoOpenOnLog", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_NoAutoOpenOnLog);
 	LUA_ENUM_ENTRY("DefaultOpen", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DefaultOpen);
@@ -91,8 +130,14 @@ int luaReg_imgui_imguiImGuiTreeNodeFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("FramePadding", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_FramePadding);
 	LUA_ENUM_ENTRY("SpanAvailWidth", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_SpanAvailWidth);
 	LUA_ENUM_ENTRY("SpanFullWidth", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_SpanFullWidth);
-	LUA_ENUM_ENTRY("NavLeftJumpsBackHere", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_NavLeftJumpsBackHere);
+	LUA_ENUM_ENTRY("SpanLabelWidth", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_SpanLabelWidth);
+	LUA_ENUM_ENTRY("SpanAllColumns", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_SpanAllColumns);
+	LUA_ENUM_ENTRY("LabelSpanAllColumns", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_LabelSpanAllColumns);
+	LUA_ENUM_ENTRY("NavLeftJumpsToParent", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_NavLeftJumpsToParent);
 	LUA_ENUM_ENTRY("CollapsingHeader", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_CollapsingHeader);
+	LUA_ENUM_ENTRY("DrawLinesNone", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DrawLinesNone);
+	LUA_ENUM_ENTRY("DrawLinesFull", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DrawLinesFull);
+	LUA_ENUM_ENTRY("DrawLinesToNodes", ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_DrawLinesToNodes);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -105,13 +150,15 @@ int luaReg_imgui_imguiImGuiPopupFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("MouseButtonLeft", ImGuiPopupFlags_::ImGuiPopupFlags_MouseButtonLeft);
 	LUA_ENUM_ENTRY("MouseButtonRight", ImGuiPopupFlags_::ImGuiPopupFlags_MouseButtonRight);
 	LUA_ENUM_ENTRY("MouseButtonMiddle", ImGuiPopupFlags_::ImGuiPopupFlags_MouseButtonMiddle);
-	LUA_ENUM_ENTRY("MouseButtonMask_", ImGuiPopupFlags_::ImGuiPopupFlags_MouseButtonMask_);
-	LUA_ENUM_ENTRY("MouseButtonDefault_", ImGuiPopupFlags_::ImGuiPopupFlags_MouseButtonDefault_);
+	LUA_ENUM_ENTRY("NoReopen", ImGuiPopupFlags_::ImGuiPopupFlags_NoReopen);
 	LUA_ENUM_ENTRY("NoOpenOverExistingPopup", ImGuiPopupFlags_::ImGuiPopupFlags_NoOpenOverExistingPopup);
 	LUA_ENUM_ENTRY("NoOpenOverItems", ImGuiPopupFlags_::ImGuiPopupFlags_NoOpenOverItems);
 	LUA_ENUM_ENTRY("AnyPopupId", ImGuiPopupFlags_::ImGuiPopupFlags_AnyPopupId);
 	LUA_ENUM_ENTRY("AnyPopupLevel", ImGuiPopupFlags_::ImGuiPopupFlags_AnyPopupLevel);
 	LUA_ENUM_ENTRY("AnyPopup", ImGuiPopupFlags_::ImGuiPopupFlags_AnyPopup);
+	LUA_ENUM_ENTRY("MouseButtonShift_", ImGuiPopupFlags_::ImGuiPopupFlags_MouseButtonShift_);
+	LUA_ENUM_ENTRY("MouseButtonMask_", ImGuiPopupFlags_::ImGuiPopupFlags_MouseButtonMask_);
+	LUA_ENUM_ENTRY("InvalidMask_", ImGuiPopupFlags_::ImGuiPopupFlags_InvalidMask_);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -121,11 +168,13 @@ int luaReg_imgui_imguiImGuiSelectableFlags(lua_State* lua_S)
 	LUA_ENTRY("imgui");
 	LUA_ENUM_DEF("ImGuiSelectableFlags");
 	LUA_ENUM_ENTRY("None", ImGuiSelectableFlags_::ImGuiSelectableFlags_None);
-	LUA_ENUM_ENTRY("DontClosePopups", ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups);
+	LUA_ENUM_ENTRY("NoAutoClosePopups", ImGuiSelectableFlags_::ImGuiSelectableFlags_NoAutoClosePopups);
 	LUA_ENUM_ENTRY("SpanAllColumns", ImGuiSelectableFlags_::ImGuiSelectableFlags_SpanAllColumns);
 	LUA_ENUM_ENTRY("AllowDoubleClick", ImGuiSelectableFlags_::ImGuiSelectableFlags_AllowDoubleClick);
 	LUA_ENUM_ENTRY("Disabled", ImGuiSelectableFlags_::ImGuiSelectableFlags_Disabled);
-	LUA_ENUM_ENTRY("AllowItemOverlap", ImGuiSelectableFlags_::ImGuiSelectableFlags_AllowItemOverlap);
+	LUA_ENUM_ENTRY("AllowOverlap", ImGuiSelectableFlags_::ImGuiSelectableFlags_AllowOverlap);
+	LUA_ENUM_ENTRY("Highlight", ImGuiSelectableFlags_::ImGuiSelectableFlags_Highlight);
+	LUA_ENUM_ENTRY("SelectOnNav", ImGuiSelectableFlags_::ImGuiSelectableFlags_SelectOnNav);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -142,6 +191,7 @@ int luaReg_imgui_imguiImGuiComboFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("HeightLargest", ImGuiComboFlags_::ImGuiComboFlags_HeightLargest);
 	LUA_ENUM_ENTRY("NoArrowButton", ImGuiComboFlags_::ImGuiComboFlags_NoArrowButton);
 	LUA_ENUM_ENTRY("NoPreview", ImGuiComboFlags_::ImGuiComboFlags_NoPreview);
+	LUA_ENUM_ENTRY("WidthFitPreview", ImGuiComboFlags_::ImGuiComboFlags_WidthFitPreview);
 	LUA_ENUM_ENTRY("HeightMask_", ImGuiComboFlags_::ImGuiComboFlags_HeightMask_);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
@@ -158,7 +208,9 @@ int luaReg_imgui_imguiImGuiTabBarFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("NoCloseWithMiddleMouseButton", ImGuiTabBarFlags_::ImGuiTabBarFlags_NoCloseWithMiddleMouseButton);
 	LUA_ENUM_ENTRY("NoTabListScrollingButtons", ImGuiTabBarFlags_::ImGuiTabBarFlags_NoTabListScrollingButtons);
 	LUA_ENUM_ENTRY("NoTooltip", ImGuiTabBarFlags_::ImGuiTabBarFlags_NoTooltip);
-	LUA_ENUM_ENTRY("FittingPolicyResizeDown", ImGuiTabBarFlags_::ImGuiTabBarFlags_FittingPolicyResizeDown);
+	LUA_ENUM_ENTRY("DrawSelectedOverline", ImGuiTabBarFlags_::ImGuiTabBarFlags_DrawSelectedOverline);
+	LUA_ENUM_ENTRY("FittingPolicyMixed", ImGuiTabBarFlags_::ImGuiTabBarFlags_FittingPolicyMixed);
+	LUA_ENUM_ENTRY("FittingPolicyShrink", ImGuiTabBarFlags_::ImGuiTabBarFlags_FittingPolicyShrink);
 	LUA_ENUM_ENTRY("FittingPolicyScroll", ImGuiTabBarFlags_::ImGuiTabBarFlags_FittingPolicyScroll);
 	LUA_ENUM_ENTRY("FittingPolicyMask_", ImGuiTabBarFlags_::ImGuiTabBarFlags_FittingPolicyMask_);
 	LUA_ENUM_ENTRY("FittingPolicyDefault_", ImGuiTabBarFlags_::ImGuiTabBarFlags_FittingPolicyDefault_);
@@ -179,107 +231,7 @@ int luaReg_imgui_imguiImGuiTabItemFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("NoReorder", ImGuiTabItemFlags_::ImGuiTabItemFlags_NoReorder);
 	LUA_ENUM_ENTRY("Leading", ImGuiTabItemFlags_::ImGuiTabItemFlags_Leading);
 	LUA_ENUM_ENTRY("Trailing", ImGuiTabItemFlags_::ImGuiTabItemFlags_Trailing);
-	LUA_ENUM_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int luaReg_imgui_imguiImGuiTableFlags(lua_State* lua_S)
-{
-	LUA_ENTRY("imgui");
-	LUA_ENUM_DEF("ImGuiTableFlags");
-	LUA_ENUM_ENTRY("None", ImGuiTableFlags_::ImGuiTableFlags_None);
-	LUA_ENUM_ENTRY("Resizable", ImGuiTableFlags_::ImGuiTableFlags_Resizable);
-	LUA_ENUM_ENTRY("Reorderable", ImGuiTableFlags_::ImGuiTableFlags_Reorderable);
-	LUA_ENUM_ENTRY("Hideable", ImGuiTableFlags_::ImGuiTableFlags_Hideable);
-	LUA_ENUM_ENTRY("Sortable", ImGuiTableFlags_::ImGuiTableFlags_Sortable);
-	LUA_ENUM_ENTRY("NoSavedSettings", ImGuiTableFlags_::ImGuiTableFlags_NoSavedSettings);
-	LUA_ENUM_ENTRY("ContextMenuInBody", ImGuiTableFlags_::ImGuiTableFlags_ContextMenuInBody);
-	LUA_ENUM_ENTRY("RowBg", ImGuiTableFlags_::ImGuiTableFlags_RowBg);
-	LUA_ENUM_ENTRY("BordersInnerH", ImGuiTableFlags_::ImGuiTableFlags_BordersInnerH);
-	LUA_ENUM_ENTRY("BordersOuterH", ImGuiTableFlags_::ImGuiTableFlags_BordersOuterH);
-	LUA_ENUM_ENTRY("BordersInnerV", ImGuiTableFlags_::ImGuiTableFlags_BordersInnerV);
-	LUA_ENUM_ENTRY("BordersOuterV", ImGuiTableFlags_::ImGuiTableFlags_BordersOuterV);
-	LUA_ENUM_ENTRY("BordersH", ImGuiTableFlags_::ImGuiTableFlags_BordersH);
-	LUA_ENUM_ENTRY("BordersV", ImGuiTableFlags_::ImGuiTableFlags_BordersV);
-	LUA_ENUM_ENTRY("BordersInner", ImGuiTableFlags_::ImGuiTableFlags_BordersInner);
-	LUA_ENUM_ENTRY("BordersOuter", ImGuiTableFlags_::ImGuiTableFlags_BordersOuter);
-	LUA_ENUM_ENTRY("Borders", ImGuiTableFlags_::ImGuiTableFlags_Borders);
-	LUA_ENUM_ENTRY("NoBordersInBody", ImGuiTableFlags_::ImGuiTableFlags_NoBordersInBody);
-	LUA_ENUM_ENTRY("NoBordersInBodyUntilResize", ImGuiTableFlags_::ImGuiTableFlags_NoBordersInBodyUntilResize);
-	LUA_ENUM_ENTRY("SizingFixedFit", ImGuiTableFlags_::ImGuiTableFlags_SizingFixedFit);
-	LUA_ENUM_ENTRY("SizingFixedSame", ImGuiTableFlags_::ImGuiTableFlags_SizingFixedSame);
-	LUA_ENUM_ENTRY("SizingStretchProp", ImGuiTableFlags_::ImGuiTableFlags_SizingStretchProp);
-	LUA_ENUM_ENTRY("SizingStretchSame", ImGuiTableFlags_::ImGuiTableFlags_SizingStretchSame);
-	LUA_ENUM_ENTRY("NoHostExtendX", ImGuiTableFlags_::ImGuiTableFlags_NoHostExtendX);
-	LUA_ENUM_ENTRY("NoHostExtendY", ImGuiTableFlags_::ImGuiTableFlags_NoHostExtendY);
-	LUA_ENUM_ENTRY("NoKeepColumnsVisible", ImGuiTableFlags_::ImGuiTableFlags_NoKeepColumnsVisible);
-	LUA_ENUM_ENTRY("PreciseWidths", ImGuiTableFlags_::ImGuiTableFlags_PreciseWidths);
-	LUA_ENUM_ENTRY("NoClip", ImGuiTableFlags_::ImGuiTableFlags_NoClip);
-	LUA_ENUM_ENTRY("PadOuterX", ImGuiTableFlags_::ImGuiTableFlags_PadOuterX);
-	LUA_ENUM_ENTRY("NoPadOuterX", ImGuiTableFlags_::ImGuiTableFlags_NoPadOuterX);
-	LUA_ENUM_ENTRY("NoPadInnerX", ImGuiTableFlags_::ImGuiTableFlags_NoPadInnerX);
-	LUA_ENUM_ENTRY("ScrollX", ImGuiTableFlags_::ImGuiTableFlags_ScrollX);
-	LUA_ENUM_ENTRY("ScrollY", ImGuiTableFlags_::ImGuiTableFlags_ScrollY);
-	LUA_ENUM_ENTRY("SortMulti", ImGuiTableFlags_::ImGuiTableFlags_SortMulti);
-	LUA_ENUM_ENTRY("SortTristate", ImGuiTableFlags_::ImGuiTableFlags_SortTristate);
-	LUA_ENUM_ENTRY("SizingMask_", ImGuiTableFlags_::ImGuiTableFlags_SizingMask_);
-	LUA_ENUM_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int luaReg_imgui_imguiImGuiTableColumnFlags(lua_State* lua_S)
-{
-	LUA_ENTRY("imgui");
-	LUA_ENUM_DEF("ImGuiTableColumnFlags");
-	LUA_ENUM_ENTRY("None", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_None);
-	LUA_ENUM_ENTRY("Disabled", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_Disabled);
-	LUA_ENUM_ENTRY("DefaultHide", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_DefaultHide);
-	LUA_ENUM_ENTRY("DefaultSort", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_DefaultSort);
-	LUA_ENUM_ENTRY("WidthStretch", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_WidthStretch);
-	LUA_ENUM_ENTRY("WidthFixed", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_WidthFixed);
-	LUA_ENUM_ENTRY("NoResize", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoResize);
-	LUA_ENUM_ENTRY("NoReorder", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoReorder);
-	LUA_ENUM_ENTRY("NoHide", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoHide);
-	LUA_ENUM_ENTRY("NoClip", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoClip);
-	LUA_ENUM_ENTRY("NoSort", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoSort);
-	LUA_ENUM_ENTRY("NoSortAscending", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoSortAscending);
-	LUA_ENUM_ENTRY("NoSortDescending", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoSortDescending);
-	LUA_ENUM_ENTRY("NoHeaderLabel", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoHeaderLabel);
-	LUA_ENUM_ENTRY("NoHeaderWidth", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoHeaderWidth);
-	LUA_ENUM_ENTRY("PreferSortAscending", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_PreferSortAscending);
-	LUA_ENUM_ENTRY("PreferSortDescending", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_PreferSortDescending);
-	LUA_ENUM_ENTRY("IndentEnable", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IndentEnable);
-	LUA_ENUM_ENTRY("IndentDisable", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IndentDisable);
-	LUA_ENUM_ENTRY("IsEnabled", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IsEnabled);
-	LUA_ENUM_ENTRY("IsVisible", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IsVisible);
-	LUA_ENUM_ENTRY("IsSorted", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IsSorted);
-	LUA_ENUM_ENTRY("IsHovered", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IsHovered);
-	LUA_ENUM_ENTRY("WidthMask_", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_WidthMask_);
-	LUA_ENUM_ENTRY("IndentMask_", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IndentMask_);
-	LUA_ENUM_ENTRY("StatusMask_", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_StatusMask_);
-	LUA_ENUM_ENTRY("NoDirectResize_", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoDirectResize_);
-	LUA_ENUM_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int luaReg_imgui_imguiImGuiTableRowFlags(lua_State* lua_S)
-{
-	LUA_ENTRY("imgui");
-	LUA_ENUM_DEF("ImGuiTableRowFlags");
-	LUA_ENUM_ENTRY("None", ImGuiTableRowFlags_::ImGuiTableRowFlags_None);
-	LUA_ENUM_ENTRY("Headers", ImGuiTableRowFlags_::ImGuiTableRowFlags_Headers);
-	LUA_ENUM_END();
-	LUA_ENTRY_END(1);
-	return 0;
-}
-int luaReg_imgui_imguiImGuiTableBgTarget(lua_State* lua_S)
-{
-	LUA_ENTRY("imgui");
-	LUA_ENUM_DEF("ImGuiTableBgTarget");
-	LUA_ENUM_ENTRY("None", ImGuiTableBgTarget_::ImGuiTableBgTarget_None);
-	LUA_ENUM_ENTRY("RowBg0", ImGuiTableBgTarget_::ImGuiTableBgTarget_RowBg0);
-	LUA_ENUM_ENTRY("RowBg1", ImGuiTableBgTarget_::ImGuiTableBgTarget_RowBg1);
-	LUA_ENUM_ENTRY("CellBg", ImGuiTableBgTarget_::ImGuiTableBgTarget_CellBg);
+	LUA_ENUM_ENTRY("NoAssumedClosure", ImGuiTabItemFlags_::ImGuiTabItemFlags_NoAssumedClosure);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -311,13 +263,18 @@ int luaReg_imgui_imguiImGuiHoveredFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("DockHierarchy", ImGuiHoveredFlags_::ImGuiHoveredFlags_DockHierarchy);
 	LUA_ENUM_ENTRY("AllowWhenBlockedByPopup", ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 	LUA_ENUM_ENTRY("AllowWhenBlockedByActiveItem", ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
-	LUA_ENUM_ENTRY("AllowWhenOverlapped", ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenOverlapped);
+	LUA_ENUM_ENTRY("AllowWhenOverlappedByItem", ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenOverlappedByItem);
+	LUA_ENUM_ENTRY("AllowWhenOverlappedByWindow", ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenOverlappedByWindow);
 	LUA_ENUM_ENTRY("AllowWhenDisabled", ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenDisabled);
 	LUA_ENUM_ENTRY("NoNavOverride", ImGuiHoveredFlags_::ImGuiHoveredFlags_NoNavOverride);
+	LUA_ENUM_ENTRY("AllowWhenOverlapped", ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenOverlapped);
 	LUA_ENUM_ENTRY("RectOnly", ImGuiHoveredFlags_::ImGuiHoveredFlags_RectOnly);
 	LUA_ENUM_ENTRY("RootAndChildWindows", ImGuiHoveredFlags_::ImGuiHoveredFlags_RootAndChildWindows);
-	LUA_ENUM_ENTRY("DelayNormal", ImGuiHoveredFlags_::ImGuiHoveredFlags_DelayNormal);
+	LUA_ENUM_ENTRY("ForTooltip", ImGuiHoveredFlags_::ImGuiHoveredFlags_ForTooltip);
+	LUA_ENUM_ENTRY("Stationary", ImGuiHoveredFlags_::ImGuiHoveredFlags_Stationary);
+	LUA_ENUM_ENTRY("DelayNone", ImGuiHoveredFlags_::ImGuiHoveredFlags_DelayNone);
 	LUA_ENUM_ENTRY("DelayShort", ImGuiHoveredFlags_::ImGuiHoveredFlags_DelayShort);
+	LUA_ENUM_ENTRY("DelayNormal", ImGuiHoveredFlags_::ImGuiHoveredFlags_DelayNormal);
 	LUA_ENUM_ENTRY("NoSharedDelay", ImGuiHoveredFlags_::ImGuiHoveredFlags_NoSharedDelay);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
@@ -329,11 +286,12 @@ int luaReg_imgui_imguiImGuiDockNodeFlags(lua_State* lua_S)
 	LUA_ENUM_DEF("ImGuiDockNodeFlags");
 	LUA_ENUM_ENTRY("None", ImGuiDockNodeFlags_::ImGuiDockNodeFlags_None);
 	LUA_ENUM_ENTRY("KeepAliveOnly", ImGuiDockNodeFlags_::ImGuiDockNodeFlags_KeepAliveOnly);
-	LUA_ENUM_ENTRY("NoDockingInCentralNode", ImGuiDockNodeFlags_::ImGuiDockNodeFlags_NoDockingInCentralNode);
+	LUA_ENUM_ENTRY("NoDockingOverCentralNode", ImGuiDockNodeFlags_::ImGuiDockNodeFlags_NoDockingOverCentralNode);
 	LUA_ENUM_ENTRY("PassthruCentralNode", ImGuiDockNodeFlags_::ImGuiDockNodeFlags_PassthruCentralNode);
-	LUA_ENUM_ENTRY("NoSplit", ImGuiDockNodeFlags_::ImGuiDockNodeFlags_NoSplit);
+	LUA_ENUM_ENTRY("NoDockingSplit", ImGuiDockNodeFlags_::ImGuiDockNodeFlags_NoDockingSplit);
 	LUA_ENUM_ENTRY("NoResize", ImGuiDockNodeFlags_::ImGuiDockNodeFlags_NoResize);
 	LUA_ENUM_ENTRY("AutoHideTabBar", ImGuiDockNodeFlags_::ImGuiDockNodeFlags_AutoHideTabBar);
+	LUA_ENUM_ENTRY("NoUndocking", ImGuiDockNodeFlags_::ImGuiDockNodeFlags_NoUndocking);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -348,10 +306,13 @@ int luaReg_imgui_imguiImGuiDragDropFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("SourceNoHoldToOpenOthers", ImGuiDragDropFlags_::ImGuiDragDropFlags_SourceNoHoldToOpenOthers);
 	LUA_ENUM_ENTRY("SourceAllowNullID", ImGuiDragDropFlags_::ImGuiDragDropFlags_SourceAllowNullID);
 	LUA_ENUM_ENTRY("SourceExtern", ImGuiDragDropFlags_::ImGuiDragDropFlags_SourceExtern);
-	LUA_ENUM_ENTRY("SourceAutoExpirePayload", ImGuiDragDropFlags_::ImGuiDragDropFlags_SourceAutoExpirePayload);
+	LUA_ENUM_ENTRY("PayloadAutoExpire", ImGuiDragDropFlags_::ImGuiDragDropFlags_PayloadAutoExpire);
+	LUA_ENUM_ENTRY("PayloadNoCrossContext", ImGuiDragDropFlags_::ImGuiDragDropFlags_PayloadNoCrossContext);
+	LUA_ENUM_ENTRY("PayloadNoCrossProcess", ImGuiDragDropFlags_::ImGuiDragDropFlags_PayloadNoCrossProcess);
 	LUA_ENUM_ENTRY("AcceptBeforeDelivery", ImGuiDragDropFlags_::ImGuiDragDropFlags_AcceptBeforeDelivery);
 	LUA_ENUM_ENTRY("AcceptNoDrawDefaultRect", ImGuiDragDropFlags_::ImGuiDragDropFlags_AcceptNoDrawDefaultRect);
 	LUA_ENUM_ENTRY("AcceptNoPreviewTooltip", ImGuiDragDropFlags_::ImGuiDragDropFlags_AcceptNoPreviewTooltip);
+	LUA_ENUM_ENTRY("AcceptDrawAsHovered", ImGuiDragDropFlags_::ImGuiDragDropFlags_AcceptDrawAsHovered);
 	LUA_ENUM_ENTRY("AcceptPeekOnly", ImGuiDragDropFlags_::ImGuiDragDropFlags_AcceptPeekOnly);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
@@ -371,6 +332,8 @@ int luaReg_imgui_imguiImGuiDataType(lua_State* lua_S)
 	LUA_ENUM_ENTRY("U64", ImGuiDataType_::ImGuiDataType_U64);
 	LUA_ENUM_ENTRY("Float", ImGuiDataType_::ImGuiDataType_Float);
 	LUA_ENUM_ENTRY("Double", ImGuiDataType_::ImGuiDataType_Double);
+	LUA_ENUM_ENTRY("Bool", ImGuiDataType_::ImGuiDataType_Bool);
+	LUA_ENUM_ENTRY("String", ImGuiDataType_::ImGuiDataType_String);
 	LUA_ENUM_ENTRY("COUNT", ImGuiDataType_::ImGuiDataType_COUNT);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
@@ -380,12 +343,12 @@ int luaReg_imgui_imguiImGuiDir(lua_State* lua_S)
 {
 	LUA_ENTRY("imgui");
 	LUA_ENUM_DEF("ImGuiDir");
-	LUA_ENUM_ENTRY("None", ImGuiDir_::ImGuiDir_None);
-	LUA_ENUM_ENTRY("Left", ImGuiDir_::ImGuiDir_Left);
-	LUA_ENUM_ENTRY("Right", ImGuiDir_::ImGuiDir_Right);
-	LUA_ENUM_ENTRY("Up", ImGuiDir_::ImGuiDir_Up);
-	LUA_ENUM_ENTRY("Down", ImGuiDir_::ImGuiDir_Down);
-	LUA_ENUM_ENTRY("COUNT", ImGuiDir_::ImGuiDir_COUNT);
+	LUA_ENUM_ENTRY("None", ImGuiDir::ImGuiDir_None);
+	LUA_ENUM_ENTRY("Left", ImGuiDir::ImGuiDir_Left);
+	LUA_ENUM_ENTRY("Right", ImGuiDir::ImGuiDir_Right);
+	LUA_ENUM_ENTRY("Up", ImGuiDir::ImGuiDir_Up);
+	LUA_ENUM_ENTRY("Down", ImGuiDir::ImGuiDir_Down);
+	LUA_ENUM_ENTRY("COUNT", ImGuiDir::ImGuiDir_COUNT);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -394,9 +357,9 @@ int luaReg_imgui_imguiImGuiSortDirection(lua_State* lua_S)
 {
 	LUA_ENTRY("imgui");
 	LUA_ENUM_DEF("ImGuiSortDirection");
-	LUA_ENUM_ENTRY("None", ImGuiSortDirection_::ImGuiSortDirection_None);
-	LUA_ENUM_ENTRY("Ascending", ImGuiSortDirection_::ImGuiSortDirection_Ascending);
-	LUA_ENUM_ENTRY("Descending", ImGuiSortDirection_::ImGuiSortDirection_Descending);
+	LUA_ENUM_ENTRY("None", ImGuiSortDirection::ImGuiSortDirection_None);
+	LUA_ENUM_ENTRY("Ascending", ImGuiSortDirection::ImGuiSortDirection_Ascending);
+	LUA_ENUM_ENTRY("Descending", ImGuiSortDirection::ImGuiSortDirection_Descending);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -406,6 +369,7 @@ int luaReg_imgui_imguiImGuiKey(lua_State* lua_S)
 	LUA_ENTRY("imgui");
 	LUA_ENUM_DEF("ImGuiKey");
 	LUA_ENUM_ENTRY("None", ImGuiKey::ImGuiKey_None);
+	LUA_ENUM_ENTRY("NamedKey_BEGIN", ImGuiKey::ImGuiKey_NamedKey_BEGIN);
 	LUA_ENUM_ENTRY("Tab", ImGuiKey::ImGuiKey_Tab);
 	LUA_ENUM_ENTRY("LeftArrow", ImGuiKey::ImGuiKey_LeftArrow);
 	LUA_ENUM_ENTRY("RightArrow", ImGuiKey::ImGuiKey_RightArrow);
@@ -478,6 +442,18 @@ int luaReg_imgui_imguiImGuiKey(lua_State* lua_S)
 	LUA_ENUM_ENTRY("F10", ImGuiKey::ImGuiKey_F10);
 	LUA_ENUM_ENTRY("F11", ImGuiKey::ImGuiKey_F11);
 	LUA_ENUM_ENTRY("F12", ImGuiKey::ImGuiKey_F12);
+	LUA_ENUM_ENTRY("F13", ImGuiKey::ImGuiKey_F13);
+	LUA_ENUM_ENTRY("F14", ImGuiKey::ImGuiKey_F14);
+	LUA_ENUM_ENTRY("F15", ImGuiKey::ImGuiKey_F15);
+	LUA_ENUM_ENTRY("F16", ImGuiKey::ImGuiKey_F16);
+	LUA_ENUM_ENTRY("F17", ImGuiKey::ImGuiKey_F17);
+	LUA_ENUM_ENTRY("F18", ImGuiKey::ImGuiKey_F18);
+	LUA_ENUM_ENTRY("F19", ImGuiKey::ImGuiKey_F19);
+	LUA_ENUM_ENTRY("F20", ImGuiKey::ImGuiKey_F20);
+	LUA_ENUM_ENTRY("F21", ImGuiKey::ImGuiKey_F21);
+	LUA_ENUM_ENTRY("F22", ImGuiKey::ImGuiKey_F22);
+	LUA_ENUM_ENTRY("F23", ImGuiKey::ImGuiKey_F23);
+	LUA_ENUM_ENTRY("F24", ImGuiKey::ImGuiKey_F24);
 	LUA_ENUM_ENTRY("Apostrophe", ImGuiKey::ImGuiKey_Apostrophe);
 	LUA_ENUM_ENTRY("Comma", ImGuiKey::ImGuiKey_Comma);
 	LUA_ENUM_ENTRY("Minus", ImGuiKey::ImGuiKey_Minus);
@@ -511,6 +487,9 @@ int luaReg_imgui_imguiImGuiKey(lua_State* lua_S)
 	LUA_ENUM_ENTRY("KeypadAdd", ImGuiKey::ImGuiKey_KeypadAdd);
 	LUA_ENUM_ENTRY("KeypadEnter", ImGuiKey::ImGuiKey_KeypadEnter);
 	LUA_ENUM_ENTRY("KeypadEqual", ImGuiKey::ImGuiKey_KeypadEqual);
+	LUA_ENUM_ENTRY("AppBack", ImGuiKey::ImGuiKey_AppBack);
+	LUA_ENUM_ENTRY("AppForward", ImGuiKey::ImGuiKey_AppForward);
+	LUA_ENUM_ENTRY("Oem102", ImGuiKey::ImGuiKey_Oem102);
 	LUA_ENUM_ENTRY("GamepadStart", ImGuiKey::ImGuiKey_GamepadStart);
 	LUA_ENUM_ENTRY("GamepadBack", ImGuiKey::ImGuiKey_GamepadBack);
 	LUA_ENUM_ENTRY("GamepadFaceLeft", ImGuiKey::ImGuiKey_GamepadFaceLeft);
@@ -546,49 +525,33 @@ int luaReg_imgui_imguiImGuiKey(lua_State* lua_S)
 	LUA_ENUM_ENTRY("ReservedForModShift", ImGuiKey::ImGuiKey_ReservedForModShift);
 	LUA_ENUM_ENTRY("ReservedForModAlt", ImGuiKey::ImGuiKey_ReservedForModAlt);
 	LUA_ENUM_ENTRY("ReservedForModSuper", ImGuiKey::ImGuiKey_ReservedForModSuper);
-	LUA_ENUM_ENTRY("COUNT", ImGuiKey::ImGuiKey_COUNT);
+	LUA_ENUM_ENTRY("NamedKey_END", ImGuiKey::ImGuiKey_NamedKey_END);
+	LUA_ENUM_ENTRY("NamedKey_COUNT", ImGuiKey::ImGuiKey_NamedKey_COUNT);
 	LUA_ENUM_ENTRY("ImGuiMod_None", ImGuiKey::ImGuiMod_None);
 	LUA_ENUM_ENTRY("ImGuiMod_Ctrl", ImGuiKey::ImGuiMod_Ctrl);
 	LUA_ENUM_ENTRY("ImGuiMod_Shift", ImGuiKey::ImGuiMod_Shift);
 	LUA_ENUM_ENTRY("ImGuiMod_Alt", ImGuiKey::ImGuiMod_Alt);
 	LUA_ENUM_ENTRY("ImGuiMod_Super", ImGuiKey::ImGuiMod_Super);
-	LUA_ENUM_ENTRY("ImGuiMod_Shortcut", ImGuiKey::ImGuiMod_Shortcut);
 	LUA_ENUM_ENTRY("ImGuiMod_Mask_", ImGuiKey::ImGuiMod_Mask_);
-	LUA_ENUM_ENTRY("NamedKey_BEGIN", ImGuiKey::ImGuiKey_NamedKey_BEGIN);
-	LUA_ENUM_ENTRY("NamedKey_END", ImGuiKey::ImGuiKey_NamedKey_END);
-	LUA_ENUM_ENTRY("NamedKey_COUNT", ImGuiKey::ImGuiKey_NamedKey_COUNT);
-	LUA_ENUM_ENTRY("KeysData_SIZE", ImGuiKey::ImGuiKey_KeysData_SIZE);
-	LUA_ENUM_ENTRY("KeysData_OFFSET", ImGuiKey::ImGuiKey_KeysData_OFFSET);
-	LUA_ENUM_ENTRY("ModCtrl", ImGuiKey::ImGuiKey_ModCtrl);
-	LUA_ENUM_ENTRY("ModShift", ImGuiKey::ImGuiKey_ModShift);
-	LUA_ENUM_ENTRY("ModAlt", ImGuiKey::ImGuiKey_ModAlt);
-	LUA_ENUM_ENTRY("ModSuper", ImGuiKey::ImGuiKey_ModSuper);
-	LUA_ENUM_ENTRY("KeyPadEnter", ImGuiKey::ImGuiKey_KeyPadEnter);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
 }
-int luaReg_imgui_imguiImGuiNavInput(lua_State* lua_S)
+int luaReg_imgui_imguiImGuiInputFlags(lua_State* lua_S)
 {
 	LUA_ENTRY("imgui");
-	LUA_ENUM_DEF("ImGuiNavInput");
-	LUA_ENUM_ENTRY("ImGuiNavInput_Activate", ImGuiNavInput::ImGuiNavInput_Activate);
-	LUA_ENUM_ENTRY("ImGuiNavInput_Cancel", ImGuiNavInput::ImGuiNavInput_Cancel);
-	LUA_ENUM_ENTRY("ImGuiNavInput_Input", ImGuiNavInput::ImGuiNavInput_Input);
-	LUA_ENUM_ENTRY("ImGuiNavInput_Menu", ImGuiNavInput::ImGuiNavInput_Menu);
-	LUA_ENUM_ENTRY("ImGuiNavInput_DpadLeft", ImGuiNavInput::ImGuiNavInput_DpadLeft);
-	LUA_ENUM_ENTRY("ImGuiNavInput_DpadRight", ImGuiNavInput::ImGuiNavInput_DpadRight);
-	LUA_ENUM_ENTRY("ImGuiNavInput_DpadUp", ImGuiNavInput::ImGuiNavInput_DpadUp);
-	LUA_ENUM_ENTRY("ImGuiNavInput_DpadDown", ImGuiNavInput::ImGuiNavInput_DpadDown);
-	LUA_ENUM_ENTRY("ImGuiNavInput_LStickLeft", ImGuiNavInput::ImGuiNavInput_LStickLeft);
-	LUA_ENUM_ENTRY("ImGuiNavInput_LStickRight", ImGuiNavInput::ImGuiNavInput_LStickRight);
-	LUA_ENUM_ENTRY("ImGuiNavInput_LStickUp", ImGuiNavInput::ImGuiNavInput_LStickUp);
-	LUA_ENUM_ENTRY("ImGuiNavInput_LStickDown", ImGuiNavInput::ImGuiNavInput_LStickDown);
-	LUA_ENUM_ENTRY("ImGuiNavInput_FocusPrev", ImGuiNavInput::ImGuiNavInput_FocusPrev);
-	LUA_ENUM_ENTRY("ImGuiNavInput_FocusNext", ImGuiNavInput::ImGuiNavInput_FocusNext);
-	LUA_ENUM_ENTRY("ImGuiNavInput_TweakSlow", ImGuiNavInput::ImGuiNavInput_TweakSlow);
-	LUA_ENUM_ENTRY("ImGuiNavInput_TweakFast", ImGuiNavInput::ImGuiNavInput_TweakFast);
-	LUA_ENUM_ENTRY("ImGuiNavInput_COUNT", ImGuiNavInput::ImGuiNavInput_COUNT);
+	LUA_ENUM_DEF("ImGuiInputFlags");
+	LUA_ENUM_ENTRY("ImGuiInputFlags_None", ImGuiInputFlags_::ImGuiInputFlags_None);
+	LUA_ENUM_ENTRY("ImGuiInputFlags_Repeat", ImGuiInputFlags_::ImGuiInputFlags_Repeat);
+	LUA_ENUM_ENTRY("ImGuiInputFlags_RouteActive", ImGuiInputFlags_::ImGuiInputFlags_RouteActive);
+	LUA_ENUM_ENTRY("ImGuiInputFlags_RouteFocused", ImGuiInputFlags_::ImGuiInputFlags_RouteFocused);
+	LUA_ENUM_ENTRY("ImGuiInputFlags_RouteGlobal", ImGuiInputFlags_::ImGuiInputFlags_RouteGlobal);
+	LUA_ENUM_ENTRY("ImGuiInputFlags_RouteAlways", ImGuiInputFlags_::ImGuiInputFlags_RouteAlways);
+	LUA_ENUM_ENTRY("ImGuiInputFlags_RouteOverFocused", ImGuiInputFlags_::ImGuiInputFlags_RouteOverFocused);
+	LUA_ENUM_ENTRY("ImGuiInputFlags_RouteOverActive", ImGuiInputFlags_::ImGuiInputFlags_RouteOverActive);
+	LUA_ENUM_ENTRY("ImGuiInputFlags_RouteUnlessBgFocused", ImGuiInputFlags_::ImGuiInputFlags_RouteUnlessBgFocused);
+	LUA_ENUM_ENTRY("ImGuiInputFlags_RouteFromRootWindow", ImGuiInputFlags_::ImGuiInputFlags_RouteFromRootWindow);
+	LUA_ENUM_ENTRY("ImGuiInputFlags_Tooltip", ImGuiInputFlags_::ImGuiInputFlags_Tooltip);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -600,14 +563,11 @@ int luaReg_imgui_imguiImGuiConfigFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("None", ImGuiConfigFlags_::ImGuiConfigFlags_None);
 	LUA_ENUM_ENTRY("NavEnableKeyboard", ImGuiConfigFlags_::ImGuiConfigFlags_NavEnableKeyboard);
 	LUA_ENUM_ENTRY("NavEnableGamepad", ImGuiConfigFlags_::ImGuiConfigFlags_NavEnableGamepad);
-	LUA_ENUM_ENTRY("NavEnableSetMousePos", ImGuiConfigFlags_::ImGuiConfigFlags_NavEnableSetMousePos);
-	LUA_ENUM_ENTRY("NavNoCaptureKeyboard", ImGuiConfigFlags_::ImGuiConfigFlags_NavNoCaptureKeyboard);
 	LUA_ENUM_ENTRY("NoMouse", ImGuiConfigFlags_::ImGuiConfigFlags_NoMouse);
 	LUA_ENUM_ENTRY("NoMouseCursorChange", ImGuiConfigFlags_::ImGuiConfigFlags_NoMouseCursorChange);
+	LUA_ENUM_ENTRY("NoKeyboard", ImGuiConfigFlags_::ImGuiConfigFlags_NoKeyboard);
 	LUA_ENUM_ENTRY("DockingEnable", ImGuiConfigFlags_::ImGuiConfigFlags_DockingEnable);
 	LUA_ENUM_ENTRY("ViewportsEnable", ImGuiConfigFlags_::ImGuiConfigFlags_ViewportsEnable);
-	LUA_ENUM_ENTRY("DpiEnableScaleViewports", ImGuiConfigFlags_::ImGuiConfigFlags_DpiEnableScaleViewports);
-	LUA_ENUM_ENTRY("DpiEnableScaleFonts", ImGuiConfigFlags_::ImGuiConfigFlags_DpiEnableScaleFonts);
 	LUA_ENUM_ENTRY("IsSRGB", ImGuiConfigFlags_::ImGuiConfigFlags_IsSRGB);
 	LUA_ENUM_ENTRY("IsTouchScreen", ImGuiConfigFlags_::ImGuiConfigFlags_IsTouchScreen);
 	LUA_ENUM_END();
@@ -623,9 +583,11 @@ int luaReg_imgui_imguiImGuiBackendFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("HasMouseCursors", ImGuiBackendFlags_::ImGuiBackendFlags_HasMouseCursors);
 	LUA_ENUM_ENTRY("HasSetMousePos", ImGuiBackendFlags_::ImGuiBackendFlags_HasSetMousePos);
 	LUA_ENUM_ENTRY("RendererHasVtxOffset", ImGuiBackendFlags_::ImGuiBackendFlags_RendererHasVtxOffset);
+	LUA_ENUM_ENTRY("RendererHasTextures", ImGuiBackendFlags_::ImGuiBackendFlags_RendererHasTextures);
+	LUA_ENUM_ENTRY("RendererHasViewports", ImGuiBackendFlags_::ImGuiBackendFlags_RendererHasViewports);
 	LUA_ENUM_ENTRY("PlatformHasViewports", ImGuiBackendFlags_::ImGuiBackendFlags_PlatformHasViewports);
 	LUA_ENUM_ENTRY("HasMouseHoveredViewport", ImGuiBackendFlags_::ImGuiBackendFlags_HasMouseHoveredViewport);
-	LUA_ENUM_ENTRY("RendererHasViewports", ImGuiBackendFlags_::ImGuiBackendFlags_RendererHasViewports);
+	LUA_ENUM_ENTRY("HasParentViewport", ImGuiBackendFlags_::ImGuiBackendFlags_HasParentViewport);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -653,6 +615,7 @@ int luaReg_imgui_imguiImGuiCol(lua_State* lua_S)
 	LUA_ENUM_ENTRY("ScrollbarGrabHovered", ImGuiCol_::ImGuiCol_ScrollbarGrabHovered);
 	LUA_ENUM_ENTRY("ScrollbarGrabActive", ImGuiCol_::ImGuiCol_ScrollbarGrabActive);
 	LUA_ENUM_ENTRY("CheckMark", ImGuiCol_::ImGuiCol_CheckMark);
+	LUA_ENUM_ENTRY("CheckboxSelectedBg", ImGuiCol_::ImGuiCol_CheckboxSelectedBg);
 	LUA_ENUM_ENTRY("SliderGrab", ImGuiCol_::ImGuiCol_SliderGrab);
 	LUA_ENUM_ENTRY("SliderGrabActive", ImGuiCol_::ImGuiCol_SliderGrabActive);
 	LUA_ENUM_ENTRY("Button", ImGuiCol_::ImGuiCol_Button);
@@ -667,11 +630,14 @@ int luaReg_imgui_imguiImGuiCol(lua_State* lua_S)
 	LUA_ENUM_ENTRY("ResizeGrip", ImGuiCol_::ImGuiCol_ResizeGrip);
 	LUA_ENUM_ENTRY("ResizeGripHovered", ImGuiCol_::ImGuiCol_ResizeGripHovered);
 	LUA_ENUM_ENTRY("ResizeGripActive", ImGuiCol_::ImGuiCol_ResizeGripActive);
-	LUA_ENUM_ENTRY("Tab", ImGuiCol_::ImGuiCol_Tab);
+	LUA_ENUM_ENTRY("InputTextCursor", ImGuiCol_::ImGuiCol_InputTextCursor);
 	LUA_ENUM_ENTRY("TabHovered", ImGuiCol_::ImGuiCol_TabHovered);
-	LUA_ENUM_ENTRY("TabActive", ImGuiCol_::ImGuiCol_TabActive);
-	LUA_ENUM_ENTRY("TabUnfocused", ImGuiCol_::ImGuiCol_TabUnfocused);
-	LUA_ENUM_ENTRY("TabUnfocusedActive", ImGuiCol_::ImGuiCol_TabUnfocusedActive);
+	LUA_ENUM_ENTRY("Tab", ImGuiCol_::ImGuiCol_Tab);
+	LUA_ENUM_ENTRY("TabSelected", ImGuiCol_::ImGuiCol_TabSelected);
+	LUA_ENUM_ENTRY("TabSelectedOverline", ImGuiCol_::ImGuiCol_TabSelectedOverline);
+	LUA_ENUM_ENTRY("TabDimmed", ImGuiCol_::ImGuiCol_TabDimmed);
+	LUA_ENUM_ENTRY("TabDimmedSelected", ImGuiCol_::ImGuiCol_TabDimmedSelected);
+	LUA_ENUM_ENTRY("TabDimmedSelectedOverline", ImGuiCol_::ImGuiCol_TabDimmedSelectedOverline);
 	LUA_ENUM_ENTRY("DockingPreview", ImGuiCol_::ImGuiCol_DockingPreview);
 	LUA_ENUM_ENTRY("DockingEmptyBg", ImGuiCol_::ImGuiCol_DockingEmptyBg);
 	LUA_ENUM_ENTRY("PlotLines", ImGuiCol_::ImGuiCol_PlotLines);
@@ -683,9 +649,13 @@ int luaReg_imgui_imguiImGuiCol(lua_State* lua_S)
 	LUA_ENUM_ENTRY("TableBorderLight", ImGuiCol_::ImGuiCol_TableBorderLight);
 	LUA_ENUM_ENTRY("TableRowBg", ImGuiCol_::ImGuiCol_TableRowBg);
 	LUA_ENUM_ENTRY("TableRowBgAlt", ImGuiCol_::ImGuiCol_TableRowBgAlt);
+	LUA_ENUM_ENTRY("TextLink", ImGuiCol_::ImGuiCol_TextLink);
 	LUA_ENUM_ENTRY("TextSelectedBg", ImGuiCol_::ImGuiCol_TextSelectedBg);
+	LUA_ENUM_ENTRY("TreeLines", ImGuiCol_::ImGuiCol_TreeLines);
 	LUA_ENUM_ENTRY("DragDropTarget", ImGuiCol_::ImGuiCol_DragDropTarget);
-	LUA_ENUM_ENTRY("NavHighlight", ImGuiCol_::ImGuiCol_NavHighlight);
+	LUA_ENUM_ENTRY("DragDropTargetBg", ImGuiCol_::ImGuiCol_DragDropTargetBg);
+	LUA_ENUM_ENTRY("UnsavedMarker", ImGuiCol_::ImGuiCol_UnsavedMarker);
+	LUA_ENUM_ENTRY("NavCursor", ImGuiCol_::ImGuiCol_NavCursor);
 	LUA_ENUM_ENTRY("NavWindowingHighlight", ImGuiCol_::ImGuiCol_NavWindowingHighlight);
 	LUA_ENUM_ENTRY("NavWindowingDimBg", ImGuiCol_::ImGuiCol_NavWindowingDimBg);
 	LUA_ENUM_ENTRY("ModalWindowDimBg", ImGuiCol_::ImGuiCol_ModalWindowDimBg);
@@ -718,14 +688,31 @@ int luaReg_imgui_imguiImGuiStyleVar(lua_State* lua_S)
 	LUA_ENUM_ENTRY("CellPadding", ImGuiStyleVar_::ImGuiStyleVar_CellPadding);
 	LUA_ENUM_ENTRY("ScrollbarSize", ImGuiStyleVar_::ImGuiStyleVar_ScrollbarSize);
 	LUA_ENUM_ENTRY("ScrollbarRounding", ImGuiStyleVar_::ImGuiStyleVar_ScrollbarRounding);
+	LUA_ENUM_ENTRY("ScrollbarPadding", ImGuiStyleVar_::ImGuiStyleVar_ScrollbarPadding);
 	LUA_ENUM_ENTRY("GrabMinSize", ImGuiStyleVar_::ImGuiStyleVar_GrabMinSize);
 	LUA_ENUM_ENTRY("GrabRounding", ImGuiStyleVar_::ImGuiStyleVar_GrabRounding);
+	LUA_ENUM_ENTRY("ImageRounding", ImGuiStyleVar_::ImGuiStyleVar_ImageRounding);
+	LUA_ENUM_ENTRY("ImageBorderSize", ImGuiStyleVar_::ImGuiStyleVar_ImageBorderSize);
 	LUA_ENUM_ENTRY("TabRounding", ImGuiStyleVar_::ImGuiStyleVar_TabRounding);
+	LUA_ENUM_ENTRY("TabBorderSize", ImGuiStyleVar_::ImGuiStyleVar_TabBorderSize);
+	LUA_ENUM_ENTRY("TabMinWidthBase", ImGuiStyleVar_::ImGuiStyleVar_TabMinWidthBase);
+	LUA_ENUM_ENTRY("TabMinWidthShrink", ImGuiStyleVar_::ImGuiStyleVar_TabMinWidthShrink);
+	LUA_ENUM_ENTRY("TabBarBorderSize", ImGuiStyleVar_::ImGuiStyleVar_TabBarBorderSize);
+	LUA_ENUM_ENTRY("TabBarOverlineSize", ImGuiStyleVar_::ImGuiStyleVar_TabBarOverlineSize);
+	LUA_ENUM_ENTRY("TableAngledHeadersAngle", ImGuiStyleVar_::ImGuiStyleVar_TableAngledHeadersAngle);
+	LUA_ENUM_ENTRY("TableAngledHeadersTextAlign", ImGuiStyleVar_::ImGuiStyleVar_TableAngledHeadersTextAlign);
+	LUA_ENUM_ENTRY("TreeLinesSize", ImGuiStyleVar_::ImGuiStyleVar_TreeLinesSize);
+	LUA_ENUM_ENTRY("TreeLinesRounding", ImGuiStyleVar_::ImGuiStyleVar_TreeLinesRounding);
+	LUA_ENUM_ENTRY("MenuItemRounding", ImGuiStyleVar_::ImGuiStyleVar_MenuItemRounding);
+	LUA_ENUM_ENTRY("SelectableRounding", ImGuiStyleVar_::ImGuiStyleVar_SelectableRounding);
+	LUA_ENUM_ENTRY("DragDropTargetRounding", ImGuiStyleVar_::ImGuiStyleVar_DragDropTargetRounding);
 	LUA_ENUM_ENTRY("ButtonTextAlign", ImGuiStyleVar_::ImGuiStyleVar_ButtonTextAlign);
 	LUA_ENUM_ENTRY("SelectableTextAlign", ImGuiStyleVar_::ImGuiStyleVar_SelectableTextAlign);
+	LUA_ENUM_ENTRY("SeparatorSize", ImGuiStyleVar_::ImGuiStyleVar_SeparatorSize);
 	LUA_ENUM_ENTRY("SeparatorTextBorderSize", ImGuiStyleVar_::ImGuiStyleVar_SeparatorTextBorderSize);
 	LUA_ENUM_ENTRY("SeparatorTextAlign", ImGuiStyleVar_::ImGuiStyleVar_SeparatorTextAlign);
 	LUA_ENUM_ENTRY("SeparatorTextPadding", ImGuiStyleVar_::ImGuiStyleVar_SeparatorTextPadding);
+	LUA_ENUM_ENTRY("DockingSeparatorSize", ImGuiStyleVar_::ImGuiStyleVar_DockingSeparatorSize);
 	LUA_ENUM_ENTRY("COUNT", ImGuiStyleVar_::ImGuiStyleVar_COUNT);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
@@ -740,7 +727,8 @@ int luaReg_imgui_imguiImGuiButtonFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("MouseButtonRight", ImGuiButtonFlags_::ImGuiButtonFlags_MouseButtonRight);
 	LUA_ENUM_ENTRY("MouseButtonMiddle", ImGuiButtonFlags_::ImGuiButtonFlags_MouseButtonMiddle);
 	LUA_ENUM_ENTRY("MouseButtonMask_", ImGuiButtonFlags_::ImGuiButtonFlags_MouseButtonMask_);
-	LUA_ENUM_ENTRY("MouseButtonDefault_", ImGuiButtonFlags_::ImGuiButtonFlags_MouseButtonDefault_);
+	LUA_ENUM_ENTRY("EnableNav", ImGuiButtonFlags_::ImGuiButtonFlags_EnableNav);
+	LUA_ENUM_ENTRY("AllowOverlap", ImGuiButtonFlags_::ImGuiButtonFlags_AllowOverlap);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -760,9 +748,11 @@ int luaReg_imgui_imguiImGuiColorEditFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("NoSidePreview", ImGuiColorEditFlags_::ImGuiColorEditFlags_NoSidePreview);
 	LUA_ENUM_ENTRY("NoDragDrop", ImGuiColorEditFlags_::ImGuiColorEditFlags_NoDragDrop);
 	LUA_ENUM_ENTRY("NoBorder", ImGuiColorEditFlags_::ImGuiColorEditFlags_NoBorder);
-	LUA_ENUM_ENTRY("AlphaBar", ImGuiColorEditFlags_::ImGuiColorEditFlags_AlphaBar);
-	LUA_ENUM_ENTRY("AlphaPreview", ImGuiColorEditFlags_::ImGuiColorEditFlags_AlphaPreview);
+	LUA_ENUM_ENTRY("NoColorMarkers", ImGuiColorEditFlags_::ImGuiColorEditFlags_NoColorMarkers);
+	LUA_ENUM_ENTRY("AlphaOpaque", ImGuiColorEditFlags_::ImGuiColorEditFlags_AlphaOpaque);
+	LUA_ENUM_ENTRY("AlphaNoBg", ImGuiColorEditFlags_::ImGuiColorEditFlags_AlphaNoBg);
 	LUA_ENUM_ENTRY("AlphaPreviewHalf", ImGuiColorEditFlags_::ImGuiColorEditFlags_AlphaPreviewHalf);
+	LUA_ENUM_ENTRY("AlphaBar", ImGuiColorEditFlags_::ImGuiColorEditFlags_AlphaBar);
 	LUA_ENUM_ENTRY("HDR", ImGuiColorEditFlags_::ImGuiColorEditFlags_HDR);
 	LUA_ENUM_ENTRY("DisplayRGB", ImGuiColorEditFlags_::ImGuiColorEditFlags_DisplayRGB);
 	LUA_ENUM_ENTRY("DisplayHSV", ImGuiColorEditFlags_::ImGuiColorEditFlags_DisplayHSV);
@@ -771,9 +761,11 @@ int luaReg_imgui_imguiImGuiColorEditFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("Float", ImGuiColorEditFlags_::ImGuiColorEditFlags_Float);
 	LUA_ENUM_ENTRY("PickerHueBar", ImGuiColorEditFlags_::ImGuiColorEditFlags_PickerHueBar);
 	LUA_ENUM_ENTRY("PickerHueWheel", ImGuiColorEditFlags_::ImGuiColorEditFlags_PickerHueWheel);
+	LUA_ENUM_ENTRY("PickerNoRotate", ImGuiColorEditFlags_::ImGuiColorEditFlags_PickerNoRotate);
 	LUA_ENUM_ENTRY("InputRGB", ImGuiColorEditFlags_::ImGuiColorEditFlags_InputRGB);
 	LUA_ENUM_ENTRY("InputHSV", ImGuiColorEditFlags_::ImGuiColorEditFlags_InputHSV);
 	LUA_ENUM_ENTRY("DefaultOptions_", ImGuiColorEditFlags_::ImGuiColorEditFlags_DefaultOptions_);
+	LUA_ENUM_ENTRY("AlphaMask_", ImGuiColorEditFlags_::ImGuiColorEditFlags_AlphaMask_);
 	LUA_ENUM_ENTRY("DisplayMask_", ImGuiColorEditFlags_::ImGuiColorEditFlags_DisplayMask_);
 	LUA_ENUM_ENTRY("DataTypeMask_", ImGuiColorEditFlags_::ImGuiColorEditFlags_DataTypeMask_);
 	LUA_ENUM_ENTRY("PickerMask_", ImGuiColorEditFlags_::ImGuiColorEditFlags_PickerMask_);
@@ -787,12 +779,16 @@ int luaReg_imgui_imguiImGuiSliderFlags(lua_State* lua_S)
 	LUA_ENTRY("imgui");
 	LUA_ENUM_DEF("ImGuiSliderFlags");
 	LUA_ENUM_ENTRY("None", ImGuiSliderFlags_::ImGuiSliderFlags_None);
-	LUA_ENUM_ENTRY("AlwaysClamp", ImGuiSliderFlags_::ImGuiSliderFlags_AlwaysClamp);
 	LUA_ENUM_ENTRY("Logarithmic", ImGuiSliderFlags_::ImGuiSliderFlags_Logarithmic);
 	LUA_ENUM_ENTRY("NoRoundToFormat", ImGuiSliderFlags_::ImGuiSliderFlags_NoRoundToFormat);
 	LUA_ENUM_ENTRY("NoInput", ImGuiSliderFlags_::ImGuiSliderFlags_NoInput);
-	LUA_ENUM_ENTRY("InvalidMask_", ImGuiSliderFlags_::ImGuiSliderFlags_InvalidMask_);
+	LUA_ENUM_ENTRY("WrapAround", ImGuiSliderFlags_::ImGuiSliderFlags_WrapAround);
 	LUA_ENUM_ENTRY("ClampOnInput", ImGuiSliderFlags_::ImGuiSliderFlags_ClampOnInput);
+	LUA_ENUM_ENTRY("ClampZeroRange", ImGuiSliderFlags_::ImGuiSliderFlags_ClampZeroRange);
+	LUA_ENUM_ENTRY("NoSpeedTweaks", ImGuiSliderFlags_::ImGuiSliderFlags_NoSpeedTweaks);
+	LUA_ENUM_ENTRY("ColorMarkers", ImGuiSliderFlags_::ImGuiSliderFlags_ColorMarkers);
+	LUA_ENUM_ENTRY("AlwaysClamp", ImGuiSliderFlags_::ImGuiSliderFlags_AlwaysClamp);
+	LUA_ENUM_ENTRY("InvalidMask_", ImGuiSliderFlags_::ImGuiSliderFlags_InvalidMask_);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -822,8 +818,22 @@ int luaReg_imgui_imguiImGuiMouseCursor(lua_State* lua_S)
 	LUA_ENUM_ENTRY("ResizeNESW", ImGuiMouseCursor_::ImGuiMouseCursor_ResizeNESW);
 	LUA_ENUM_ENTRY("ResizeNWSE", ImGuiMouseCursor_::ImGuiMouseCursor_ResizeNWSE);
 	LUA_ENUM_ENTRY("Hand", ImGuiMouseCursor_::ImGuiMouseCursor_Hand);
+	LUA_ENUM_ENTRY("Wait", ImGuiMouseCursor_::ImGuiMouseCursor_Wait);
+	LUA_ENUM_ENTRY("Progress", ImGuiMouseCursor_::ImGuiMouseCursor_Progress);
 	LUA_ENUM_ENTRY("NotAllowed", ImGuiMouseCursor_::ImGuiMouseCursor_NotAllowed);
 	LUA_ENUM_ENTRY("COUNT", ImGuiMouseCursor_::ImGuiMouseCursor_COUNT);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_imgui_imguiImGuiMouseSource(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImGuiMouseSource");
+	LUA_ENUM_ENTRY("ImGuiMouseSource_Mouse", ImGuiMouseSource::ImGuiMouseSource_Mouse);
+	LUA_ENUM_ENTRY("ImGuiMouseSource_TouchScreen", ImGuiMouseSource::ImGuiMouseSource_TouchScreen);
+	LUA_ENUM_ENTRY("ImGuiMouseSource_Pen", ImGuiMouseSource::ImGuiMouseSource_Pen);
+	LUA_ENUM_ENTRY("ImGuiMouseSource_COUNT", ImGuiMouseSource::ImGuiMouseSource_COUNT);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -841,6 +851,182 @@ int luaReg_imgui_imguiImGuiCond(lua_State* lua_S)
 	LUA_ENTRY_END(1);
 	return 0;
 }
+int luaReg_imgui_imguiImGuiTableFlags(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImGuiTableFlags");
+	LUA_ENUM_ENTRY("None", ImGuiTableFlags_::ImGuiTableFlags_None);
+	LUA_ENUM_ENTRY("Resizable", ImGuiTableFlags_::ImGuiTableFlags_Resizable);
+	LUA_ENUM_ENTRY("Reorderable", ImGuiTableFlags_::ImGuiTableFlags_Reorderable);
+	LUA_ENUM_ENTRY("Hideable", ImGuiTableFlags_::ImGuiTableFlags_Hideable);
+	LUA_ENUM_ENTRY("Sortable", ImGuiTableFlags_::ImGuiTableFlags_Sortable);
+	LUA_ENUM_ENTRY("NoSavedSettings", ImGuiTableFlags_::ImGuiTableFlags_NoSavedSettings);
+	LUA_ENUM_ENTRY("ContextMenuInBody", ImGuiTableFlags_::ImGuiTableFlags_ContextMenuInBody);
+	LUA_ENUM_ENTRY("RowBg", ImGuiTableFlags_::ImGuiTableFlags_RowBg);
+	LUA_ENUM_ENTRY("BordersInnerH", ImGuiTableFlags_::ImGuiTableFlags_BordersInnerH);
+	LUA_ENUM_ENTRY("BordersOuterH", ImGuiTableFlags_::ImGuiTableFlags_BordersOuterH);
+	LUA_ENUM_ENTRY("BordersInnerV", ImGuiTableFlags_::ImGuiTableFlags_BordersInnerV);
+	LUA_ENUM_ENTRY("BordersOuterV", ImGuiTableFlags_::ImGuiTableFlags_BordersOuterV);
+	LUA_ENUM_ENTRY("BordersH", ImGuiTableFlags_::ImGuiTableFlags_BordersH);
+	LUA_ENUM_ENTRY("BordersV", ImGuiTableFlags_::ImGuiTableFlags_BordersV);
+	LUA_ENUM_ENTRY("BordersInner", ImGuiTableFlags_::ImGuiTableFlags_BordersInner);
+	LUA_ENUM_ENTRY("BordersOuter", ImGuiTableFlags_::ImGuiTableFlags_BordersOuter);
+	LUA_ENUM_ENTRY("Borders", ImGuiTableFlags_::ImGuiTableFlags_Borders);
+	LUA_ENUM_ENTRY("NoBordersInBody", ImGuiTableFlags_::ImGuiTableFlags_NoBordersInBody);
+	LUA_ENUM_ENTRY("NoBordersInBodyUntilResize", ImGuiTableFlags_::ImGuiTableFlags_NoBordersInBodyUntilResize);
+	LUA_ENUM_ENTRY("SizingFixedFit", ImGuiTableFlags_::ImGuiTableFlags_SizingFixedFit);
+	LUA_ENUM_ENTRY("SizingFixedSame", ImGuiTableFlags_::ImGuiTableFlags_SizingFixedSame);
+	LUA_ENUM_ENTRY("SizingStretchProp", ImGuiTableFlags_::ImGuiTableFlags_SizingStretchProp);
+	LUA_ENUM_ENTRY("SizingStretchSame", ImGuiTableFlags_::ImGuiTableFlags_SizingStretchSame);
+	LUA_ENUM_ENTRY("NoHostExtendX", ImGuiTableFlags_::ImGuiTableFlags_NoHostExtendX);
+	LUA_ENUM_ENTRY("NoHostExtendY", ImGuiTableFlags_::ImGuiTableFlags_NoHostExtendY);
+	LUA_ENUM_ENTRY("NoKeepColumnsVisible", ImGuiTableFlags_::ImGuiTableFlags_NoKeepColumnsVisible);
+	LUA_ENUM_ENTRY("PreciseWidths", ImGuiTableFlags_::ImGuiTableFlags_PreciseWidths);
+	LUA_ENUM_ENTRY("NoClip", ImGuiTableFlags_::ImGuiTableFlags_NoClip);
+	LUA_ENUM_ENTRY("PadOuterX", ImGuiTableFlags_::ImGuiTableFlags_PadOuterX);
+	LUA_ENUM_ENTRY("NoPadOuterX", ImGuiTableFlags_::ImGuiTableFlags_NoPadOuterX);
+	LUA_ENUM_ENTRY("NoPadInnerX", ImGuiTableFlags_::ImGuiTableFlags_NoPadInnerX);
+	LUA_ENUM_ENTRY("ScrollX", ImGuiTableFlags_::ImGuiTableFlags_ScrollX);
+	LUA_ENUM_ENTRY("ScrollY", ImGuiTableFlags_::ImGuiTableFlags_ScrollY);
+	LUA_ENUM_ENTRY("SortMulti", ImGuiTableFlags_::ImGuiTableFlags_SortMulti);
+	LUA_ENUM_ENTRY("SortTristate", ImGuiTableFlags_::ImGuiTableFlags_SortTristate);
+	LUA_ENUM_ENTRY("HighlightHoveredColumn", ImGuiTableFlags_::ImGuiTableFlags_HighlightHoveredColumn);
+	LUA_ENUM_ENTRY("SizingMask_", ImGuiTableFlags_::ImGuiTableFlags_SizingMask_);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_imgui_imguiImGuiTableColumnFlags(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImGuiTableColumnFlags");
+	LUA_ENUM_ENTRY("None", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_None);
+	LUA_ENUM_ENTRY("Disabled", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_Disabled);
+	LUA_ENUM_ENTRY("DefaultHide", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_DefaultHide);
+	LUA_ENUM_ENTRY("DefaultSort", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_DefaultSort);
+	LUA_ENUM_ENTRY("WidthStretch", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_WidthStretch);
+	LUA_ENUM_ENTRY("WidthFixed", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_WidthFixed);
+	LUA_ENUM_ENTRY("NoResize", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoResize);
+	LUA_ENUM_ENTRY("NoReorder", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoReorder);
+	LUA_ENUM_ENTRY("NoHide", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoHide);
+	LUA_ENUM_ENTRY("NoClip", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoClip);
+	LUA_ENUM_ENTRY("NoSort", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoSort);
+	LUA_ENUM_ENTRY("NoSortAscending", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoSortAscending);
+	LUA_ENUM_ENTRY("NoSortDescending", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoSortDescending);
+	LUA_ENUM_ENTRY("NoHeaderLabel", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoHeaderLabel);
+	LUA_ENUM_ENTRY("NoHeaderWidth", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoHeaderWidth);
+	LUA_ENUM_ENTRY("PreferSortAscending", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_PreferSortAscending);
+	LUA_ENUM_ENTRY("PreferSortDescending", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_PreferSortDescending);
+	LUA_ENUM_ENTRY("IndentEnable", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IndentEnable);
+	LUA_ENUM_ENTRY("IndentDisable", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IndentDisable);
+	LUA_ENUM_ENTRY("AngledHeader", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_AngledHeader);
+	LUA_ENUM_ENTRY("IsEnabled", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IsEnabled);
+	LUA_ENUM_ENTRY("IsVisible", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IsVisible);
+	LUA_ENUM_ENTRY("IsSorted", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IsSorted);
+	LUA_ENUM_ENTRY("IsHovered", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IsHovered);
+	LUA_ENUM_ENTRY("WidthMask_", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_WidthMask_);
+	LUA_ENUM_ENTRY("IndentMask_", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_IndentMask_);
+	LUA_ENUM_ENTRY("StatusMask_", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_StatusMask_);
+	LUA_ENUM_ENTRY("NoDirectResize_", ImGuiTableColumnFlags_::ImGuiTableColumnFlags_NoDirectResize_);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_imgui_imguiImGuiTableRowFlags(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImGuiTableRowFlags");
+	LUA_ENUM_ENTRY("None", ImGuiTableRowFlags_::ImGuiTableRowFlags_None);
+	LUA_ENUM_ENTRY("Headers", ImGuiTableRowFlags_::ImGuiTableRowFlags_Headers);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_imgui_imguiImGuiTableBgTarget(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImGuiTableBgTarget");
+	LUA_ENUM_ENTRY("None", ImGuiTableBgTarget_::ImGuiTableBgTarget_None);
+	LUA_ENUM_ENTRY("RowBg0", ImGuiTableBgTarget_::ImGuiTableBgTarget_RowBg0);
+	LUA_ENUM_ENTRY("RowBg1", ImGuiTableBgTarget_::ImGuiTableBgTarget_RowBg1);
+	LUA_ENUM_ENTRY("CellBg", ImGuiTableBgTarget_::ImGuiTableBgTarget_CellBg);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_imgui_imguiImGuiListClipperFlags(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImGuiListClipperFlags");
+	LUA_ENUM_ENTRY("ImGuiListClipperFlags_None", ImGuiListClipperFlags_::ImGuiListClipperFlags_None);
+	LUA_ENUM_ENTRY("ImGuiListClipperFlags_NoSetTableRowCounters", ImGuiListClipperFlags_::ImGuiListClipperFlags_NoSetTableRowCounters);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_imgui_imguiImGuiMultiSelectFlags(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImGuiMultiSelectFlags");
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_None", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_None);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_SingleSelect", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_SingleSelect);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_NoSelectAll", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_NoSelectAll);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_NoRangeSelect", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_NoRangeSelect);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_NoAutoSelect", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_NoAutoSelect);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_NoAutoClear", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_NoAutoClear);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_NoAutoClearOnReselect", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_NoAutoClearOnReselect);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_BoxSelect1d", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_BoxSelect1d);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_BoxSelect2d", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_BoxSelect2d);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_BoxSelectNoScroll", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_BoxSelectNoScroll);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_ClearOnEscape", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_ClearOnEscape);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_ClearOnClickVoid", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_ClearOnClickVoid);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_ScopeWindow", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_ScopeWindow);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_ScopeRect", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_ScopeRect);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_SelectOnAuto", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_SelectOnAuto);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_SelectOnClickAlways", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_SelectOnClickAlways);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_SelectOnClickRelease", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_SelectOnClickRelease);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_NavWrapX", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_NavWrapX);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_NoSelectOnRightClick", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_NoSelectOnRightClick);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_SelectOnMask_", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_SelectOnMask_);
+	LUA_ENUM_ENTRY("ImGuiMultiSelectFlags_CheckboxMode_", ImGuiMultiSelectFlags_::ImGuiMultiSelectFlags_CheckboxMode_);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_imgui_imguiImGuiSelectionRequestType(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImGuiSelectionRequestType");
+	LUA_ENUM_ENTRY("ImGuiSelectionRequestType_None", ImGuiSelectionRequestType::ImGuiSelectionRequestType_None);
+	LUA_ENUM_ENTRY("ImGuiSelectionRequestType_SetAll", ImGuiSelectionRequestType::ImGuiSelectionRequestType_SetAll);
+	LUA_ENUM_ENTRY("ImGuiSelectionRequestType_SetRange", ImGuiSelectionRequestType::ImGuiSelectionRequestType_SetRange);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_imgui_imguiImTextureFormat(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImTextureFormat");
+	LUA_ENUM_ENTRY("ImTextureFormat_RGBA32", ImTextureFormat::ImTextureFormat_RGBA32);
+	LUA_ENUM_ENTRY("ImTextureFormat_Alpha8", ImTextureFormat::ImTextureFormat_Alpha8);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+int luaReg_imgui_imguiImTextureStatus(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENUM_DEF("ImTextureStatus");
+	LUA_ENUM_ENTRY("ImTextureStatus_OK", ImTextureStatus::ImTextureStatus_OK);
+	LUA_ENUM_ENTRY("ImTextureStatus_Destroyed", ImTextureStatus::ImTextureStatus_Destroyed);
+	LUA_ENUM_ENTRY("ImTextureStatus_WantCreate", ImTextureStatus::ImTextureStatus_WantCreate);
+	LUA_ENUM_ENTRY("ImTextureStatus_WantUpdates", ImTextureStatus::ImTextureStatus_WantUpdates);
+	LUA_ENUM_ENTRY("ImTextureStatus_WantDestroy", ImTextureStatus::ImTextureStatus_WantDestroy);
+	LUA_ENUM_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
 int lua_ImGui_alignTextToFramePadding(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.alignTextToFramePadding");
@@ -853,31 +1039,24 @@ int lua_ImGui_arrowButton(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(2, &ImGui::ArrowButton);
 	LUA_GINVOKE_FOOTER("2");
 }
-int lua_ImGui_beginChildFrame(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginChildFrame");
-	LUA_TRY_INVOKE_R(3, static_cast<bool(*)(ImGuiID, const ImVec2&, ImGuiWindowFlags)>(&ImGui::BeginChildFrame));
-	LUA_TRY_INVOKE_R(2, [](ImGuiID arg0,const ImVec2& arg1){{return ImGui::BeginChildFrame(std::move(arg0),arg1);}});
-	LUA_GINVOKE_FOOTER("2,3");
-}
 int lua_ImGui_beginCombo(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginCombo");
-	LUA_TRY_INVOKE_R(3, static_cast<bool(*)(const char*, const char*, ImGuiComboFlags)>(&ImGui::BeginCombo));
-	LUA_TRY_INVOKE_R(2, [](const char* arg0,const char* arg1){{return ImGui::BeginCombo(arg0,arg1);}});
+	LUA_TRY_INVOKE_R(3, &ImGui::BeginCombo);
+	LUA_TRY_INVOKE_R(2, ([](const char* arg0,const char* arg1){{return ImGui::BeginCombo(arg0,arg1);}}));
 	LUA_GINVOKE_FOOTER("2,3");
 }
 int lua_ImGui_beginDisabled(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginDisabled");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(bool)>(&ImGui::BeginDisabled));
+	LUA_TRY_INVOKE(1, &ImGui::BeginDisabled);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::BeginDisabled();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImGui_beginDragDropSource(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginDragDropSource");
-	LUA_TRY_INVOKE_R(1, static_cast<bool(*)(ImGuiDragDropFlags)>(&ImGui::BeginDragDropSource));
+	LUA_TRY_INVOKE_R(1, &ImGui::BeginDragDropSource);
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::BeginDragDropSource();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -893,10 +1072,16 @@ int lua_ImGui_beginGroup(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, &ImGui::BeginGroup);
 	LUA_GINVOKE_FOOTER("0");
 }
+int lua_ImGui_beginItemTooltip(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginItemTooltip");
+	LUA_TRY_INVOKE_R(0, &ImGui::BeginItemTooltip);
+	LUA_GINVOKE_FOOTER("0");
+}
 int lua_ImGui_beginListBox(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginListBox");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, const ImVec2&)>(&ImGui::BeginListBox));
+	LUA_TRY_INVOKE_R(2, &ImGui::BeginListBox);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::BeginListBox(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -909,7 +1094,7 @@ int lua_ImGui_beginMainMenuBar(lua_State* lua_S)
 int lua_ImGui_beginMenu(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginMenu");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, bool)>(&ImGui::BeginMenu));
+	LUA_TRY_INVOKE_R(2, &ImGui::BeginMenu);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::BeginMenu(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -919,17 +1104,25 @@ int lua_ImGui_beginMenuBar(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, &ImGui::BeginMenuBar);
 	LUA_GINVOKE_FOOTER("0");
 }
+int lua_ImGui_beginMultiSelect(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginMultiSelect");
+	LUA_TRY_INVOKE_R(3, &ImGui::BeginMultiSelect);
+	LUA_TRY_INVOKE_R(2, ([](ImGuiMultiSelectFlags arg0,int arg1){{return ImGui::BeginMultiSelect(std::move(arg0),std::move(arg1));}}));
+	LUA_TRY_INVOKE_R(1, [](ImGuiMultiSelectFlags arg0){{return ImGui::BeginMultiSelect(std::move(arg0));}});
+	LUA_GINVOKE_FOOTER("1,2,3");
+}
 int lua_ImGui_beginPopup(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginPopup");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, ImGuiWindowFlags)>(&ImGui::BeginPopup));
+	LUA_TRY_INVOKE_R(2, &ImGui::BeginPopup);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::BeginPopup(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_beginPopupContextItem(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginPopupContextItem");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, ImGuiPopupFlags)>(&ImGui::BeginPopupContextItem));
+	LUA_TRY_INVOKE_R(2, &ImGui::BeginPopupContextItem);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::BeginPopupContextItem(arg0);}});
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::BeginPopupContextItem();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
@@ -937,7 +1130,7 @@ int lua_ImGui_beginPopupContextItem(lua_State* lua_S)
 int lua_ImGui_beginPopupContextVoid(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginPopupContextVoid");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, ImGuiPopupFlags)>(&ImGui::BeginPopupContextVoid));
+	LUA_TRY_INVOKE_R(2, &ImGui::BeginPopupContextVoid);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::BeginPopupContextVoid(arg0);}});
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::BeginPopupContextVoid();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
@@ -945,7 +1138,7 @@ int lua_ImGui_beginPopupContextVoid(lua_State* lua_S)
 int lua_ImGui_beginPopupContextWindow(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginPopupContextWindow");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, ImGuiPopupFlags)>(&ImGui::BeginPopupContextWindow));
+	LUA_TRY_INVOKE_R(2, &ImGui::BeginPopupContextWindow);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::BeginPopupContextWindow(arg0);}});
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::BeginPopupContextWindow();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
@@ -953,23 +1146,23 @@ int lua_ImGui_beginPopupContextWindow(lua_State* lua_S)
 int lua_ImGui_beginTabBar(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginTabBar");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, ImGuiTabBarFlags)>(&ImGui::BeginTabBar));
+	LUA_TRY_INVOKE_R(2, &ImGui::BeginTabBar);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::BeginTabBar(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_beginTable(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginTable");
-	LUA_TRY_INVOKE_R(5, static_cast<bool(*)(const char*, int, ImGuiTableFlags, const ImVec2&, float)>(&ImGui::BeginTable));
-	LUA_TRY_INVOKE_R(4, [](const char* arg0,int arg1,ImGuiTableFlags arg2,const ImVec2& arg3){{return ImGui::BeginTable(arg0,std::move(arg1),std::move(arg2),arg3);}});
-	LUA_TRY_INVOKE_R(3, [](const char* arg0,int arg1,ImGuiTableFlags arg2){{return ImGui::BeginTable(arg0,std::move(arg1),std::move(arg2));}});
-	LUA_TRY_INVOKE_R(2, [](const char* arg0,int arg1){{return ImGui::BeginTable(arg0,std::move(arg1));}});
+	LUA_TRY_INVOKE_R(5, &ImGui::BeginTable);
+	LUA_TRY_INVOKE_R(4, ([](const char* arg0,int arg1,ImGuiTableFlags arg2,const ImVec2& arg3){{return ImGui::BeginTable(arg0,std::move(arg1),std::move(arg2),arg3);}}));
+	LUA_TRY_INVOKE_R(3, ([](const char* arg0,int arg1,ImGuiTableFlags arg2){{return ImGui::BeginTable(arg0,std::move(arg1),std::move(arg2));}}));
+	LUA_TRY_INVOKE_R(2, ([](const char* arg0,int arg1){{return ImGui::BeginTable(arg0,std::move(arg1));}}));
 	LUA_GINVOKE_FOOTER("2,3,4,5");
 }
 int lua_ImGui_beginTooltip(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.beginTooltip");
-	LUA_TRY_INVOKE(0, &ImGui::BeginTooltip);
+	LUA_TRY_INVOKE_R(0, &ImGui::BeginTooltip);
 	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImGui_bullet(lua_State* lua_S)
@@ -981,13 +1174,13 @@ int lua_ImGui_bullet(lua_State* lua_S)
 int lua_ImGui_bulletText(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.bulletText");
-	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::BulletText("%s",arg0);}});
+	LUA_TRY_INVOKE(1, ([](const char* arg0){{return ImGui::BulletText("%s",arg0);}}));
 	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImGui_button(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.button");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, const ImVec2&)>(&ImGui::Button));
+	LUA_TRY_INVOKE_R(2, &ImGui::Button);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::Button(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -1006,9 +1199,9 @@ int lua_ImGui_closeCurrentPopup(lua_State* lua_S)
 int lua_ImGui_colorButton(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.colorButton");
-	LUA_TRY_INVOKE_R(4, static_cast<bool(*)(const char*, const ImVec4&, ImGuiColorEditFlags, const ImVec2&)>(&ImGui::ColorButton));
-	LUA_TRY_INVOKE_R(3, [](const char* arg0,const ImVec4& arg1,ImGuiColorEditFlags arg2){{return ImGui::ColorButton(arg0,arg1,std::move(arg2));}});
-	LUA_TRY_INVOKE_R(2, [](const char* arg0,const ImVec4& arg1){{return ImGui::ColorButton(arg0,arg1);}});
+	LUA_TRY_INVOKE_R(4, &ImGui::ColorButton);
+	LUA_TRY_INVOKE_R(3, ([](const char* arg0,const ImVec4& arg1,ImGuiColorEditFlags arg2){{return ImGui::ColorButton(arg0,arg1,std::move(arg2));}}));
+	LUA_TRY_INVOKE_R(2, ([](const char* arg0,const ImVec4& arg1){{return ImGui::ColorButton(arg0,arg1);}}));
 	LUA_GINVOKE_FOOTER("2,3,4");
 }
 int lua_ImGui_colorConvertFloat4ToU32(lua_State* lua_S)
@@ -1026,8 +1219,8 @@ int lua_ImGui_colorConvertU32ToFloat4(lua_State* lua_S)
 int lua_ImGui_columns(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.columns");
-	LUA_TRY_INVOKE(3, static_cast<void(*)(int, const char*, bool)>(&ImGui::Columns));
-	LUA_TRY_INVOKE(2, [](int arg0,const char* arg1){{return ImGui::Columns(std::move(arg0),arg1);}});
+	LUA_TRY_INVOKE(3, &ImGui::Columns);
+	LUA_TRY_INVOKE(2, ([](int arg0,const char* arg1){{return ImGui::Columns(std::move(arg0),arg1);}}));
 	LUA_TRY_INVOKE(1, [](int arg0){{return ImGui::Columns(std::move(arg0));}});
 	LUA_TRY_INVOKE(0, [](){{return ImGui::Columns();}});
 	LUA_GINVOKE_FOOTER("0,1,2,3");
@@ -1037,6 +1230,24 @@ int lua_ImGui_debugCheckVersionAndDataLayout(lua_State* lua_S)
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.debugCheckVersionAndDataLayout");
 	LUA_TRY_INVOKE_R(7, &ImGui::DebugCheckVersionAndDataLayout);
 	LUA_GINVOKE_FOOTER("7");
+}
+int lua_ImGui_debugFlashStyleColor(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.debugFlashStyleColor");
+	LUA_TRY_INVOKE(1, &ImGui::DebugFlashStyleColor);
+	LUA_GINVOKE_FOOTER("1");
+}
+int lua_ImGui_debugLog(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.debugLog");
+	LUA_TRY_INVOKE(1, ([](const char* arg0){{return ImGui::DebugLog("%s",arg0);}}));
+	LUA_GINVOKE_FOOTER("1");
+}
+int lua_ImGui_debugStartItemPicker(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.debugStartItemPicker");
+	LUA_TRY_INVOKE(0, &ImGui::DebugStartItemPicker);
+	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImGui_debugTextEncoding(lua_State* lua_S)
 {
@@ -1050,35 +1261,11 @@ int lua_ImGui_destroyPlatformWindows(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, &ImGui::DestroyPlatformWindows);
 	LUA_GINVOKE_FOOTER("0");
 }
-int lua_ImGui_dockSpace(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.dockSpace");
-	LUA_TRY_INVOKE_R(4, static_cast<unsigned int(*)(ImGuiID, const ImVec2&, ImGuiDockNodeFlags, const ImGuiWindowClass*)>(&ImGui::DockSpace));
-	LUA_TRY_INVOKE_R(3, [](ImGuiID arg0,const ImVec2& arg1,ImGuiDockNodeFlags arg2){{return ImGui::DockSpace(std::move(arg0),arg1,std::move(arg2));}});
-	LUA_TRY_INVOKE_R(2, [](ImGuiID arg0,const ImVec2& arg1){{return ImGui::DockSpace(std::move(arg0),arg1);}});
-	LUA_TRY_INVOKE_R(1, [](ImGuiID arg0){{return ImGui::DockSpace(std::move(arg0));}});
-	LUA_GINVOKE_FOOTER("1,2,3,4");
-}
-int lua_ImGui_dockSpaceOverViewport(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.dockSpaceOverViewport");
-	LUA_TRY_INVOKE_R(3, static_cast<unsigned int(*)(const ImGuiViewport*, ImGuiDockNodeFlags, const ImGuiWindowClass*)>(&ImGui::DockSpaceOverViewport));
-	LUA_TRY_INVOKE_R(2, [](const ImGuiViewport* arg0,ImGuiDockNodeFlags arg1){{return ImGui::DockSpaceOverViewport(arg0,std::move(arg1));}});
-	LUA_TRY_INVOKE_R(1, [](const ImGuiViewport* arg0){{return ImGui::DockSpaceOverViewport(arg0);}});
-	LUA_TRY_INVOKE_R(0, [](){{return ImGui::DockSpaceOverViewport();}});
-	LUA_GINVOKE_FOOTER("0,1,2,3");
-}
 int lua_ImGui_dummy(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.dummy");
 	LUA_TRY_INVOKE(1, &ImGui::Dummy);
 	LUA_GINVOKE_FOOTER("1");
-}
-int lua_ImGui_endChildFrame(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.endChildFrame");
-	LUA_TRY_INVOKE(0, &ImGui::EndChildFrame);
-	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImGui_endCombo(lua_State* lua_S)
 {
@@ -1140,6 +1327,12 @@ int lua_ImGui_endMenuBar(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, &ImGui::EndMenuBar);
 	LUA_GINVOKE_FOOTER("0");
 }
+int lua_ImGui_endMultiSelect(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.endMultiSelect");
+	LUA_TRY_INVOKE_R(0, &ImGui::EndMultiSelect);
+	LUA_GINVOKE_FOOTER("0");
+}
 int lua_ImGui_endPopup(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.endPopup");
@@ -1179,8 +1372,8 @@ int lua_ImGui_findViewportByID(lua_State* lua_S)
 int lua_ImGui_getBackgroundDrawList(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.getBackgroundDrawList");
-	LUA_TRY_INVOKE_R(1, static_cast<ImDrawList*(*)(ImGuiViewport*)>(&ImGui::GetBackgroundDrawList));
-	LUA_TRY_INVOKE_R(0, static_cast<ImDrawList*(*)()>(&ImGui::GetBackgroundDrawList));
+	LUA_TRY_INVOKE_R(1, &ImGui::GetBackgroundDrawList);
+	LUA_TRY_INVOKE_R(0, [](){{return ImGui::GetBackgroundDrawList();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImGui_getClipboardText(lua_State* lua_S)
@@ -1198,14 +1391,14 @@ int lua_ImGui_getColumnIndex(lua_State* lua_S)
 int lua_ImGui_getColumnOffset(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.getColumnOffset");
-	LUA_TRY_INVOKE_R(1, static_cast<float(*)(int)>(&ImGui::GetColumnOffset));
+	LUA_TRY_INVOKE_R(1, &ImGui::GetColumnOffset);
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::GetColumnOffset();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImGui_getColumnWidth(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.getColumnWidth");
-	LUA_TRY_INVOKE_R(1, static_cast<float(*)(int)>(&ImGui::GetColumnWidth));
+	LUA_TRY_INVOKE_R(1, &ImGui::GetColumnWidth);
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::GetColumnWidth();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -1219,12 +1412,6 @@ int lua_ImGui_getContentRegionAvail(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.getContentRegionAvail");
 	LUA_TRY_INVOKE_R(0, &ImGui::GetContentRegionAvail);
-	LUA_GINVOKE_FOOTER("0");
-}
-int lua_ImGui_getContentRegionMax(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.getContentRegionMax");
-	LUA_TRY_INVOKE_R(0, &ImGui::GetContentRegionMax);
 	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImGui_getCursorPos(lua_State* lua_S)
@@ -1257,6 +1444,12 @@ int lua_ImGui_getCursorStartPos(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, &ImGui::GetCursorStartPos);
 	LUA_GINVOKE_FOOTER("0");
 }
+int lua_ImGui_getFontBaked(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.getFontBaked");
+	LUA_TRY_INVOKE_R(0, &ImGui::GetFontBaked);
+	LUA_GINVOKE_FOOTER("0");
+}
 int lua_ImGui_getFontSize(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.getFontSize");
@@ -1272,8 +1465,8 @@ int lua_ImGui_getFontTexUvWhitePixel(lua_State* lua_S)
 int lua_ImGui_getForegroundDrawList(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.getForegroundDrawList");
-	LUA_TRY_INVOKE_R(1, static_cast<ImDrawList*(*)(ImGuiViewport*)>(&ImGui::GetForegroundDrawList));
-	LUA_TRY_INVOKE_R(0, static_cast<ImDrawList*(*)()>(&ImGui::GetForegroundDrawList));
+	LUA_TRY_INVOKE_R(1, &ImGui::GetForegroundDrawList);
+	LUA_TRY_INVOKE_R(0, [](){{return ImGui::GetForegroundDrawList();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImGui_getFrameCount(lua_State* lua_S)
@@ -1297,9 +1490,24 @@ int lua_ImGui_getFrameHeightWithSpacing(lua_State* lua_S)
 int lua_ImGui_getID(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.getID");
-	LUA_TRY_INVOKE_R(2, static_cast<unsigned int(*)(const char*, const char*)>(&ImGui::GetID));
-	LUA_TRY_INVOKE_R(1, static_cast<unsigned int(*)(const char*)>(&ImGui::GetID));
+	LUA_TRY_INVOKE_R(2, (static_cast<ImGuiID(*)(const char*, const char*)>(&ImGui::GetID)));
+	LUA_TRY_INVOKE_R_OVERLOAD(1, static_cast<ImGuiID(*)(int)>(&ImGui::GetID));
+	LUA_TRY_INVOKE_R_OVERLOAD(1, static_cast<ImGuiID(*)(const char*)>(&ImGui::GetID));
 	LUA_GINVOKE_FOOTER("1,2");
+}
+int lua_ImGui_getItemClickedCountWithSingleClickDelay(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.getItemClickedCountWithSingleClickDelay");
+	LUA_TRY_INVOKE_R(2, &ImGui::GetItemClickedCountWithSingleClickDelay);
+	LUA_TRY_INVOKE_R(1, [](ImGuiMouseButton arg0){{return ImGui::GetItemClickedCountWithSingleClickDelay(std::move(arg0));}});
+	LUA_TRY_INVOKE_R(0, [](){{return ImGui::GetItemClickedCountWithSingleClickDelay();}});
+	LUA_GINVOKE_FOOTER("0,1,2");
+}
+int lua_ImGui_getItemFlags(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.getItemFlags");
+	LUA_TRY_INVOKE_R(0, &ImGui::GetItemFlags);
+	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImGui_getItemID(lua_State* lua_S)
 {
@@ -1358,7 +1566,7 @@ int lua_ImGui_getMouseCursor(lua_State* lua_S)
 int lua_ImGui_getMouseDragDelta(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.getMouseDragDelta");
-	LUA_TRY_INVOKE_R(2, static_cast<ImVec2(*)(ImGuiMouseButton, float)>(&ImGui::GetMouseDragDelta));
+	LUA_TRY_INVOKE_R(2, &ImGui::GetMouseDragDelta);
 	LUA_TRY_INVOKE_R(1, [](ImGuiMouseButton arg0){{return ImGui::GetMouseDragDelta(std::move(arg0));}});
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::GetMouseDragDelta();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
@@ -1441,18 +1649,6 @@ int lua_ImGui_getVersion(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, &ImGui::GetVersion);
 	LUA_GINVOKE_FOOTER("0");
 }
-int lua_ImGui_getWindowContentRegionMax(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.getWindowContentRegionMax");
-	LUA_TRY_INVOKE_R(0, &ImGui::GetWindowContentRegionMax);
-	LUA_GINVOKE_FOOTER("0");
-}
-int lua_ImGui_getWindowContentRegionMin(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.getWindowContentRegionMin");
-	LUA_TRY_INVOKE_R(0, &ImGui::GetWindowContentRegionMin);
-	LUA_GINVOKE_FOOTER("0");
-}
 int lua_ImGui_getWindowDockID(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.getWindowDockID");
@@ -1504,15 +1700,15 @@ int lua_ImGui_getWindowWidth(lua_State* lua_S)
 int lua_ImGui_indent(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.indent");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(float)>(&ImGui::Indent));
+	LUA_TRY_INVOKE(1, &ImGui::Indent);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::Indent();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImGui_invisibleButton(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.invisibleButton");
-	LUA_TRY_INVOKE_R(3, static_cast<bool(*)(const char*, const ImVec2&, ImGuiButtonFlags)>(&ImGui::InvisibleButton));
-	LUA_TRY_INVOKE_R(2, [](const char* arg0,const ImVec2& arg1){{return ImGui::InvisibleButton(arg0,arg1);}});
+	LUA_TRY_INVOKE_R(3, &ImGui::InvisibleButton);
+	LUA_TRY_INVOKE_R(2, ([](const char* arg0,const ImVec2& arg1){{return ImGui::InvisibleButton(arg0,arg1);}}));
 	LUA_GINVOKE_FOOTER("2,3");
 }
 int lua_ImGui_isAnyItemActive(lua_State* lua_S)
@@ -1554,7 +1750,7 @@ int lua_ImGui_isItemActive(lua_State* lua_S)
 int lua_ImGui_isItemClicked(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.isItemClicked");
-	LUA_TRY_INVOKE_R(1, static_cast<bool(*)(ImGuiMouseButton)>(&ImGui::IsItemClicked));
+	LUA_TRY_INVOKE_R(1, &ImGui::IsItemClicked);
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::IsItemClicked();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -1585,7 +1781,7 @@ int lua_ImGui_isItemFocused(lua_State* lua_S)
 int lua_ImGui_isItemHovered(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.isItemHovered");
-	LUA_TRY_INVOKE_R(1, static_cast<bool(*)(ImGuiHoveredFlags)>(&ImGui::IsItemHovered));
+	LUA_TRY_INVOKE_R(1, &ImGui::IsItemHovered);
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::IsItemHovered();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -1595,11 +1791,23 @@ int lua_ImGui_isItemToggledOpen(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, &ImGui::IsItemToggledOpen);
 	LUA_GINVOKE_FOOTER("0");
 }
+int lua_ImGui_isItemToggledSelection(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.isItemToggledSelection");
+	LUA_TRY_INVOKE_R(0, &ImGui::IsItemToggledSelection);
+	LUA_GINVOKE_FOOTER("0");
+}
 int lua_ImGui_isItemVisible(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.isItemVisible");
 	LUA_TRY_INVOKE_R(0, &ImGui::IsItemVisible);
 	LUA_GINVOKE_FOOTER("0");
+}
+int lua_ImGui_isKeyChordPressed(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.isKeyChordPressed");
+	LUA_TRY_INVOKE_R(1, &ImGui::IsKeyChordPressed);
+	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImGui_isKeyDown(lua_State* lua_S)
 {
@@ -1610,7 +1818,7 @@ int lua_ImGui_isKeyDown(lua_State* lua_S)
 int lua_ImGui_isKeyPressed(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.isKeyPressed");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(ImGuiKey, bool)>(&ImGui::IsKeyPressed));
+	LUA_TRY_INVOKE_R(2, &ImGui::IsKeyPressed);
 	LUA_TRY_INVOKE_R(1, [](ImGuiKey arg0){{return ImGui::IsKeyPressed(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -1623,7 +1831,7 @@ int lua_ImGui_isKeyReleased(lua_State* lua_S)
 int lua_ImGui_isMouseClicked(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.isMouseClicked");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(ImGuiMouseButton, bool)>(&ImGui::IsMouseClicked));
+	LUA_TRY_INVOKE_R(2, &ImGui::IsMouseClicked);
 	LUA_TRY_INVOKE_R(1, [](ImGuiMouseButton arg0){{return ImGui::IsMouseClicked(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -1642,15 +1850,15 @@ int lua_ImGui_isMouseDown(lua_State* lua_S)
 int lua_ImGui_isMouseDragging(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.isMouseDragging");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(ImGuiMouseButton, float)>(&ImGui::IsMouseDragging));
+	LUA_TRY_INVOKE_R(2, &ImGui::IsMouseDragging);
 	LUA_TRY_INVOKE_R(1, [](ImGuiMouseButton arg0){{return ImGui::IsMouseDragging(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_isMouseHoveringRect(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.isMouseHoveringRect");
-	LUA_TRY_INVOKE_R(3, static_cast<bool(*)(const ImVec2&, const ImVec2&, bool)>(&ImGui::IsMouseHoveringRect));
-	LUA_TRY_INVOKE_R(2, [](const ImVec2& arg0,const ImVec2& arg1){{return ImGui::IsMouseHoveringRect(arg0,arg1);}});
+	LUA_TRY_INVOKE_R(3, &ImGui::IsMouseHoveringRect);
+	LUA_TRY_INVOKE_R(2, ([](const ImVec2& arg0,const ImVec2& arg1){{return ImGui::IsMouseHoveringRect(arg0,arg1);}}));
 	LUA_GINVOKE_FOOTER("2,3");
 }
 int lua_ImGui_isMouseReleased(lua_State* lua_S)
@@ -1659,17 +1867,24 @@ int lua_ImGui_isMouseReleased(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(1, &ImGui::IsMouseReleased);
 	LUA_GINVOKE_FOOTER("1");
 }
+int lua_ImGui_isMouseReleasedWithDelay(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.isMouseReleasedWithDelay");
+	LUA_TRY_INVOKE_R(2, &ImGui::IsMouseReleasedWithDelay);
+	LUA_TRY_INVOKE_R(1, [](ImGuiMouseButton arg0){{return ImGui::IsMouseReleasedWithDelay(std::move(arg0));}});
+	LUA_GINVOKE_FOOTER("1,2");
+}
 int lua_ImGui_isPopupOpen(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.isPopupOpen");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, ImGuiPopupFlags)>(&ImGui::IsPopupOpen));
+	LUA_TRY_INVOKE_R(2, &ImGui::IsPopupOpen);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::IsPopupOpen(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_isRectVisible(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.isRectVisible");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const ImVec2&, const ImVec2&)>(&ImGui::IsRectVisible));
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(*)(const ImVec2&, const ImVec2&)>(&ImGui::IsRectVisible)));
 	LUA_TRY_INVOKE_R(1, static_cast<bool(*)(const ImVec2&)>(&ImGui::IsRectVisible));
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -1694,21 +1909,21 @@ int lua_ImGui_isWindowDocked(lua_State* lua_S)
 int lua_ImGui_isWindowFocused(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.isWindowFocused");
-	LUA_TRY_INVOKE_R(1, static_cast<bool(*)(ImGuiFocusedFlags)>(&ImGui::IsWindowFocused));
+	LUA_TRY_INVOKE_R(1, &ImGui::IsWindowFocused);
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::IsWindowFocused();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImGui_isWindowHovered(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.isWindowHovered");
-	LUA_TRY_INVOKE_R(1, static_cast<bool(*)(ImGuiHoveredFlags)>(&ImGui::IsWindowHovered));
+	LUA_TRY_INVOKE_R(1, &ImGui::IsWindowHovered);
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::IsWindowHovered();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImGui_labelText(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.labelText");
-	LUA_TRY_INVOKE(2, [](const char* arg0,const char* arg1){{return ImGui::LabelText(arg0,"%s",arg1);}});
+	LUA_TRY_INVOKE(2, ([](const char* arg0,const char* arg1){{return ImGui::LabelText(arg0,"%s",arg1);}}));
 	LUA_GINVOKE_FOOTER("2");
 }
 int lua_ImGui_loadIniSettingsFromDisk(lua_State* lua_S)
@@ -1720,7 +1935,7 @@ int lua_ImGui_loadIniSettingsFromDisk(lua_State* lua_S)
 int lua_ImGui_loadIniSettingsFromMemory(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.loadIniSettingsFromMemory");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(const char*, size_t)>(&ImGui::LoadIniSettingsFromMemory));
+	LUA_TRY_INVOKE(2, &ImGui::LoadIniSettingsFromMemory);
 	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::LoadIniSettingsFromMemory(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -1739,20 +1954,20 @@ int lua_ImGui_logFinish(lua_State* lua_S)
 int lua_ImGui_logText(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.logText");
-	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::LogText("%s",arg0);}});
+	LUA_TRY_INVOKE(1, ([](const char* arg0){{return ImGui::LogText("%s",arg0);}}));
 	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImGui_logToClipboard(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.logToClipboard");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(int)>(&ImGui::LogToClipboard));
+	LUA_TRY_INVOKE(1, &ImGui::LogToClipboard);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::LogToClipboard();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImGui_logToFile(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.logToFile");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(int, const char*)>(&ImGui::LogToFile));
+	LUA_TRY_INVOKE(2, &ImGui::LogToFile);
 	LUA_TRY_INVOKE(1, [](int arg0){{return ImGui::LogToFile(std::move(arg0));}});
 	LUA_TRY_INVOKE(0, [](){{return ImGui::LogToFile();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
@@ -1760,7 +1975,7 @@ int lua_ImGui_logToFile(lua_State* lua_S)
 int lua_ImGui_logToTTY(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.logToTTY");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(int)>(&ImGui::LogToTTY));
+	LUA_TRY_INVOKE(1, &ImGui::LogToTTY);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::LogToTTY();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -1785,31 +2000,19 @@ int lua_ImGui_nextColumn(lua_State* lua_S)
 int lua_ImGui_openPopup(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.openPopup");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(ImGuiID, ImGuiPopupFlags)>(&ImGui::OpenPopup));
-	LUA_TRY_INVOKE(2, [](const char* arg0,ImGuiPopupFlags arg1){{return ImGui::OpenPopup(arg0,std::move(arg1));}});
-	LUA_TRY_INVOKE(1, [](ImGuiID arg0){{return ImGui::OpenPopup(std::move(arg0));}});
-	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::OpenPopup(arg0);}});
+	LUA_TRY_INVOKE_R_OVERLOAD(2, (static_cast<bool(*)(ImGuiID, ImGuiPopupFlags)>(&ImGui::OpenPopup)));
+	LUA_TRY_INVOKE_R_OVERLOAD(2, (static_cast<bool(*)(const char*, ImGuiPopupFlags)>(&ImGui::OpenPopup)));
+	LUA_TRY_INVOKE_R_OVERLOAD(1, [](ImGuiID arg0){{return ImGui::OpenPopup(std::move(arg0));}});
+	LUA_TRY_INVOKE_R_OVERLOAD(1, [](const char* arg0){{return ImGui::OpenPopup(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_openPopupOnItemClick(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.openPopupOnItemClick");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(const char*, ImGuiPopupFlags)>(&ImGui::OpenPopupOnItemClick));
-	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::OpenPopupOnItemClick(arg0);}});
-	LUA_TRY_INVOKE(0, [](){{return ImGui::OpenPopupOnItemClick();}});
+	LUA_TRY_INVOKE_R(2, &ImGui::OpenPopupOnItemClick);
+	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::OpenPopupOnItemClick(arg0);}});
+	LUA_TRY_INVOKE_R(0, [](){{return ImGui::OpenPopupOnItemClick();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
-}
-int lua_ImGui_popAllowKeyboardFocus(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.popAllowKeyboardFocus");
-	LUA_TRY_INVOKE(0, &ImGui::PopAllowKeyboardFocus);
-	LUA_GINVOKE_FOOTER("0");
-}
-int lua_ImGui_popButtonRepeat(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.popButtonRepeat");
-	LUA_TRY_INVOKE(0, &ImGui::PopButtonRepeat);
-	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImGui_popClipRect(lua_State* lua_S)
 {
@@ -1829,6 +2032,12 @@ int lua_ImGui_popID(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, &ImGui::PopID);
 	LUA_GINVOKE_FOOTER("0");
 }
+int lua_ImGui_popItemFlag(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.popItemFlag");
+	LUA_TRY_INVOKE(0, &ImGui::PopItemFlag);
+	LUA_GINVOKE_FOOTER("0");
+}
 int lua_ImGui_popItemWidth(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.popItemWidth");
@@ -1838,14 +2047,14 @@ int lua_ImGui_popItemWidth(lua_State* lua_S)
 int lua_ImGui_popStyleColor(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.popStyleColor");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(int)>(&ImGui::PopStyleColor));
+	LUA_TRY_INVOKE(1, &ImGui::PopStyleColor);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::PopStyleColor();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImGui_popStyleVar(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.popStyleVar");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(int)>(&ImGui::PopStyleVar));
+	LUA_TRY_INVOKE(1, &ImGui::PopStyleVar);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::PopStyleVar();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -1858,22 +2067,10 @@ int lua_ImGui_popTextWrapPos(lua_State* lua_S)
 int lua_ImGui_progressBar(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.progressBar");
-	LUA_TRY_INVOKE(3, static_cast<void(*)(float, const ImVec2&, const char*)>(&ImGui::ProgressBar));
-	LUA_TRY_INVOKE(2, [](float arg0,const ImVec2& arg1){{return ImGui::ProgressBar(std::move(arg0),arg1);}});
+	LUA_TRY_INVOKE(3, &ImGui::ProgressBar);
+	LUA_TRY_INVOKE(2, ([](float arg0,const ImVec2& arg1){{return ImGui::ProgressBar(std::move(arg0),arg1);}}));
 	LUA_TRY_INVOKE(1, [](float arg0){{return ImGui::ProgressBar(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2,3");
-}
-int lua_ImGui_pushAllowKeyboardFocus(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.pushAllowKeyboardFocus");
-	LUA_TRY_INVOKE(1, &ImGui::PushAllowKeyboardFocus);
-	LUA_GINVOKE_FOOTER("1");
-}
-int lua_ImGui_pushButtonRepeat(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.pushButtonRepeat");
-	LUA_TRY_INVOKE(1, &ImGui::PushButtonRepeat);
-	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImGui_pushClipRect(lua_State* lua_S)
 {
@@ -1881,16 +2078,34 @@ int lua_ImGui_pushClipRect(lua_State* lua_S)
 	LUA_TRY_INVOKE(3, &ImGui::PushClipRect);
 	LUA_GINVOKE_FOOTER("3");
 }
+int lua_ImGui_pushItemFlag(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.pushItemFlag");
+	LUA_TRY_INVOKE(2, &ImGui::PushItemFlag);
+	LUA_GINVOKE_FOOTER("2");
+}
 int lua_ImGui_pushItemWidth(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.pushItemWidth");
 	LUA_TRY_INVOKE(1, &ImGui::PushItemWidth);
 	LUA_GINVOKE_FOOTER("1");
 }
+int lua_ImGui_pushStyleVarX(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.pushStyleVarX");
+	LUA_TRY_INVOKE(2, &ImGui::PushStyleVarX);
+	LUA_GINVOKE_FOOTER("2");
+}
+int lua_ImGui_pushStyleVarY(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.pushStyleVarY");
+	LUA_TRY_INVOKE(2, &ImGui::PushStyleVarY);
+	LUA_GINVOKE_FOOTER("2");
+}
 int lua_ImGui_pushTextWrapPos(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.pushTextWrapPos");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(float)>(&ImGui::PushTextWrapPos));
+	LUA_TRY_INVOKE(1, &ImGui::PushTextWrapPos);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::PushTextWrapPos();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -1909,14 +2124,14 @@ int lua_ImGui_renderPlatformWindowsDefault(lua_State* lua_S)
 int lua_ImGui_resetMouseDragDelta(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.resetMouseDragDelta");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(ImGuiMouseButton)>(&ImGui::ResetMouseDragDelta));
+	LUA_TRY_INVOKE(1, &ImGui::ResetMouseDragDelta);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::ResetMouseDragDelta();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImGui_sameLine(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.sameLine");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(float, float)>(&ImGui::SameLine));
+	LUA_TRY_INVOKE(2, &ImGui::SameLine);
 	LUA_TRY_INVOKE(1, [](float arg0){{return ImGui::SameLine(std::move(arg0));}});
 	LUA_TRY_INVOKE(0, [](){{return ImGui::SameLine();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
@@ -1943,12 +2158,6 @@ int lua_ImGui_setClipboardText(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setClipboardText");
 	LUA_TRY_INVOKE(1, &ImGui::SetClipboardText);
-	LUA_GINVOKE_FOOTER("1");
-}
-int lua_ImGui_setColorEditOptions(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.setColorEditOptions");
-	LUA_TRY_INVOKE(1, &ImGui::SetColorEditOptions);
 	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImGui_setColumnOffset(lua_State* lua_S)
@@ -1987,22 +2196,28 @@ int lua_ImGui_setCursorScreenPos(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, &ImGui::SetCursorScreenPos);
 	LUA_GINVOKE_FOOTER("1");
 }
-int lua_ImGui_setItemAllowOverlap(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.setItemAllowOverlap");
-	LUA_TRY_INVOKE(0, &ImGui::SetItemAllowOverlap);
-	LUA_GINVOKE_FOOTER("0");
-}
 int lua_ImGui_setItemDefaultFocus(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setItemDefaultFocus");
 	LUA_TRY_INVOKE(0, &ImGui::SetItemDefaultFocus);
 	LUA_GINVOKE_FOOTER("0");
 }
+int lua_ImGui_setItemKeyOwner(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.setItemKeyOwner");
+	LUA_TRY_INVOKE_R(1, &ImGui::SetItemKeyOwner);
+	LUA_GINVOKE_FOOTER("1");
+}
+int lua_ImGui_setItemTooltip(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.setItemTooltip");
+	LUA_TRY_INVOKE(1, ([](const char* arg0){{return ImGui::SetItemTooltip("%s",arg0);}}));
+	LUA_GINVOKE_FOOTER("1");
+}
 int lua_ImGui_setKeyboardFocusHere(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setKeyboardFocusHere");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(int)>(&ImGui::SetKeyboardFocusHere));
+	LUA_TRY_INVOKE(1, &ImGui::SetKeyboardFocusHere);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::SetKeyboardFocusHere();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -2010,6 +2225,12 @@ int lua_ImGui_setMouseCursor(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setMouseCursor");
 	LUA_TRY_INVOKE(1, &ImGui::SetMouseCursor);
+	LUA_GINVOKE_FOOTER("1");
+}
+int lua_ImGui_setNavCursorVisible(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.setNavCursorVisible");
+	LUA_TRY_INVOKE(1, &ImGui::SetNavCursorVisible);
 	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImGui_setNextFrameWantCaptureKeyboard(lua_State* lua_S)
@@ -2024,12 +2245,31 @@ int lua_ImGui_setNextFrameWantCaptureMouse(lua_State* lua_S)
 	LUA_TRY_INVOKE(1, &ImGui::SetNextFrameWantCaptureMouse);
 	LUA_GINVOKE_FOOTER("1");
 }
+int lua_ImGui_setNextItemAllowOverlap(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.setNextItemAllowOverlap");
+	LUA_TRY_INVOKE(0, &ImGui::SetNextItemAllowOverlap);
+	LUA_GINVOKE_FOOTER("0");
+}
 int lua_ImGui_setNextItemOpen(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setNextItemOpen");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(bool, ImGuiCond)>(&ImGui::SetNextItemOpen));
+	LUA_TRY_INVOKE(2, &ImGui::SetNextItemOpen);
 	LUA_TRY_INVOKE(1, [](bool arg0){{return ImGui::SetNextItemOpen(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
+}
+int lua_ImGui_setNextItemShortcut(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.setNextItemShortcut");
+	LUA_TRY_INVOKE(2, &ImGui::SetNextItemShortcut);
+	LUA_TRY_INVOKE(1, [](ImGuiKeyChord arg0){{return ImGui::SetNextItemShortcut(std::move(arg0));}});
+	LUA_GINVOKE_FOOTER("1,2");
+}
+int lua_ImGui_setNextItemStorageID(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.setNextItemStorageID");
+	LUA_TRY_INVOKE(1, &ImGui::SetNextItemStorageID);
+	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImGui_setNextItemWidth(lua_State* lua_S)
 {
@@ -2046,7 +2286,7 @@ int lua_ImGui_setNextWindowBgAlpha(lua_State* lua_S)
 int lua_ImGui_setNextWindowCollapsed(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setNextWindowCollapsed");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(bool, ImGuiCond)>(&ImGui::SetNextWindowCollapsed));
+	LUA_TRY_INVOKE(2, &ImGui::SetNextWindowCollapsed);
 	LUA_TRY_INVOKE(1, [](bool arg0){{return ImGui::SetNextWindowCollapsed(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -2059,7 +2299,7 @@ int lua_ImGui_setNextWindowContentSize(lua_State* lua_S)
 int lua_ImGui_setNextWindowDockID(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setNextWindowDockID");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(ImGuiID, ImGuiCond)>(&ImGui::SetNextWindowDockID));
+	LUA_TRY_INVOKE(2, &ImGui::SetNextWindowDockID);
 	LUA_TRY_INVOKE(1, [](ImGuiID arg0){{return ImGui::SetNextWindowDockID(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
@@ -2072,8 +2312,8 @@ int lua_ImGui_setNextWindowFocus(lua_State* lua_S)
 int lua_ImGui_setNextWindowPos(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setNextWindowPos");
-	LUA_TRY_INVOKE(3, static_cast<void(*)(const ImVec2&, ImGuiCond, const ImVec2&)>(&ImGui::SetNextWindowPos));
-	LUA_TRY_INVOKE(2, [](const ImVec2& arg0,ImGuiCond arg1){{return ImGui::SetNextWindowPos(arg0,std::move(arg1));}});
+	LUA_TRY_INVOKE(3, &ImGui::SetNextWindowPos);
+	LUA_TRY_INVOKE(2, ([](const ImVec2& arg0,ImGuiCond arg1){{return ImGui::SetNextWindowPos(arg0,std::move(arg1));}}));
 	LUA_TRY_INVOKE(1, [](const ImVec2& arg0){{return ImGui::SetNextWindowPos(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2,3");
 }
@@ -2086,16 +2326,15 @@ int lua_ImGui_setNextWindowScroll(lua_State* lua_S)
 int lua_ImGui_setNextWindowSize(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setNextWindowSize");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(const ImVec2&, ImGuiCond)>(&ImGui::SetNextWindowSize));
+	LUA_TRY_INVOKE(2, &ImGui::SetNextWindowSize);
 	LUA_TRY_INVOKE(1, [](const ImVec2& arg0){{return ImGui::SetNextWindowSize(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_setNextWindowSizeConstraints(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setNextWindowSizeConstraints");
-	LUA_TRY_INVOKE(3, [](const ImVec2& arg0,const ImVec2& arg1,ImGuiSizeCallback arg2){{return ImGui::SetNextWindowSizeConstraints(arg0,arg1,std::move(arg2));}});
-	LUA_TRY_INVOKE(2, [](const ImVec2& arg0,const ImVec2& arg1){{return ImGui::SetNextWindowSizeConstraints(arg0,arg1);}});
-	LUA_GINVOKE_FOOTER("2,3");
+	LUA_TRY_INVOKE(2, ([](const ImVec2& arg0,const ImVec2& arg1){{return ImGui::SetNextWindowSizeConstraints(arg0,arg1);}}));
+	LUA_GINVOKE_FOOTER("2");
 }
 int lua_ImGui_setNextWindowViewport(lua_State* lua_S)
 {
@@ -2106,28 +2345,28 @@ int lua_ImGui_setNextWindowViewport(lua_State* lua_S)
 int lua_ImGui_setScrollFromPosX(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setScrollFromPosX");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(float, float)>(&ImGui::SetScrollFromPosX));
+	LUA_TRY_INVOKE(2, &ImGui::SetScrollFromPosX);
 	LUA_TRY_INVOKE(1, [](float arg0){{return ImGui::SetScrollFromPosX(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_setScrollFromPosY(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setScrollFromPosY");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(float, float)>(&ImGui::SetScrollFromPosY));
+	LUA_TRY_INVOKE(2, &ImGui::SetScrollFromPosY);
 	LUA_TRY_INVOKE(1, [](float arg0){{return ImGui::SetScrollFromPosY(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_setScrollHereX(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setScrollHereX");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(float)>(&ImGui::SetScrollHereX));
+	LUA_TRY_INVOKE(1, &ImGui::SetScrollHereX);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::SetScrollHereX();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
 int lua_ImGui_setScrollHereY(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setScrollHereY");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(float)>(&ImGui::SetScrollHereY));
+	LUA_TRY_INVOKE(1, &ImGui::SetScrollHereY);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::SetScrollHereY();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -2152,15 +2391,15 @@ int lua_ImGui_setTabItemClosed(lua_State* lua_S)
 int lua_ImGui_setTooltip(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setTooltip");
-	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::SetTooltip("%s",arg0);}});
+	LUA_TRY_INVOKE(1, ([](const char* arg0){{return ImGui::SetTooltip("%s",arg0);}}));
 	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImGui_setWindowCollapsed(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setWindowCollapsed");
-	LUA_TRY_INVOKE(3, static_cast<void(*)(const char*, bool, ImGuiCond)>(&ImGui::SetWindowCollapsed));
-	LUA_TRY_INVOKE(2, [](const char* arg0,bool arg1){{return ImGui::SetWindowCollapsed(arg0,std::move(arg1));}});
-	LUA_TRY_INVOKE(2, [](bool arg0,ImGuiCond arg1){{return ImGui::SetWindowCollapsed(std::move(arg0),std::move(arg1));}});
+	LUA_TRY_INVOKE(3, (static_cast<void(*)(const char*, bool, ImGuiCond)>(&ImGui::SetWindowCollapsed)));
+	LUA_TRY_INVOKE_OVERLOAD(2, ([](const char* arg0,bool arg1){{return ImGui::SetWindowCollapsed(arg0,std::move(arg1));}}));
+	LUA_TRY_INVOKE_OVERLOAD(2, (static_cast<void(*)(bool, ImGuiCond)>(&ImGui::SetWindowCollapsed)));
 	LUA_TRY_INVOKE(1, [](bool arg0){{return ImGui::SetWindowCollapsed(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2,3");
 }
@@ -2171,35 +2410,48 @@ int lua_ImGui_setWindowFocus(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, static_cast<void(*)()>(&ImGui::SetWindowFocus));
 	LUA_GINVOKE_FOOTER("0,1");
 }
-int lua_ImGui_setWindowFontScale(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.setWindowFontScale");
-	LUA_TRY_INVOKE(1, &ImGui::SetWindowFontScale);
-	LUA_GINVOKE_FOOTER("1");
-}
 int lua_ImGui_setWindowPos(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setWindowPos");
-	LUA_TRY_INVOKE(3, static_cast<void(*)(const char*, const ImVec2&, ImGuiCond)>(&ImGui::SetWindowPos));
-	LUA_TRY_INVOKE(2, [](const char* arg0,const ImVec2& arg1){{return ImGui::SetWindowPos(arg0,arg1);}});
-	LUA_TRY_INVOKE(2, [](const ImVec2& arg0,ImGuiCond arg1){{return ImGui::SetWindowPos(arg0,std::move(arg1));}});
+	LUA_TRY_INVOKE(3, (static_cast<void(*)(const char*, const ImVec2&, ImGuiCond)>(&ImGui::SetWindowPos)));
+	LUA_TRY_INVOKE_OVERLOAD(2, ([](const char* arg0,const ImVec2& arg1){{return ImGui::SetWindowPos(arg0,arg1);}}));
+	LUA_TRY_INVOKE_OVERLOAD(2, (static_cast<void(*)(const ImVec2&, ImGuiCond)>(&ImGui::SetWindowPos)));
 	LUA_TRY_INVOKE(1, [](const ImVec2& arg0){{return ImGui::SetWindowPos(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2,3");
 }
 int lua_ImGui_setWindowSize(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.setWindowSize");
-	LUA_TRY_INVOKE(3, static_cast<void(*)(const char*, const ImVec2&, ImGuiCond)>(&ImGui::SetWindowSize));
-	LUA_TRY_INVOKE(2, [](const char* arg0,const ImVec2& arg1){{return ImGui::SetWindowSize(arg0,arg1);}});
-	LUA_TRY_INVOKE(2, [](const ImVec2& arg0,ImGuiCond arg1){{return ImGui::SetWindowSize(arg0,std::move(arg1));}});
+	LUA_TRY_INVOKE(3, (static_cast<void(*)(const char*, const ImVec2&, ImGuiCond)>(&ImGui::SetWindowSize)));
+	LUA_TRY_INVOKE_OVERLOAD(2, ([](const char* arg0,const ImVec2& arg1){{return ImGui::SetWindowSize(arg0,arg1);}}));
+	LUA_TRY_INVOKE_OVERLOAD(2, (static_cast<void(*)(const ImVec2&, ImGuiCond)>(&ImGui::SetWindowSize)));
 	LUA_TRY_INVOKE(1, [](const ImVec2& arg0){{return ImGui::SetWindowSize(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2,3");
+}
+int lua_ImGui_shortcut(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.shortcut");
+	LUA_TRY_INVOKE_R(2, &ImGui::Shortcut);
+	LUA_TRY_INVOKE_R(1, [](ImGuiKeyChord arg0){{return ImGui::Shortcut(std::move(arg0));}});
+	LUA_GINVOKE_FOOTER("1,2");
+}
+int lua_ImGui_showDebugLogWindow(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.showDebugLogWindow");
+	LUA_TRY_INVOKE(0, [](){{return ImGui::ShowDebugLogWindow();}});
+	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImGui_showFontSelector(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.showFontSelector");
 	LUA_TRY_INVOKE(1, &ImGui::ShowFontSelector);
 	LUA_GINVOKE_FOOTER("1");
+}
+int lua_ImGui_showIDStackToolWindow(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.showIDStackToolWindow");
+	LUA_TRY_INVOKE(0, [](){{return ImGui::ShowIDStackToolWindow();}});
+	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImGui_showStyleSelector(lua_State* lua_S)
 {
@@ -2228,9 +2480,15 @@ int lua_ImGui_spacing(lua_State* lua_S)
 int lua_ImGui_tabItemButton(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.tabItemButton");
-	LUA_TRY_INVOKE_R(2, static_cast<bool(*)(const char*, ImGuiTabItemFlags)>(&ImGui::TabItemButton));
+	LUA_TRY_INVOKE_R(2, &ImGui::TabItemButton);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::TabItemButton(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
+}
+int lua_ImGui_tableAngledHeadersRow(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.tableAngledHeadersRow");
+	LUA_TRY_INVOKE(0, &ImGui::TableAngledHeadersRow);
+	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImGui_tableGetColumnCount(lua_State* lua_S)
 {
@@ -2241,7 +2499,7 @@ int lua_ImGui_tableGetColumnCount(lua_State* lua_S)
 int lua_ImGui_tableGetColumnFlags(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.tableGetColumnFlags");
-	LUA_TRY_INVOKE_R(1, static_cast<int(*)(int)>(&ImGui::TableGetColumnFlags));
+	LUA_TRY_INVOKE_R(1, &ImGui::TableGetColumnFlags);
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::TableGetColumnFlags();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -2254,9 +2512,15 @@ int lua_ImGui_tableGetColumnIndex(lua_State* lua_S)
 int lua_ImGui_tableGetColumnName(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.tableGetColumnName");
-	LUA_TRY_INVOKE_R(1, static_cast<const char*(*)(int)>(&ImGui::TableGetColumnName));
+	LUA_TRY_INVOKE_R(1, &ImGui::TableGetColumnName);
 	LUA_TRY_INVOKE_R(0, [](){{return ImGui::TableGetColumnName();}});
 	LUA_GINVOKE_FOOTER("0,1");
+}
+int lua_ImGui_tableGetHoveredColumn(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.tableGetHoveredColumn");
+	LUA_TRY_INVOKE_R(0, &ImGui::TableGetHoveredColumn);
+	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImGui_tableGetRowIndex(lua_State* lua_S)
 {
@@ -2285,7 +2549,7 @@ int lua_ImGui_tableNextColumn(lua_State* lua_S)
 int lua_ImGui_tableNextRow(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.tableNextRow");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(ImGuiTableRowFlags, float)>(&ImGui::TableNextRow));
+	LUA_TRY_INVOKE(2, &ImGui::TableNextRow);
 	LUA_TRY_INVOKE(1, [](ImGuiTableRowFlags arg0){{return ImGui::TableNextRow(std::move(arg0));}});
 	LUA_TRY_INVOKE(0, [](){{return ImGui::TableNextRow();}});
 	LUA_GINVOKE_FOOTER("0,1,2");
@@ -2293,8 +2557,8 @@ int lua_ImGui_tableNextRow(lua_State* lua_S)
 int lua_ImGui_tableSetBgColor(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.tableSetBgColor");
-	LUA_TRY_INVOKE(3, static_cast<void(*)(ImGuiTableBgTarget, ImU32, int)>(&ImGui::TableSetBgColor));
-	LUA_TRY_INVOKE(2, [](ImGuiTableBgTarget arg0,ImU32 arg1){{return ImGui::TableSetBgColor(std::move(arg0),std::move(arg1));}});
+	LUA_TRY_INVOKE(3, &ImGui::TableSetBgColor);
+	LUA_TRY_INVOKE(2, ([](ImGuiTableBgTarget arg0,ImU32 arg1){{return ImGui::TableSetBgColor(std::move(arg0),std::move(arg1));}}));
 	LUA_GINVOKE_FOOTER("2,3");
 }
 int lua_ImGui_tableSetColumnEnabled(lua_State* lua_S)
@@ -2312,9 +2576,9 @@ int lua_ImGui_tableSetColumnIndex(lua_State* lua_S)
 int lua_ImGui_tableSetupColumn(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.tableSetupColumn");
-	LUA_TRY_INVOKE(4, static_cast<void(*)(const char*, ImGuiTableColumnFlags, float, ImGuiID)>(&ImGui::TableSetupColumn));
-	LUA_TRY_INVOKE(3, [](const char* arg0,ImGuiTableColumnFlags arg1,float arg2){{return ImGui::TableSetupColumn(arg0,std::move(arg1),std::move(arg2));}});
-	LUA_TRY_INVOKE(2, [](const char* arg0,ImGuiTableColumnFlags arg1){{return ImGui::TableSetupColumn(arg0,std::move(arg1));}});
+	LUA_TRY_INVOKE(4, &ImGui::TableSetupColumn);
+	LUA_TRY_INVOKE(3, ([](const char* arg0,ImGuiTableColumnFlags arg1,float arg2){{return ImGui::TableSetupColumn(arg0,std::move(arg1),std::move(arg2));}}));
+	LUA_TRY_INVOKE(2, ([](const char* arg0,ImGuiTableColumnFlags arg1){{return ImGui::TableSetupColumn(arg0,std::move(arg1));}}));
 	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::TableSetupColumn(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2,3,4");
 }
@@ -2327,48 +2591,67 @@ int lua_ImGui_tableSetupScrollFreeze(lua_State* lua_S)
 int lua_ImGui_text(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.text");
-	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::Text("%s",arg0);}});
+	LUA_TRY_INVOKE(1, ([](const char* arg0){{return ImGui::Text("%s",arg0);}}));
 	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImGui_textColored(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.textColored");
-	LUA_TRY_INVOKE(2, [](const ImVec4& arg0,const char* arg1){{return ImGui::TextColored(arg0,"%s",arg1);}});
+	LUA_TRY_INVOKE(2, ([](const ImVec4& arg0,const char* arg1){{return ImGui::TextColored(arg0,"%s",arg1);}}));
 	LUA_GINVOKE_FOOTER("2");
 }
 int lua_ImGui_textDisabled(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.textDisabled");
-	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::TextDisabled("%s",arg0);}});
+	LUA_TRY_INVOKE(1, ([](const char* arg0){{return ImGui::TextDisabled("%s",arg0);}}));
 	LUA_GINVOKE_FOOTER("1");
+}
+int lua_ImGui_textLink(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.textLink");
+	LUA_TRY_INVOKE_R(1, &ImGui::TextLink);
+	LUA_GINVOKE_FOOTER("1");
+}
+int lua_ImGui_textLinkOpenURL(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.textLinkOpenURL");
+	LUA_TRY_INVOKE_R(2, &ImGui::TextLinkOpenURL);
+	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::TextLinkOpenURL(arg0);}});
+	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_textUnformatted(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.textUnformatted");
-	LUA_TRY_INVOKE(2, static_cast<void(*)(const char*, const char*)>(&ImGui::TextUnformatted));
+	LUA_TRY_INVOKE(2, &ImGui::TextUnformatted);
 	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::TextUnformatted(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_textWrapped(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.textWrapped");
-	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::TextWrapped("%s",arg0);}});
+	LUA_TRY_INVOKE(1, ([](const char* arg0){{return ImGui::TextWrapped("%s",arg0);}}));
 	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImGui_treeNode(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.treeNode");
-	LUA_TRY_INVOKE_R(2, [](const char* arg0,const char* arg1){{return ImGui::TreeNode(arg0,"%s",arg1);}});
+	LUA_TRY_INVOKE_R(2, ([](const char* arg0,const char* arg1){{return ImGui::TreeNode(arg0,"%s",arg1);}}));
 	LUA_TRY_INVOKE_R(1, static_cast<bool(*)(const char*)>(&ImGui::TreeNode));
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_treeNodeEx(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.treeNodeEx");
-	LUA_TRY_INVOKE_R(3, [](const char* arg0,ImGuiTreeNodeFlags arg1,const char* arg2){{return ImGui::TreeNodeEx(arg0,std::move(arg1),"%s",arg2);}});
-	LUA_TRY_INVOKE_R(2, [](const char* arg0,ImGuiTreeNodeFlags arg1){{return ImGui::TreeNodeEx(arg0,std::move(arg1));}});
+	LUA_TRY_INVOKE_R(3, ([](const char* arg0,ImGuiTreeNodeFlags arg1,const char* arg2){{return ImGui::TreeNodeEx(arg0,std::move(arg1),"%s",arg2);}}));
+	LUA_TRY_INVOKE_R(2, (static_cast<bool(*)(const char*, ImGuiTreeNodeFlags)>(&ImGui::TreeNodeEx)));
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::TreeNodeEx(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2,3");
+}
+int lua_ImGui_treeNodeGetOpen(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "ImGui.treeNodeGetOpen");
+	LUA_TRY_INVOKE_R(1, &ImGui::TreeNodeGetOpen);
+	LUA_GINVOKE_FOOTER("1");
 }
 int lua_ImGui_treePop(lua_State* lua_S)
 {
@@ -2385,7 +2668,7 @@ int lua_ImGui_treePush(lua_State* lua_S)
 int lua_ImGui_unindent(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.unindent");
-	LUA_TRY_INVOKE(1, static_cast<void(*)(float)>(&ImGui::Unindent));
+	LUA_TRY_INVOKE(1, &ImGui::Unindent);
 	LUA_TRY_INVOKE(0, [](){{return ImGui::Unindent();}});
 	LUA_GINVOKE_FOOTER("0,1");
 }
@@ -2400,16 +2683,17 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_ENTRY("imgui");
 	LUA_METHOD("alignTextToFramePadding", lua_ImGui_alignTextToFramePadding);
 	LUA_METHOD("arrowButton", lua_ImGui_arrowButton);
-	LUA_METHOD("beginChildFrame", lua_ImGui_beginChildFrame);
 	LUA_METHOD("beginCombo", lua_ImGui_beginCombo);
 	LUA_METHOD("beginDisabled", lua_ImGui_beginDisabled);
 	LUA_METHOD("beginDragDropSource", lua_ImGui_beginDragDropSource);
 	LUA_METHOD("beginDragDropTarget", lua_ImGui_beginDragDropTarget);
 	LUA_METHOD("beginGroup", lua_ImGui_beginGroup);
+	LUA_METHOD("beginItemTooltip", lua_ImGui_beginItemTooltip);
 	LUA_METHOD("beginListBox", lua_ImGui_beginListBox);
 	LUA_METHOD("beginMainMenuBar", lua_ImGui_beginMainMenuBar);
 	LUA_METHOD("beginMenu", lua_ImGui_beginMenu);
 	LUA_METHOD("beginMenuBar", lua_ImGui_beginMenuBar);
+	LUA_METHOD("beginMultiSelect", lua_ImGui_beginMultiSelect);
 	LUA_METHOD("beginPopup", lua_ImGui_beginPopup);
 	LUA_METHOD("beginPopupContextItem", lua_ImGui_beginPopupContextItem);
 	LUA_METHOD("beginPopupContextVoid", lua_ImGui_beginPopupContextVoid);
@@ -2427,12 +2711,12 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("colorConvertU32ToFloat4", lua_ImGui_colorConvertU32ToFloat4);
 	LUA_METHOD("columns", lua_ImGui_columns);
 	LUA_METHOD("debugCheckVersionAndDataLayout", lua_ImGui_debugCheckVersionAndDataLayout);
+	LUA_METHOD("debugFlashStyleColor", lua_ImGui_debugFlashStyleColor);
+	LUA_METHOD("debugLog", lua_ImGui_debugLog);
+	LUA_METHOD("debugStartItemPicker", lua_ImGui_debugStartItemPicker);
 	LUA_METHOD("debugTextEncoding", lua_ImGui_debugTextEncoding);
 	LUA_METHOD("destroyPlatformWindows", lua_ImGui_destroyPlatformWindows);
-	LUA_METHOD("dockSpace", lua_ImGui_dockSpace);
-	LUA_METHOD("dockSpaceOverViewport", lua_ImGui_dockSpaceOverViewport);
 	LUA_METHOD("dummy", lua_ImGui_dummy);
-	LUA_METHOD("endChildFrame", lua_ImGui_endChildFrame);
 	LUA_METHOD("endCombo", lua_ImGui_endCombo);
 	LUA_METHOD("endDisabled", lua_ImGui_endDisabled);
 	LUA_METHOD("endDragDropSource", lua_ImGui_endDragDropSource);
@@ -2443,6 +2727,7 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("endMainMenuBar", lua_ImGui_endMainMenuBar);
 	LUA_METHOD("endMenu", lua_ImGui_endMenu);
 	LUA_METHOD("endMenuBar", lua_ImGui_endMenuBar);
+	LUA_METHOD("endMultiSelect", lua_ImGui_endMultiSelect);
 	LUA_METHOD("endPopup", lua_ImGui_endPopup);
 	LUA_METHOD("endTabBar", lua_ImGui_endTabBar);
 	LUA_METHOD("endTabItem", lua_ImGui_endTabItem);
@@ -2456,12 +2741,12 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("getColumnWidth", lua_ImGui_getColumnWidth);
 	LUA_METHOD("getColumnsCount", lua_ImGui_getColumnsCount);
 	LUA_METHOD("getContentRegionAvail", lua_ImGui_getContentRegionAvail);
-	LUA_METHOD("getContentRegionMax", lua_ImGui_getContentRegionMax);
 	LUA_METHOD("getCursorPos", lua_ImGui_getCursorPos);
 	LUA_METHOD("getCursorPosX", lua_ImGui_getCursorPosX);
 	LUA_METHOD("getCursorPosY", lua_ImGui_getCursorPosY);
 	LUA_METHOD("getCursorScreenPos", lua_ImGui_getCursorScreenPos);
 	LUA_METHOD("getCursorStartPos", lua_ImGui_getCursorStartPos);
+	LUA_METHOD("getFontBaked", lua_ImGui_getFontBaked);
 	LUA_METHOD("getFontSize", lua_ImGui_getFontSize);
 	LUA_METHOD("getFontTexUvWhitePixel", lua_ImGui_getFontTexUvWhitePixel);
 	LUA_METHOD("getForegroundDrawList", lua_ImGui_getForegroundDrawList);
@@ -2469,6 +2754,8 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("getFrameHeight", lua_ImGui_getFrameHeight);
 	LUA_METHOD("getFrameHeightWithSpacing", lua_ImGui_getFrameHeightWithSpacing);
 	LUA_METHOD("getID", lua_ImGui_getID);
+	LUA_METHOD("getItemClickedCountWithSingleClickDelay", lua_ImGui_getItemClickedCountWithSingleClickDelay);
+	LUA_METHOD("getItemFlags", lua_ImGui_getItemFlags);
 	LUA_METHOD("getItemID", lua_ImGui_getItemID);
 	LUA_METHOD("getItemRectMax", lua_ImGui_getItemRectMax);
 	LUA_METHOD("getItemRectMin", lua_ImGui_getItemRectMin);
@@ -2492,8 +2779,6 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("getTime", lua_ImGui_getTime);
 	LUA_METHOD("getTreeNodeToLabelSpacing", lua_ImGui_getTreeNodeToLabelSpacing);
 	LUA_METHOD("getVersion", lua_ImGui_getVersion);
-	LUA_METHOD("getWindowContentRegionMax", lua_ImGui_getWindowContentRegionMax);
-	LUA_METHOD("getWindowContentRegionMin", lua_ImGui_getWindowContentRegionMin);
 	LUA_METHOD("getWindowDockID", lua_ImGui_getWindowDockID);
 	LUA_METHOD("getWindowDpiScale", lua_ImGui_getWindowDpiScale);
 	LUA_METHOD("getWindowDrawList", lua_ImGui_getWindowDrawList);
@@ -2517,7 +2802,9 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("isItemFocused", lua_ImGui_isItemFocused);
 	LUA_METHOD("isItemHovered", lua_ImGui_isItemHovered);
 	LUA_METHOD("isItemToggledOpen", lua_ImGui_isItemToggledOpen);
+	LUA_METHOD("isItemToggledSelection", lua_ImGui_isItemToggledSelection);
 	LUA_METHOD("isItemVisible", lua_ImGui_isItemVisible);
+	LUA_METHOD("isKeyChordPressed", lua_ImGui_isKeyChordPressed);
 	LUA_METHOD("isKeyDown", lua_ImGui_isKeyDown);
 	LUA_METHOD("isKeyPressed", lua_ImGui_isKeyPressed);
 	LUA_METHOD("isKeyReleased", lua_ImGui_isKeyReleased);
@@ -2527,6 +2814,7 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("isMouseDragging", lua_ImGui_isMouseDragging);
 	LUA_METHOD("isMouseHoveringRect", lua_ImGui_isMouseHoveringRect);
 	LUA_METHOD("isMouseReleased", lua_ImGui_isMouseReleased);
+	LUA_METHOD("isMouseReleasedWithDelay", lua_ImGui_isMouseReleasedWithDelay);
 	LUA_METHOD("isPopupOpen", lua_ImGui_isPopupOpen);
 	LUA_METHOD("isRectVisible", lua_ImGui_isRectVisible);
 	LUA_METHOD("isWindowAppearing", lua_ImGui_isWindowAppearing);
@@ -2548,20 +2836,20 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("nextColumn", lua_ImGui_nextColumn);
 	LUA_METHOD("openPopup", lua_ImGui_openPopup);
 	LUA_METHOD("openPopupOnItemClick", lua_ImGui_openPopupOnItemClick);
-	LUA_METHOD("popAllowKeyboardFocus", lua_ImGui_popAllowKeyboardFocus);
-	LUA_METHOD("popButtonRepeat", lua_ImGui_popButtonRepeat);
 	LUA_METHOD("popClipRect", lua_ImGui_popClipRect);
 	LUA_METHOD("popFont", lua_ImGui_popFont);
 	LUA_METHOD("popID", lua_ImGui_popID);
+	LUA_METHOD("popItemFlag", lua_ImGui_popItemFlag);
 	LUA_METHOD("popItemWidth", lua_ImGui_popItemWidth);
 	LUA_METHOD("popStyleColor", lua_ImGui_popStyleColor);
 	LUA_METHOD("popStyleVar", lua_ImGui_popStyleVar);
 	LUA_METHOD("popTextWrapPos", lua_ImGui_popTextWrapPos);
 	LUA_METHOD("progressBar", lua_ImGui_progressBar);
-	LUA_METHOD("pushAllowKeyboardFocus", lua_ImGui_pushAllowKeyboardFocus);
-	LUA_METHOD("pushButtonRepeat", lua_ImGui_pushButtonRepeat);
 	LUA_METHOD("pushClipRect", lua_ImGui_pushClipRect);
+	LUA_METHOD("pushItemFlag", lua_ImGui_pushItemFlag);
 	LUA_METHOD("pushItemWidth", lua_ImGui_pushItemWidth);
+	LUA_METHOD("pushStyleVarX", lua_ImGui_pushStyleVarX);
+	LUA_METHOD("pushStyleVarY", lua_ImGui_pushStyleVarY);
 	LUA_METHOD("pushTextWrapPos", lua_ImGui_pushTextWrapPos);
 	LUA_METHOD("render", lua_ImGui_render);
 	LUA_METHOD("renderPlatformWindowsDefault", lua_ImGui_renderPlatformWindowsDefault);
@@ -2571,20 +2859,24 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("separator", lua_ImGui_separator);
 	LUA_METHOD("separatorText", lua_ImGui_separatorText);
 	LUA_METHOD("setClipboardText", lua_ImGui_setClipboardText);
-	LUA_METHOD("setColorEditOptions", lua_ImGui_setColorEditOptions);
 	LUA_METHOD("setColumnOffset", lua_ImGui_setColumnOffset);
 	LUA_METHOD("setColumnWidth", lua_ImGui_setColumnWidth);
 	LUA_METHOD("setCursorPos", lua_ImGui_setCursorPos);
 	LUA_METHOD("setCursorPosX", lua_ImGui_setCursorPosX);
 	LUA_METHOD("setCursorPosY", lua_ImGui_setCursorPosY);
 	LUA_METHOD("setCursorScreenPos", lua_ImGui_setCursorScreenPos);
-	LUA_METHOD("setItemAllowOverlap", lua_ImGui_setItemAllowOverlap);
 	LUA_METHOD("setItemDefaultFocus", lua_ImGui_setItemDefaultFocus);
+	LUA_METHOD("setItemKeyOwner", lua_ImGui_setItemKeyOwner);
+	LUA_METHOD("setItemTooltip", lua_ImGui_setItemTooltip);
 	LUA_METHOD("setKeyboardFocusHere", lua_ImGui_setKeyboardFocusHere);
 	LUA_METHOD("setMouseCursor", lua_ImGui_setMouseCursor);
+	LUA_METHOD("setNavCursorVisible", lua_ImGui_setNavCursorVisible);
 	LUA_METHOD("setNextFrameWantCaptureKeyboard", lua_ImGui_setNextFrameWantCaptureKeyboard);
 	LUA_METHOD("setNextFrameWantCaptureMouse", lua_ImGui_setNextFrameWantCaptureMouse);
+	LUA_METHOD("setNextItemAllowOverlap", lua_ImGui_setNextItemAllowOverlap);
 	LUA_METHOD("setNextItemOpen", lua_ImGui_setNextItemOpen);
+	LUA_METHOD("setNextItemShortcut", lua_ImGui_setNextItemShortcut);
+	LUA_METHOD("setNextItemStorageID", lua_ImGui_setNextItemStorageID);
 	LUA_METHOD("setNextItemWidth", lua_ImGui_setNextItemWidth);
 	LUA_METHOD("setNextWindowBgAlpha", lua_ImGui_setNextWindowBgAlpha);
 	LUA_METHOD("setNextWindowCollapsed", lua_ImGui_setNextWindowCollapsed);
@@ -2606,19 +2898,23 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("setTooltip", lua_ImGui_setTooltip);
 	LUA_METHOD("setWindowCollapsed", lua_ImGui_setWindowCollapsed);
 	LUA_METHOD("setWindowFocus", lua_ImGui_setWindowFocus);
-	LUA_METHOD("setWindowFontScale", lua_ImGui_setWindowFontScale);
 	LUA_METHOD("setWindowPos", lua_ImGui_setWindowPos);
 	LUA_METHOD("setWindowSize", lua_ImGui_setWindowSize);
+	LUA_METHOD("shortcut", lua_ImGui_shortcut);
+	LUA_METHOD("showDebugLogWindow", lua_ImGui_showDebugLogWindow);
 	LUA_METHOD("showFontSelector", lua_ImGui_showFontSelector);
+	LUA_METHOD("showIDStackToolWindow", lua_ImGui_showIDStackToolWindow);
 	LUA_METHOD("showStyleSelector", lua_ImGui_showStyleSelector);
 	LUA_METHOD("showUserGuide", lua_ImGui_showUserGuide);
 	LUA_METHOD("smallButton", lua_ImGui_smallButton);
 	LUA_METHOD("spacing", lua_ImGui_spacing);
 	LUA_METHOD("tabItemButton", lua_ImGui_tabItemButton);
+	LUA_METHOD("tableAngledHeadersRow", lua_ImGui_tableAngledHeadersRow);
 	LUA_METHOD("tableGetColumnCount", lua_ImGui_tableGetColumnCount);
 	LUA_METHOD("tableGetColumnFlags", lua_ImGui_tableGetColumnFlags);
 	LUA_METHOD("tableGetColumnIndex", lua_ImGui_tableGetColumnIndex);
 	LUA_METHOD("tableGetColumnName", lua_ImGui_tableGetColumnName);
+	LUA_METHOD("tableGetHoveredColumn", lua_ImGui_tableGetHoveredColumn);
 	LUA_METHOD("tableGetRowIndex", lua_ImGui_tableGetRowIndex);
 	LUA_METHOD("tableHeader", lua_ImGui_tableHeader);
 	LUA_METHOD("tableHeadersRow", lua_ImGui_tableHeadersRow);
@@ -2632,10 +2928,13 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("text", lua_ImGui_text);
 	LUA_METHOD("textColored", lua_ImGui_textColored);
 	LUA_METHOD("textDisabled", lua_ImGui_textDisabled);
+	LUA_METHOD("textLink", lua_ImGui_textLink);
+	LUA_METHOD("textLinkOpenURL", lua_ImGui_textLinkOpenURL);
 	LUA_METHOD("textUnformatted", lua_ImGui_textUnformatted);
 	LUA_METHOD("textWrapped", lua_ImGui_textWrapped);
 	LUA_METHOD("treeNode", lua_ImGui_treeNode);
 	LUA_METHOD("treeNodeEx", lua_ImGui_treeNodeEx);
+	LUA_METHOD("treeNodeGetOpen", lua_ImGui_treeNodeGetOpen);
 	LUA_METHOD("treePop", lua_ImGui_treePop);
 	LUA_METHOD("treePush", lua_ImGui_treePush);
 	LUA_METHOD("unindent", lua_ImGui_unindent);

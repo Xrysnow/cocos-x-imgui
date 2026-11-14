@@ -2,6 +2,8 @@
 #include "../imgui/misc/cpp/imgui_stdlib.h"
 #include "scripting/lua-bindings/manual/CCLuaEngine.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
+//#include "scripting/lua-bindings/manual/lua_conversion/detail/base.hpp"
+//#include "scripting/lua-bindings/manual/lua_conversion/detail/conversion.hpp"
 #include "lua_imgui_auto.hpp"
 #include "lua_imguiStyle_auto.hpp"
 #include "lua_imguiIO_auto.hpp"
@@ -12,6 +14,11 @@
 #include "lua_implot_auto.hpp"
 #include "../CCIMGUI.h"
 #include "../CCImGuiLayer.h"
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <limits>
+#include <vector>
 
 #pragma warning (disable: 4244)
 
@@ -32,9 +39,87 @@
 	if(!luaval_to_native(_L, (_N), (_V)))\
 		return luaL_error(L, "invalid parameter #%d: %s", (_N), luaL_typename(_L, (_N)));
 
-using imlua::luaval_to_native;
-using imlua::native_to_luaval;
-using imlua::LUA_TCDATA;
+using lua::luaval_to_native;
+using lua::native_to_luaval;
+using lua::LUA_TCDATA;
+
+static_assert(sizeof(int64_t) == 8 && sizeof(ImGuiSelectionUserData) == sizeof(int64_t));
+static_assert(std::numeric_limits<ImGuiSelectionUserData>::is_signed &&
+	std::numeric_limits<ImGuiSelectionUserData>::digits == std::numeric_limits<int64_t>::digits);
+
+static constexpr int64_t selection_max_safe_integer = 9007199254740991LL;
+
+bool luaval_to_ImGuiSelectionToken(lua_State* L, int lo, ImGuiSelectionToken* outValue, const char* fName)
+{
+	LUA_CHECK_TO_NATIVE;
+	const auto type = lua_type(L, lo);
+	int64_t value = 0;
+	if (type == LUA_TNUMBER)
+	{
+		const auto number = lua_tonumber(L, lo);
+		if (!std::isfinite(number) || std::trunc(number) != number ||
+			number < -selection_max_safe_integer || number > selection_max_safe_integer ||
+			!luaval_to_native(L, lo, &value, fName))
+			return false;
+	}
+	else if (type == LUA_TCDATA)
+	{
+		static constexpr auto read_int64 = R"__(
+local ffi = require('ffi')
+local signed = ffi.typeof('int64_t')
+return function(value)
+    if not ffi.istype(signed, value) then return nil end
+    local copy = ffi.new('int64_t[1]')
+    copy[0] = value
+    return ffi.string(copy, 8)
+end
+)__";
+		if (!lua::_try_get_internal_helper(L, "imgui.selection_userdata.read_int64", read_int64))
+			return false;
+		lua_pushvalue(L, lo);
+		bool ok = lua_pcall(L, 1, 1, 0) == 0 && lua_type(L, -1) == LUA_TSTRING;
+		size_t size = 0;
+		const char* bytes = ok ? lua_tolstring(L, -1, &size) : nullptr;
+		ok = bytes && size == sizeof(value);
+		if (ok) std::memcpy(&value, bytes, sizeof(value));
+		lua_settop(L, top);
+		if (!ok) return false;
+	}
+	else
+		return false;
+
+	if (value == -1)
+		return false;
+	outValue->value = value;
+	return true;
+}
+
+void ImGuiSelectionToken_to_luaval(lua_State* L, ImGuiSelectionToken value)
+{
+	if (!L) return;
+	if (value.value >= -selection_max_safe_integer && value.value <= selection_max_safe_integer)
+	{
+		lua_pushnumber(L, static_cast<lua_Number>(value.value));
+		return;
+	}
+	static constexpr auto push_int64 = R"__(
+local ffi = require('ffi')
+return function(bytes)
+    local value = ffi.new('int64_t[1]')
+    ffi.copy(value, bytes, 8)
+    return value[0]
+end
+)__";
+	if (!lua::_try_get_internal_helper(L, "imgui.selection_userdata.push_int64", push_int64))
+	{
+		luaL_error(L, "cannot initialize exact ImGuiSelectionUserData output");
+		return;
+	}
+	// The native and FFI integers share the same process byte order; no double conversion.
+	lua_pushlstring(L, reinterpret_cast<const char*>(&value.value), sizeof(value.value));
+	if (lua_pcall(L, 1, 1, 0) != 0)
+		lua_error(L);
+}
 
 ImVec2 _luaval_to_imvec2(lua_State *L, int lo)
 {
@@ -59,184 +144,65 @@ ImVec4 _luaval_to_imvec4(lua_State *L, int lo)
 ImPlotPoint _luaval_to_implotPoint(lua_State* L, int lo)
 {
 	ImPlotPoint v;
-	luaval_to_ImPlotPoint(L, lo, &v);
+	luaval_to_native(L, lo, &v);
 	return v;
 }
 ImPlotRange _luaval_to_implotRange(lua_State* L, int lo)
 {
 	ImPlotRange v;
-	luaval_to_ImPlotRange(L, lo, &v);
+	luaval_to_native(L, lo, &v);
 	return v;
 }
 ImPlotRect _luaval_to_implotRect(lua_State* L, int lo)
 {
 	ImPlotRect v;
-	luaval_to_ImPlotRect(L, lo, &v);
+	luaval_to_native(L, lo, &v);
 	return v;
 }
 ImU32 lua_tou32(lua_State *L, int lo)
 {
 	return (ImU32)luaL_checknumber(L, lo);
 }
-
-bool luaval_to_ImVec2(lua_State* L, int lo, ImVec2* out, const char* name)
+ImTextureRef _luaval_to_imTextureRef(lua_State *L, int lo)
 {
-	if (!out)
-		return false;
-	cocos2d::Vec2 v;
-	if (!luaval_to_vec2(L, lo, &v))
-		return false;
-	out->x = v.x;
-	out->y = v.y;
-	return true;
-}
-bool luaval_to_ImVec4(lua_State* L, int lo, ImVec4* out, const char* name)
-{
-	if (!out)
-		return false;
-	cocos2d::Vec4 v;
-	if (!luaval_to_vec4(L, lo, &v))
-		return false;
-	out->x = v.x;
-	out->y = v.y;
-	out->z = v.z;
-	out->w = v.w;
-	return true;
-}
-bool luaval_to_ImPlotPoint(lua_State* L, int lo, ImPlotPoint* out, const char* name)
-{
-	if (!L || !out)
-		return false;
-	bool ok = true;
-	tolua_Error tolua_err;
-	if (!tolua_istable(L, lo, 0, &tolua_err))
-	{
-#if CC_DEBUG >=1
-		luaval_to_native_err(L, "#ferror:", &tolua_err, name);
-#endif
-		ok = false;
-	}
-	if (ok)
-	{
-		lua_pushstring(L, "x");
-		lua_gettable(L, lo);
-		out->x = lua_isnil(L, -1) ? 0.0 : lua_tonumber(L, -1);
-		lua_pop(L, 1);
-
-		lua_pushstring(L, "y");
-		lua_gettable(L, lo);
-		out->y = lua_isnil(L, -1) ? 0.0 : lua_tonumber(L, -1);
-		lua_pop(L, 1);
-	}
-	return ok;
-}
-bool luaval_to_ImPlotRange(lua_State* L, int lo, ImPlotRange* out, const char* name)
-{
-	if (!L || !out)
-		return false;
-	bool ok = true;
-	tolua_Error tolua_err;
-	if (!tolua_istable(L, lo, 0, &tolua_err))
-	{
-#if CC_DEBUG >=1
-		luaval_to_native_err(L, "#ferror:", &tolua_err, name);
-#endif
-		ok = false;
-	}
-	if (ok)
-	{
-		lua_pushstring(L, "min");
-		lua_gettable(L, lo);
-		out->Min = lua_isnil(L, -1) ? 0.0 : lua_tonumber(L, -1);
-		lua_pop(L, 1);
-
-		lua_pushstring(L, "max");
-		lua_gettable(L, lo);
-		out->Max = lua_isnil(L, -1) ? 0.0 : lua_tonumber(L, -1);
-		lua_pop(L, 1);
-	}
-	return ok;
-}
-bool luaval_to_ImPlotRect(lua_State* L, int lo, ImPlotRect* out, const char* name)
-{
-	if (!L || !out)
-		return false;
-	bool ok = true;
-	tolua_Error tolua_err;
-	if (!tolua_istable(L, lo, 0, &tolua_err))
-	{
-#if CC_DEBUG >=1
-		luaval_to_native_err(L, "#ferror:", &tolua_err, name);
-#endif
-		ok = false;
-	}
-	if (ok)
-	{
-		lua_pushstring(L, "x");
-		lua_gettable(L, lo);
-		ok &= luaval_to_ImPlotRange(L, lua_gettop(L), &out->X, name);
-		lua_pop(L, 1);
-		if (!ok)
-			return false;
-		lua_pushstring(L, "y");
-		lua_gettable(L, lo);
-		ok &= luaval_to_ImPlotRange(L, lua_gettop(L), &out->Y, name);
-		lua_pop(L, 1);
-	}
-	return ok;
+	ImTextureRef v;
+	luaval_to_ImTextureRef(L, lo, &v);
+	return v;
 }
 
-void ImVec2_to_luaval(lua_State* L, const ImVec2& val)
+bool luaval_to_ImTextureRef(lua_State* L, int lo, ImTextureRef* out, const char* name)
 {
-	cocos2d::Vec2 v;
-	v.x = val.x;
-	v.y = val.y;
-	vec2_to_luaval(L, v);
+	cocos2d::Sprite* sp = nullptr;
+	if (luaval_to_object(L, lo, "cc.Sprite", &sp, name))
+	{
+		*out = sp ? ImTextureRef{(ImTextureID)sp->getTexture()} : ImTextureRef{};
+		return true;
+	}
+	cocos2d::Texture2D* tex = nullptr;
+	if (luaval_to_object(L, lo, "cc.Texture2D", &tex, name))
+	{
+		*out = tex ? ImTextureRef{(ImTextureID)tex} : ImTextureRef{};
+		return true;
+	}
+	return false;
 }
-void ImVec4_to_luaval(lua_State* L, const ImVec4& val)
+
+static void imgui_copyFontConfigName(ImFontConfig& config, const char* name, size_t length)
 {
-	cocos2d::Vec4 v;
-	v.x = val.x;
-	v.y = val.y;
-	v.z = val.z;
-	v.w = val.w;
-	vec4_to_luaval(L, v);
+	const auto count = (std::min)(length, sizeof(config.Name) - 1);
+	std::memcpy(config.Name, name, count);
+	config.Name[count] = '\0';
 }
-void ImPlotPoint_to_luaval(lua_State* L, const ImPlotPoint& val)
+
+static int imgui_setFontConfigName(lua_State* lua_S, int lo, ImFontConfig& config)
 {
-	if (!L)
-		return;
-	lua_newtable(L);
-	lua_pushstring(L, "x");
-	lua_pushnumber(L, (lua_Number)val.x);
-	lua_rawset(L, -3);
-	lua_pushstring(L, "y");
-	lua_pushnumber(L, (lua_Number)val.y);
-	lua_rawset(L, -3);
-}
-void ImPlotRange_to_luaval(lua_State* L, const ImPlotRange& val)
-{
-	if (!L)
-		return;
-	lua_newtable(L);
-	lua_pushstring(L, "min");
-	lua_pushnumber(L, (lua_Number)val.Min);
-	lua_rawset(L, -3);
-	lua_pushstring(L, "max");
-	lua_pushnumber(L, (lua_Number)val.Max);
-	lua_rawset(L, -3);
-}
-void ImPlotRect_to_luaval(lua_State* L, const ImPlotRect& val)
-{
-	if (!L)
-		return;
-	lua_newtable(L);
-	lua_pushstring(L, "x");
-	ImPlotRange_to_luaval(L, val.X);
-	lua_rawset(L, -3);
-	lua_pushstring(L, "y");
-	ImPlotRange_to_luaval(L, val.Y);
-	lua_rawset(L, -3);
+	LUA_CUR_FNAME("imgui.ImFontConfig.Name/setter");
+	std::string name;
+	LUA_NATIVE_SETTER(name, lo);
+	if (name.find('\0') != std::string::npos)
+		return luaL_error(lua_S, "%s does not accept embedded NUL bytes", LUA_FNAME);
+	imgui_copyFontConfigName(config, name.data(), name.size());
+	return 0;
 }
 
 ImFontConfig lua_toImFontConfig(lua_State* L, int lo)
@@ -250,20 +216,57 @@ ImFontConfig lua_toImFontConfig(lua_State* L, int lo)
 	ImFontConfig ret;
 	if (lua_istable(L, lo))
 	{
+		lua_getfield(L, lo, "Name");
+		if (!lua_isnil(L, -1))
+			imgui_setFontConfigName(L, -1, ret);
+		lua_pop(L, 1);
 		get_field(FontDataSize, luaL_checkinteger);
 		get_field(FontDataOwnedByAtlas, lua_toboolean);
 		get_field(FontNo, luaL_checkinteger);
-		get_field(SizePixels, luaL_checknumber);
+		get_field(MergeMode, lua_toboolean);
+		get_field(PixelSnapH, lua_toboolean);
 		get_field(OversampleH, luaL_checkinteger);
 		get_field(OversampleV, luaL_checkinteger);
-		get_field(PixelSnapH, lua_toboolean);
-		get_field(GlyphExtraSpacing, _luaval_to_imvec2);
+		get_field(EllipsisChar, luaL_checkinteger);
+		get_field(SizePixels, luaL_checknumber);
 		get_field(GlyphOffset, _luaval_to_imvec2);
 		get_field(GlyphMinAdvanceX, luaL_checknumber);
 		get_field(GlyphMaxAdvanceX, luaL_checknumber);
-		get_field(MergeMode, lua_toboolean);
-		get_field(FontBuilderFlags, luaL_checkinteger);
+		get_field(GlyphExtraAdvanceX, luaL_checknumber);
+		get_field(FontNo, luaL_checkinteger);
+		get_field(FontLoaderFlags, luaL_checkinteger);
 		get_field(RasterizerMultiply, luaL_checknumber);
+		get_field(RasterizerDensity, luaL_checknumber);
+		get_field(ExtraSizeScale, luaL_checknumber);
+		get_field(Flags, luaL_checkinteger);
+	}
+#undef get_field
+	return ret;
+}
+
+ImPlotSpec lua_toImPlotSpec(lua_State* L, int lo)
+{
+#define get_field(_K, _F)\
+	lua_getfield(L, lo, #_K);\
+	if(!lua_isnil(L, -1)) {\
+		(&ret)->_K = _F(L, -1); }\
+	lua_pop(L, 1);
+
+	ImPlotSpec ret;
+	if (lua_istable(L, lo))
+	{
+		get_field(LineColor, _luaval_to_imvec4);
+		get_field(LineWeight, luaL_checknumber);
+		get_field(FillColor, _luaval_to_imvec4);
+		get_field(FillAlpha, luaL_checknumber);
+		get_field(Marker, luaL_checkinteger);
+		get_field(MarkerSize, luaL_checknumber);
+		get_field(MarkerLineColor, _luaval_to_imvec4);
+		get_field(MarkerFillColor, _luaval_to_imvec4);
+		get_field(Size, luaL_checknumber);
+		get_field(Offset, luaL_checkinteger);
+		get_field(Stride, luaL_checkinteger);
+		get_field(Flags, luaL_checkinteger);
 	}
 #undef get_field
 	return ret;
@@ -370,12 +373,12 @@ static int imgui_endChild(lua_State *L) {
 
 // Parameters stacks (shared)
 
-static int imgui_pushFont(lua_State *L) {
-	ImFont* font = nullptr;
-	if (lua_gettop(L) >= 1)
-		luaval_to_object(L, 1, "imgui.ImFont", &font);
-	ImGui::PushFont(font);
-	return 0;
+static int imgui_pushFont(lua_State* lua_S) {
+	LUA_GINVOKE_HEADER("ImGui", "imgui.pushFont");
+	LUA_TRY_INVOKE_R(2, (static_cast<void(*)(ImFont*, float)>(&ImGui::PushFont)));
+	LUA_TRY_INVOKE_R(1, [](ImFont* font) { ImGui::PushFont(font, font ? font->LegacySize : 0.0f); });
+	LUA_TRY_INVOKE_R(0, []() { ImGui::PushFont(nullptr, 0.0f); });
+	LUA_GINVOKE_FOOTER("0,1,2");
 }
 static int imgui_getFont(lua_State *L) {
 	object_to_luaval(L, "imgui.ImFont", ImGui::GetFont());
@@ -479,34 +482,64 @@ static int imgui_image(lua_State *L) {
 	}
     return 0;
 }
-static int imgui_imageButton(lua_State *L) {
-	// retrun 0 to hint an error
+static int imgui_imageWithBg(lua_State *L) {
 	const int args = lua_gettop(L);
 	cocos2d::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, 1, "cc.Texture2D", &tex))
 	{
 		if (!tex)
 			return 0;
-		lua_pushboolean(L,
-			CCIMGUI::getInstance()->imageButton(tex,
-				lua_opt_imv2(args, 2, ImVec2(0, 0)),
-				lua_opt_imv2(args, 3, ImVec2(0, 0)),
-				lua_opt_imv2(args, 4, ImVec2(1, 1)),
-				lua_opt_int(args, 5, -1),
-				lua_opt_imv4(args, 6, ImVec4(0, 0, 0, 0)),
-				lua_opt_imv4(args, 7, ImVec4(1, 1, 1, 1)))
-		);
-		return 1;
+		CCIMGUI::getInstance()->imageWithBg(tex,
+			lua_opt_imv2(args, 2, ImVec2(0, 0)),
+			lua_opt_imv2(args, 3, ImVec2(0, 0)),
+			lua_opt_imv2(args, 4, ImVec2(1, 1)),
+			lua_opt_imv4(args, 5, ImVec4(0, 0, 0, 0)),
+			lua_opt_imv4(args, 6, ImVec4(1, 1, 1, 1)));
+		return 0;
 	}
 	cocos2d::Sprite* sp = nullptr;
 	if (luaval_to_object(L, 1, "cc.Sprite", &sp))
 	{
 		if (!sp)
 			return 0;
+		CCIMGUI::getInstance()->imageWithBg(sp,
+			lua_opt_imv2(args, 2, ImVec2(0, 0)),
+			lua_opt_imv4(args, 3, ImVec4(0, 0, 0, 0)),
+			lua_opt_imv4(args, 4, ImVec4(1, 1, 1, 1)));
+		return 0;
+	}
+	return 0;
+}
+static int imgui_imageButton(lua_State *L) {
+	// retrun 0 to hint an error
+	const int args = lua_gettop(L);
+	cocos2d::Texture2D* tex = nullptr;
+	if (luaval_to_object(L, 2, "cc.Texture2D", &tex))
+	{
+		if (!tex)
+			return 0;
 		lua_pushboolean(L,
-			CCIMGUI::getInstance()->imageButton(sp,
-				lua_opt_imv2(args, 2, ImVec2(0, 0)),
-				lua_opt_int(args, 3, -1),
+			CCIMGUI::getInstance()->imageButton(
+				luaL_checkstring(L, 1),
+				tex,
+				lua_opt_imv2(args, 3, ImVec2(0, 0)),
+				lua_opt_imv2(args, 4, ImVec2(0, 0)),
+				lua_opt_imv2(args, 5, ImVec2(1, 1)),
+				lua_opt_imv4(args, 6, ImVec4(0, 0, 0, 0)),
+				lua_opt_imv4(args, 7, ImVec4(1, 1, 1, 1)))
+		);
+		return 1;
+	}
+	cocos2d::Sprite* sp = nullptr;
+	if (luaval_to_object(L, 2, "cc.Sprite", &sp))
+	{
+		if (!sp)
+			return 0;
+		lua_pushboolean(L,
+			CCIMGUI::getInstance()->imageButton(
+				luaL_checkstring(L, 1),
+				sp,
+				lua_opt_imv2(args, 3, ImVec2(0, 0)),
 				lua_opt_imv4(args, 4, ImVec4(0, 0, 0, 0)),
 				lua_opt_imv4(args, 5, ImVec4(1, 1, 1, 1))));
 		return 1;
@@ -1053,6 +1086,167 @@ static int imgui_beginPopupModal(lua_State *L) {
 	return 1;
 }
 
+// Tables
+
+static int imgui_tableGetSortSpecs(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "imgui.tableGetSortSpecs");
+	LUA_TRY_INVOKE_R(0, &ImGui::TableGetSortSpecs);
+	LUA_GINVOKE_FOOTER("0");
+}
+
+static ImGuiTableSortSpecs* imgui_checkTableSortSpecs(lua_State* lua_S)
+{
+	luaL_checkudata(lua_S, 1, "imgui.ImGuiTableSortSpecs");
+	auto cobj = LUA_TO_COBJ(ImGuiTableSortSpecs*, 1);
+	if (!cobj)
+		luaL_error(lua_S, "invalid imgui.ImGuiTableSortSpecs object");
+	return cobj;
+}
+
+static int lua_ImGuiTableSortSpecs_Specs_getter(lua_State* lua_S)
+{
+	auto cobj = imgui_checkTableSortSpecs(lua_S);
+	lua::native_array_to_luaval(lua_S, cobj->Specs, cobj->SpecsCount);
+	return 1;
+}
+
+static int lua_ImGuiTableSortSpecs_SpecsCount_getter(lua_State* lua_S)
+{
+	auto cobj = imgui_checkTableSortSpecs(lua_S);
+	LUA_PUSH_NATIVE(cobj->SpecsCount);
+	return 1;
+}
+
+static int lua_ImGuiTableSortSpecs_readonly(lua_State* lua_S)
+{
+	// A null tolua setter would allow a Lua peer field to shadow the property.
+	return luaL_error(lua_S, "imgui.ImGuiTableSortSpecs.Specs and SpecsCount are read-only");
+}
+
+static int lua_ImGuiTableSortSpecs_SpecsDirty_getter(lua_State* lua_S)
+{
+	auto cobj = imgui_checkTableSortSpecs(lua_S);
+	LUA_PUSH_NATIVE(cobj->SpecsDirty);
+	return 1;
+}
+
+static int lua_ImGuiTableSortSpecs_SpecsDirty_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiTableSortSpecs.SpecsDirty/setter");
+	auto cobj = imgui_checkTableSortSpecs(lua_S);
+	LUA_NATIVE_SETTER(cobj->SpecsDirty, 2);
+	return 0;
+}
+
+static int luaReg_imguiTableSortSpecs(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_CLS_DEF(ImGuiTableSortSpecs, "ImGuiTableSortSpecs", "imgui.ImGuiTableSortSpecs",
+		nullptr, nullptr);
+	LUA_FIELD("Specs", lua_ImGuiTableSortSpecs_Specs_getter, lua_ImGuiTableSortSpecs_readonly);
+	LUA_FIELD("SpecsCount", lua_ImGuiTableSortSpecs_SpecsCount_getter, lua_ImGuiTableSortSpecs_readonly);
+	LUA_FIELD("SpecsDirty", lua_ImGuiTableSortSpecs_SpecsDirty_getter, lua_ImGuiTableSortSpecs_SpecsDirty_setter);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+
+// Multi-selection
+
+static int imgui_setNextItemSelectionUserData(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "imgui.setNextItemSelectionUserData");
+	LUA_TRY_INVOKE_R(1, [](ImGuiSelectionToken value) {
+		ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(value.value));
+	});
+	LUA_GINVOKE_FOOTER("1");
+}
+
+static ImGuiMultiSelectIO* imgui_checkMultiSelectIO(lua_State* lua_S)
+{
+	luaL_checkudata(lua_S, 1, "imgui.ImGuiMultiSelectIO");
+	auto cobj = LUA_TO_COBJ(ImGuiMultiSelectIO*, 1);
+	if (!cobj)
+		luaL_error(lua_S, "invalid imgui.ImGuiMultiSelectIO object");
+	return cobj;
+}
+
+static int lua_ImGuiMultiSelectIO_Requests_getter(lua_State* lua_S)
+{
+	auto cobj = imgui_checkMultiSelectIO(lua_S);
+	// Copy the whole request list before Lua allocations can run GC or reenter ImGui.
+	std::vector<ImGuiSelectionRequest> requests;
+	if (cobj->Requests.Size > 0)
+		requests.assign(cobj->Requests.Data, cobj->Requests.Data + cobj->Requests.Size);
+	lua::native_array_to_luaval(lua_S, requests.data(), requests.size());
+	return 1;
+}
+
+static int lua_ImGuiMultiSelectIO_RangeSrcItem_getter(lua_State* lua_S)
+{
+	auto cobj = imgui_checkMultiSelectIO(lua_S);
+	LUA_PUSH_NATIVE(ImGuiSelectionToken{static_cast<int64_t>(cobj->RangeSrcItem)});
+	return 1;
+}
+
+static int lua_ImGuiMultiSelectIO_NavIdItem_getter(lua_State* lua_S)
+{
+	auto cobj = imgui_checkMultiSelectIO(lua_S);
+	LUA_PUSH_NATIVE(ImGuiSelectionToken{static_cast<int64_t>(cobj->NavIdItem)});
+	return 1;
+}
+
+static int lua_ImGuiMultiSelectIO_NavIdSelected_getter(lua_State* lua_S)
+{
+	auto cobj = imgui_checkMultiSelectIO(lua_S);
+	LUA_PUSH_NATIVE(cobj->NavIdSelected);
+	return 1;
+}
+
+static int lua_ImGuiMultiSelectIO_ItemsCount_getter(lua_State* lua_S)
+{
+	auto cobj = imgui_checkMultiSelectIO(lua_S);
+	LUA_PUSH_NATIVE(cobj->ItemsCount);
+	return 1;
+}
+
+static int lua_ImGuiMultiSelectIO_RangeSrcReset_getter(lua_State* lua_S)
+{
+	auto cobj = imgui_checkMultiSelectIO(lua_S);
+	LUA_PUSH_NATIVE(cobj->RangeSrcReset);
+	return 1;
+}
+
+static int lua_ImGuiMultiSelectIO_RangeSrcReset_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiMultiSelectIO.RangeSrcReset/setter");
+	auto cobj = imgui_checkMultiSelectIO(lua_S);
+	LUA_NATIVE_SETTER(cobj->RangeSrcReset, 2);
+	return 0;
+}
+
+static int lua_ImGuiMultiSelectIO_readonly(lua_State* lua_S)
+{
+	return luaL_error(lua_S, "imgui.ImGuiMultiSelectIO: only RangeSrcReset is writable");
+}
+
+static int luaReg_imguiMultiSelectIO(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_CLS_DEF(ImGuiMultiSelectIO, "ImGuiMultiSelectIO", "imgui.ImGuiMultiSelectIO",
+		nullptr, nullptr);
+	LUA_FIELD("Requests", lua_ImGuiMultiSelectIO_Requests_getter, lua_ImGuiMultiSelectIO_readonly);
+	LUA_FIELD("RangeSrcItem", lua_ImGuiMultiSelectIO_RangeSrcItem_getter, lua_ImGuiMultiSelectIO_readonly);
+	LUA_FIELD("NavIdItem", lua_ImGuiMultiSelectIO_NavIdItem_getter, lua_ImGuiMultiSelectIO_readonly);
+	LUA_FIELD("NavIdSelected", lua_ImGuiMultiSelectIO_NavIdSelected_getter, lua_ImGuiMultiSelectIO_readonly);
+	LUA_FIELD("ItemsCount", lua_ImGuiMultiSelectIO_ItemsCount_getter, lua_ImGuiMultiSelectIO_readonly);
+	LUA_FIELD("RangeSrcReset", lua_ImGuiMultiSelectIO_RangeSrcReset_getter, lua_ImGuiMultiSelectIO_RangeSrcReset_setter);
+	LUA_CLS_END();
+	LUA_ENTRY_END(1);
+	return 0;
+}
+
 // Tab Bars, Tabs
 
 static int imgui_beginTabItem(lua_State *L) {
@@ -1064,7 +1258,7 @@ static int imgui_beginTabItem(lua_State *L) {
 				luaL_checkstring(L, 1)));
 		return 1;
 	}
-	bool open;
+	bool open = false;
 	bool* p = nullptr;
 	if (!lua_isnil(L, 2))
 	{
@@ -1079,6 +1273,48 @@ static int imgui_beginTabItem(lua_State *L) {
 		return 2;
 	}
 	return 1;
+}
+
+// Docking
+
+static int imgui_dockSpace(lua_State* lua_S)
+{
+	if (lua_gettop(lua_S) == 4 && lua_isnil(lua_S, 4))
+		lua_pop(lua_S, 1);
+	LUA_GINVOKE_HEADER("ImGui", "imgui.dockSpace");
+	LUA_TRY_INVOKE_R(4, ([](ImGuiID id, const ImVec2& size, ImGuiDockNodeFlags flags, const ImGuiWindowClass& window_class) {
+		return ImGui::DockSpace(id, size, flags, &window_class);
+	}));
+	LUA_TRY_INVOKE_R(3, ([](ImGuiID id, const ImVec2& size, ImGuiDockNodeFlags flags) {
+		return ImGui::DockSpace(id, size, flags);
+	}));
+	LUA_TRY_INVOKE_R(2, ([](ImGuiID id, const ImVec2& size) { return ImGui::DockSpace(id, size); }));
+	LUA_TRY_INVOKE_R(1, [](ImGuiID id) { return ImGui::DockSpace(id); });
+	LUA_GINVOKE_FOOTER("1,2,3,4");
+}
+
+static int imgui_dockSpaceOverViewport(lua_State* lua_S)
+{
+	if (lua_gettop(lua_S) == 4 && lua_isnil(lua_S, 4))
+		lua_pop(lua_S, 1);
+	LUA_GINVOKE_HEADER("ImGui", "imgui.dockSpaceOverViewport");
+	LUA_TRY_INVOKE_R(4, ([](ImGuiID id, const ImGuiViewport* viewport, ImGuiDockNodeFlags flags, const ImGuiWindowClass& window_class) {
+		return ImGui::DockSpaceOverViewport(id, viewport, flags, &window_class);
+	}));
+	LUA_TRY_INVOKE_R(3, ([](ImGuiID id, const ImGuiViewport* viewport, ImGuiDockNodeFlags flags) {
+		return ImGui::DockSpaceOverViewport(id, viewport, flags);
+	}));
+	LUA_TRY_INVOKE_R(2, ([](ImGuiID id, const ImGuiViewport* viewport) { return ImGui::DockSpaceOverViewport(id, viewport); }));
+	LUA_TRY_INVOKE_R(1, [](ImGuiID id) { return ImGui::DockSpaceOverViewport(id); });
+	LUA_TRY_INVOKE_R(0, []() { return ImGui::DockSpaceOverViewport(); });
+	LUA_GINVOKE_FOOTER("0,1,2,3,4");
+}
+
+static int imgui_setNextWindowClass(lua_State* lua_S)
+{
+	LUA_GINVOKE_HEADER("ImGui", "imgui.setNextWindowClass");
+	LUA_TRY_INVOKE_R(1, [](const ImGuiWindowClass& window_class) { ImGui::SetNextWindowClass(&window_class); });
+	LUA_GINVOKE_FOOTER("1");
 }
 
 // Drag and Drop TODO: release lua values in CCImGuiLayer?
@@ -1173,7 +1409,8 @@ static int imgui_getDragDropPayload(lua_State *L) {
 static int imgui_calcListClipping(lua_State *L) {
 	int start = 0;
 	int end = 0;
-	ImGui::CalcListClipping(luaL_checkint(L, 1), luaL_checknumber(L, 2), &start, &end);
+	//TODO:
+	//ImGui::CalcListClipping(luaL_checkint(L, 1), luaL_checknumber(L, 2), &start, &end);
 	lua_pushinteger(L, start);
 	lua_pushinteger(L, end);
 	return 2;
@@ -1217,7 +1454,7 @@ static int imgui_isMousePosValid(lua_State *L) {
 	}
 	auto mouse_pos = _luaval_to_imvec2(L, 1);
 	lua_pushboolean(L, ImGui::IsMousePosValid(&mouse_pos));
-	ImVec2_to_luaval(L, mouse_pos);
+	native_to_luaval(L, mouse_pos);
 	return 2;
 }
 
@@ -1256,21 +1493,71 @@ enum GlyphRanges
 	GlyphRangesThai,                   // Default + Thai characters
 	GlyphRangesVietnamese,             // Default + Vietname characters
 };
-static const ImWchar* luaval_to_GlyphRanges(lua_State* L, int lo, const std::string& storeKey)
+static const ImWchar* luaval_to_GlyphRanges(lua_State* L, int lo)
 {
 	auto& io = ImGui::GetIO();
-	std::vector<unsigned short> arr;
 	auto ranges = io.Fonts->GetGlyphRangesChineseFull();
 	if (lua_istable(L, lo))
 	{
-		luaval_to_std_vector_ushort(L, lo, &arr);
-		if (arr.size() % 2 == 0)
-			arr.push_back(0);
-		ranges = CCIMGUI::getInstance()->addGlyphRanges(storeKey, arr);
+		const size_t count = lua_objlen(L, lo);
+		if (count > static_cast<size_t>((std::numeric_limits<int>::max)()))
+			luaL_error(L, "glyph range array is too large");
+		// Validate raw keys as well as values: Lua's length alone does not reject holes.
+		size_t keys = 0;
+		lua_pushnil(L);
+		while (lua_next(L, lo) != 0)
+		{
+			const auto key = lua_tonumber(L, -2);
+			if (lua_type(L, -2) != LUA_TNUMBER || !std::isfinite(key) ||
+				std::trunc(key) != key || key < 1 || key > count)
+				luaL_error(L, "glyph ranges must be a dense array");
+			++keys;
+			lua_pop(L, 1);
+		}
+		if (keys != count)
+			luaL_error(L, "glyph ranges must be a dense array");
+		size_t endpoints = count;
+		lua_Number start = 0;
+		for (size_t i = 0; i < count; ++i)
+		{
+			lua_rawgeti(L, lo, static_cast<int>(i + 1));
+			const auto value = lua_tonumber(L, -1);
+			if (lua_type(L, -1) != LUA_TNUMBER || !std::isfinite(value) ||
+				std::trunc(value) != value || value < 0 || value > IM_UNICODE_CODEPOINT_MAX)
+				luaL_error(L, "glyph range endpoints must be supported integer code points");
+			if (value == 0)
+			{
+				if (i != count - 1 || i % 2 != 0)
+					luaL_error(L, "glyph ranges only allow a final zero after complete pairs");
+				--endpoints;
+			}
+			else if (i % 2 == 0) start = value;
+			else if (value < start)
+				luaL_error(L, "glyph range start exceeds its end");
+			lua_pop(L, 1);
+		}
+		if (endpoints % 2 != 0)
+			luaL_error(L, "glyph ranges require start/end pairs");
+		std::vector<ImWchar> arr;
+		arr.reserve(endpoints + 1);
+		for (size_t i = 0; i < endpoints; ++i)
+		{
+			lua_rawgeti(L, lo, static_cast<int>(i + 1));
+			arr.push_back(static_cast<ImWchar>(lua_tonumber(L, -1)));
+			lua_pop(L, 1);
+		}
+		arr.push_back(0);
+		// Immutable storage is keyed by content, never by a truncated debug name.
+		const std::string key(reinterpret_cast<const char*>(arr.data()), arr.size() * sizeof(ImWchar));
+		ranges = CCIMGUI::getInstance()->addGlyphRanges(key, arr);
 	}
 	else
 	{
-		switch ((GlyphRanges)luaL_checkinteger(L, lo)) {
+		const auto preset = lua_tonumber(L, lo);
+		if (lua_type(L, lo) != LUA_TNUMBER || !std::isfinite(preset) ||
+			std::trunc(preset) != preset || preset < GlyphRangesDefault || preset > GlyphRangesVietnamese)
+			luaL_error(L, "invalid glyph range preset");
+		switch (static_cast<GlyphRanges>(static_cast<int>(preset))) {
 		case GlyphRangesDefault: ranges = io.Fonts->GetGlyphRangesDefault(); break;
 		case GlyphRangesKorean: ranges = io.Fonts->GetGlyphRangesKorean(); break;
 		case GlyphRangesJapanese: ranges = io.Fonts->GetGlyphRangesJapanese(); break;
@@ -1296,24 +1583,29 @@ static int imgui_addFontTTF(lua_State *L) {
 	ImFontConfig cfg;
 	if (args >= 3)
 		cfg = lua_toImFontConfig(L, 3);
-	cfg.FontDataOwnedByAtlas = false;
+	cfg.FontDataOwnedByAtlas = true;
 	if (cfg.Name[0] == 0)
 	{
 		auto name = path + ", " + std::to_string((int)size_pixels);
-		if (name.size() > sizeof(cfg.Name))
-			name = name.substr(name.size() - sizeof(cfg.Name));
-		std::memcpy(cfg.Name, name.c_str(), name.size());
+		const auto count = (std::min)(name.size(), sizeof(cfg.Name) - 1);
+		imgui_copyFontConfigName(cfg, name.data() + name.size() - count, count);
 	}
 
 	auto& io = ImGui::GetIO();
-	std::vector<unsigned short> arr;
 	auto ranges = io.Fonts->GetGlyphRangesChineseFull();
 	if (args >= 4)
 	{
-		ranges = luaval_to_GlyphRanges(L, 4, cfg.Name);
+		ranges = luaval_to_GlyphRanges(L, 4);
 	}
+	if (data.getSize() <= 100 || data.getSize() > (std::numeric_limits<int>::max)())
+		return luaL_error(L, "invalid font data size");
+	// Modern ImGui retains font bytes for later glyph loads; cocos Data is local.
+	auto* fontData = ImGui::MemAlloc(data.getSize());
+	if (!fontData)
+		return luaL_error(L, "failed to allocate font data");
+	std::memcpy(fontData, data.getBytes(), data.getSize());
 	object_to_luaval(L, "imgui.ImFont",
-		io.Fonts->AddFontFromMemoryTTF(data.getBytes(), data.getSize(), size_pixels, &cfg, ranges));
+		io.Fonts->AddFontFromMemoryTTF(fontData, static_cast<int>(data.getSize()), size_pixels, &cfg, ranges));
 	return 1;
 }
 
@@ -1370,13 +1662,14 @@ static int imgui_ccNode(lua_State *L) {
 static int imgui_ccNodeButton(lua_State *L) {
 	const int args = lua_gettop(L);
 	cocos2d::Node* node = nullptr;
-	if (luaval_to_object(L, 1, "cc.Node", &node))
+	if (luaval_to_object(L, 2, "cc.Node", &node))
 	{
 		if (!node)
 			return 0;
 		lua_pushboolean(L,
-			CCIMGUI::getInstance()->nodeButton(node,
-				lua_opt_int(args, 2, -1),
+			CCIMGUI::getInstance()->nodeButton(
+				luaL_checkstring(L, 1),
+				node,
 				lua_opt_imv4(args, 3, ImVec4(0, 0, 0, 0)),
 				lua_opt_imv4(args, 4, ImVec4(1, 1, 1, 1)))
 		);
@@ -1504,11 +1797,11 @@ static int imgui_setMarkdownImageCallback(lua_State* L)
 		cocos2d::Sprite* sp = nullptr;
 		luaval_to_object(L, -4, "cc.Sprite", &sp);
 		ImVec2 size(0, 0);
-		luaval_to_ImVec2(L, -3, &size);
+		luaval_to_native(L, -3, &size);
 		ImVec4 tint_col(1, 1, 1, 1);
-		luaval_to_ImVec4(L, -2, &tint_col);
+		luaval_to_native(L, -2, &tint_col);
 		ImVec4 border_col(0, 0, 0, 0);
-		luaval_to_ImVec4(L, -1, &border_col);
+		luaval_to_native(L, -1, &border_col);
 		return std::make_tuple(sp, size, tint_col, border_col);
 	};
 	CCIMGUI::getInstance()->setMarkdownImageCallback(f);
@@ -1581,7 +1874,7 @@ static const luaL_Reg imgui_methods[] = {
 	M(pushFont), M(getFont), M(pushStyleColor), M(pushStyleVar),
 
 	// Widgets
-    M(image), M(imageButton), M(collapsingHeader), M(checkbox),
+    M(image), M(imageWithBg), M(imageButton), M(collapsingHeader), M(checkbox),
 	M(checkboxFlags), M(radioButton), M(combo),
 
     // Widgets: Drags
@@ -1615,6 +1908,15 @@ static const luaL_Reg imgui_methods[] = {
 
 	// Tab Bars, Tabs
 	M(beginTabItem),
+
+	// Docking
+	M(dockSpace), M(dockSpaceOverViewport), M(setNextWindowClass),
+
+	// Tables
+	M(tableGetSortSpecs),
+
+	// Multi-selection
+	M(setNextItemSelectionUserData),
 
 	// Drag and Drop
 	M(setDragDropPayload),M(acceptDragDropPayload),M(getDragDropPayload),
@@ -1707,7 +2009,7 @@ static int drawlist_addText(lua_State *L)
 		ImVec4* p = nullptr;
 		if (args >= 8)
 		{
-			luaval_to_ImVec4(L, 8, &v);
+			luaval_to_native(L, 8, &v);
 			p = &v;
 		}
 		cobj->AddText(
@@ -1726,7 +2028,6 @@ static int drawlist_addImage(lua_State *L)
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
 	const int args = lua_gettop(L);
-	ImVec2 uva, uvb;
 	ImTextureID tid;
 	int id;
 	cocos2d::Texture2D* tex = nullptr;
@@ -1748,14 +2049,15 @@ static int drawlist_addImage(lua_State *L)
 	if (luaval_to_object(L, 2, "cc.Sprite", &sp))
 	{
 		if (!sp) return 0;
-		std::tie(tid, uva, uvb, id) = CCIMGUI::getInstance()->useSprite(sp);
+		ImVec2 uv_min, uv_max;
+		std::tie(tid, uv_min, uv_max, id) = CCIMGUI::getInstance()->useSprite(sp);
 		if (!tid) return 0;
 		cobj->AddImage(
 			tid,
 			_luaval_to_imvec2(L, 3),
 			_luaval_to_imvec2(L, 4),
-			uva,
-			uvb,
+			uv_min,
+			uv_max,
 			lua_opt_u32(args, 5, IM_COL32_WHITE));
 		return 0;
 	}
@@ -1858,14 +2160,14 @@ static int drawlist_addPolyline(lua_State *L)
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
 	std::vector<cocos2d::Vec2> arr;
-	luaval_to_std_vector_vec2(L, 2, &arr);
-	if (arr.empty()) return 0;
+	if (!luaval_to_native(L, 2, &arr))
+		return 0;
 	cobj->AddPolyline(
 		(ImVec2*)arr.data(),
 		arr.size(),
 		lua_tou32(L, 3),
-		luaL_checkinteger(L, 4),
-		luaL_checknumber(L, 5));
+		(float)luaL_checknumber(L, 4),
+		(ImDrawFlags)luaL_checkinteger(L, 5));
 	return 0;
 }
 static int drawlist_addConvexPolyFilled(lua_State *L)
@@ -1873,12 +2175,32 @@ static int drawlist_addConvexPolyFilled(lua_State *L)
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
 	std::vector<cocos2d::Vec2> arr;
-	luaval_to_std_vector_vec2(L, 2, &arr);
-	if (arr.empty()) return 0;
+	if (!luaval_to_native(L, 2, &arr))
+		return 0;
 	cobj->AddConvexPolyFilled(
 		(ImVec2*)arr.data(),
 		arr.size(),
 		lua_tou32(L, 3));
+	return 0;
+}
+static int drawlist_addConcavePolyFilled(lua_State *L)
+{
+	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
+	if (!cobj) return 0;
+	std::vector<cocos2d::Vec2> arr;
+	if (!luaval_to_native(L, 2, &arr))
+		return 0;
+	cobj->AddConcavePolyFilled(
+		(ImVec2*)arr.data(),
+		arr.size(),
+		lua_tou32(L, 3));
+	return 0;
+}
+static int drawlist_pushTexture(lua_State* L)
+{
+	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
+	if (!cobj) return 0;
+	cobj->PushTexture(_luaval_to_imTextureRef(L, 2));
 	return 0;
 }
 
@@ -1891,10 +2213,70 @@ static const luaL_Reg drawlist_methods[] = {
 	M(addImageQuad),
 	M(addImageRounded),
 	M(addPolyline),
-	M(addConvexPolyFilled)
+	M(addConvexPolyFilled),
+	M(addConcavePolyFilled),
+	M(pushTexture),
 };
 
 // font
+
+static ImFontConfig* imgui_checkFontConfig(lua_State* lua_S)
+{
+	luaL_checkudata(lua_S, 1, "imgui.ImFontConfig");
+	auto* config = LUA_TO_COBJ(ImFontConfig*, 1);
+	if (!config)
+		luaL_error(lua_S, "invalid imgui.ImFontConfig");
+	return config;
+}
+
+static int lua_ImFontConfig_Name_getter(lua_State* lua_S)
+{
+	const auto* config = imgui_checkFontConfig(lua_S);
+	size_t length = 0;
+	while (length < sizeof(config->Name) && config->Name[length] != '\0')
+		++length;
+	lua_pushlstring(lua_S, config->Name, length);
+	return 1;
+}
+
+static int lua_ImFontConfig_Name_setter(lua_State* lua_S)
+{
+	return imgui_setFontConfigName(lua_S, 2, *imgui_checkFontConfig(lua_S));
+}
+
+static int luaReg_imguiFontConfigManual(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENTRY("ImFontConfig");
+	LUA_FIELD("Name", lua_ImFontConfig_Name_getter, lua_ImFontConfig_Name_setter);
+	LUA_ENTRY_END(2);
+	return 0;
+}
+
+static int fontAtlas_getGlyphRangesDefault(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("imgui.ImFontAtlas", "imgui.ImFontAtlas:getGlyphRangesDefault");
+	LUA_TRY_INVOKE_R(0, ([](ImFontAtlas* atlas) {
+		std::vector<ImWchar> snapshot;
+		// Copy inclusive start/end pairs before converting to a fresh Lua table.
+		for (const ImWchar* ranges = atlas->GetGlyphRangesDefault(); ranges[0]; ranges += 2)
+		{
+			snapshot.push_back(ranges[0]);
+			snapshot.push_back(ranges[1]);
+		}
+		return snapshot;
+	}));
+	LUA_INVOKE_FOOTER("0");
+}
+
+static int luaReg_imguiFontAtlasManual(lua_State* lua_S)
+{
+	LUA_ENTRY("imgui");
+	LUA_ENTRY("ImFontAtlas");
+	LUA_METHOD("getGlyphRangesDefault", fontAtlas_getGlyphRangesDefault);
+	LUA_ENTRY_END(2);
+	return 0;
+}
 
 static int font_mergeGlyphs(lua_State* L)
 {
@@ -1926,6 +2308,29 @@ static int font_mergeGlyphs(lua_State* L)
 #define M(n) {#n, font_##n}
 static const luaL_Reg font_methods[] = {
 	M(mergeGlyphs)
+};
+
+static int fontBaked_findGlyph(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("imgui.ImFontBaked", "imgui.ImFontBaked:findGlyph");
+	LUA_TRY_INVOKE_R(1, ([](ImFontBaked* font, ImWchar codepoint) {
+		return ImFontGlyphSnapshot(font->FindGlyph(codepoint));
+	}));
+	LUA_INVOKE_FOOTER("1");
+}
+
+static int fontBaked_findGlyphNoFallback(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("imgui.ImFontBaked", "imgui.ImFontBaked:findGlyphNoFallback");
+	LUA_TRY_INVOKE_R(1, ([](ImFontBaked* font, ImWchar codepoint) {
+		return ImFontGlyphSnapshot(font->FindGlyphNoFallback(codepoint));
+	}));
+	LUA_INVOKE_FOOTER("1");
+}
+
+static const luaL_Reg font_baked_methods[] = {
+	{"findGlyph", fontBaked_findGlyph},
+	{"findGlyphNoFallback", fontBaked_findGlyphNoFallback}
 };
 
 // implot
@@ -1981,11 +2386,6 @@ static int implot_setupAxisTicks(lua_State* L) {
 	return 1;
 }
 
-#define IMPLOT_COUNT_OFFSET(_i1, _i2, _size)\
-	int count = luaL_checkinteger(L, _i1);\
-	int offset = lua_opt_int(args, _i2, 0);\
-	offset = std::max(0, std::min(offset, (_size)));\
-	count = std::max(0, std::min(count, (_size) - offset));
 #define LUA_GET_PTR(_name, _i)\
 	T* _name = (T*)lua_to_cptr(L, (_i));\
 	if (!(_name)) return lua_param_error(_i);
@@ -2047,6 +2447,14 @@ static void* lua_to_cptr(lua_State* L, int lo)
 	return nullptr;
 }
 
+static int lua_check_count(lua_State* L, int lo, size_t size)
+{
+	const int count = std::min(
+		(lua_Integer)std::numeric_limits<int>::max(),
+		luaL_checkinteger(L, lo));
+	return std::max(0, std::min(count, (int)size));
+}
+
 template<
 	template <typename T, int _Offset = 1> class Fn,
 	int TypeIdx = 2, int Offset = 1>
@@ -2082,13 +2490,12 @@ static int implot_plotLine(lua_State* L) {
 	const auto type = lua_type(L, 3);
 	if (type == LUA_TNUMBER) {
 		// values
-		IMPLOT_COUNT_OFFSET(3, 7, (int)v1.size());
+		const auto count = lua_check_count(L, 3, v1.size());
 		if (count > 0)
 			ImPlot::PlotLine<double>(label_id, v1.data(), count,
 				lua_opt_number(args, 4, 1), // double xscale=1
 				lua_opt_number(args, 5, 0), // double xstart=0,
-				lua_opt_int(args, 6, 0), // ImPlotLineFlags flags=0,
-				offset);
+				lua_toImPlotSpec(L, 6));
 		return 0;
 	}
 	if (type == LUA_TTABLE) {
@@ -2096,12 +2503,10 @@ static int implot_plotLine(lua_State* L) {
 		std::vector<double> v2;
 		if (!luaval_to_native(L, 3, &v2))
 			return lua_param_error(3);
-		const int size = std::min(v1.size(), v2.size());
-		IMPLOT_COUNT_OFFSET(4, 6, size);
+		const auto count = lua_check_count(L, 4, std::min(v1.size(), v2.size()));
 		if (count > 0)
 			ImPlot::PlotLine<double>(label_id, v1.data(), v2.data(), count,
-				lua_opt_int(args, 5, 0), // ImPlotLineFlags flags=0,
-				offset);
+				lua_toImPlotSpec(L, 5));
 		return 0;
 	}
 	return lua_param_error(3);
@@ -2144,25 +2549,22 @@ static int implot_plotScatter(lua_State* L) {
 		return lua_param_error(2);
 	const auto type = lua_type(L, 3);
 	if (type == LUA_TNUMBER) {
-		IMPLOT_COUNT_OFFSET(3, 7, (int)v1.size());
+		const auto count = lua_check_count(L, 3, v1.size());
 		if (count > 0)
 			ImPlot::PlotScatter<double>(label_id, v1.data(), count,
 				lua_opt_number(args, 4, 1),
 				lua_opt_number(args, 5, 0),
-				lua_opt_int(args, 6, 0),
-				offset);
+				lua_toImPlotSpec(L, 6));
 		return 0;
 	}
 	if (type == LUA_TTABLE) {
 		std::vector<double> v2;
 		if (!luaval_to_native(L, 3, &v2))
 			return lua_param_error(3);
-		const int size = std::min(v1.size(), v2.size());
-		IMPLOT_COUNT_OFFSET(4, 6, size);
+		const auto count = lua_check_count(L, 4, std::min(v1.size(), v2.size()));
 		if (count > 0)
 			ImPlot::PlotScatter<double>(label_id, v1.data(), v2.data(), count,
-				lua_opt_int(args, 5, 0),
-				offset);
+				lua_toImPlotSpec(L, 6));
 		return 0;
 	}
 	return lua_param_error(3);
@@ -2204,25 +2606,22 @@ static int implot_plotStairs(lua_State* L) {
 		return lua_param_error(2);
 	const auto type2 = lua_type(L, 3);
 	if (type2 == LUA_TNUMBER) {
-		IMPLOT_COUNT_OFFSET(3, 7, (int)v1.size());
+		const auto count = lua_check_count(L, 3, v1.size());
 		if (count > 0)
 			ImPlot::PlotStairs<double>(label_id, v1.data(), count,
 				lua_opt_number(args, 4, 1),
 				lua_opt_number(args, 5, 0),
-				lua_opt_int(args, 6, 0),
-				offset);
+				lua_toImPlotSpec(L, 6));
 		return 0;
 	}
 	if (type2 == LUA_TTABLE) {
 		std::vector<double> v2;
 		if (!luaval_to_native(L, 3, &v2))
 			return lua_param_error(3);
-		const int size = std::min(v1.size(), v2.size());
-		IMPLOT_COUNT_OFFSET(4, 6, size);
+		const auto count = lua_check_count(L, 4, std::min(v1.size(), v2.size()));
 		if (count > 0)
 			ImPlot::PlotStairs<double>(label_id, v1.data(), v2.data(), count,
-				lua_opt_int(args, 5, 0),
-				offset);
+				lua_toImPlotSpec(L, 5));
 		return 0;
 	}
 	return lua_param_error(3);
@@ -2265,15 +2664,13 @@ static int implot_plotShaded(lua_State* L) {
 	const auto type3 = lua_type(L, 3);
 	if (type3 == LUA_TNUMBER) {
 		// values
-		const int size = v1.size();
-		IMPLOT_COUNT_OFFSET(3, 8, size);
+		const auto count = lua_check_count(L, 3, v1.size());
 		if (count > 0)
 			ImPlot::PlotShaded<double>(label_id, v1.data(), count,
 				lua_opt_number(args, 4, 0),
 				lua_opt_number(args, 5, 1),
 				lua_opt_number(args, 6, 0),
-				lua_opt_int(args, 7, 0),
-				offset);
+				lua_toImPlotSpec(L, 7));
 		return 0;
 	}
 	std::vector<double> v2;
@@ -2282,13 +2679,11 @@ static int implot_plotShaded(lua_State* L) {
 	const auto type4 = lua_type(L, 4);
 	if (type4 == LUA_TNUMBER) {
 		// xs, ys
-		const int size = std::min(v1.size(), v2.size());
-		IMPLOT_COUNT_OFFSET(4, 7, size);
+		const auto count = lua_check_count(L, 4, std::min(v1.size(), v2.size()));
 		if (count > 0)
 			ImPlot::PlotShaded<double>(label_id, v1.data(), v2.data(), count,
 				lua_opt_number(args, 5, 0),
-				lua_opt_int(args, 6, 0),
-				offset);
+				lua_toImPlotSpec(L, 6));
 		return 0;
 	}
 	if (type4 == LUA_TTABLE) {
@@ -2296,13 +2691,12 @@ static int implot_plotShaded(lua_State* L) {
 		std::vector<double> v3;
 		if (!luaval_to_native(L, 4, &v3))
 			return lua_param_error(4);
-		const int size = std::min({ v1.size(), v2.size(), v3.size() });
-		IMPLOT_COUNT_OFFSET(5, 7, size);
+		const auto count = lua_check_count(L, 5,
+			std::min({ v1.size(), v2.size(), v3.size() }));
 		if (count > 0)
 			ImPlot::PlotShaded<double>(label_id,
 				v1.data(), v2.data(), v3.data(), count,
-				lua_opt_int(args, 6, 0),
-				offset);
+				lua_toImPlotSpec(L, 6));
 		return 0;
 	}
 	return lua_param_error(4);
@@ -2361,14 +2755,12 @@ static int implot_plotBars(lua_State* L) {
 	const auto type3 = lua_type(L, 3);
 	if (type3 == LUA_TNUMBER) {
 		// values
-		const int size = v1.size();
-		IMPLOT_COUNT_OFFSET(3, 7, size);
+		const auto count = lua_check_count(L, 3, v1.size());
 		if (count > 0)
 			ImPlot::PlotBars<double>(label_id, v1.data(), count,
 				lua_opt_number(args, 4, 0.67),
 				lua_opt_number(args, 5, 0),
-				lua_opt_int(args, 6, 0),
-				offset);
+				lua_toImPlotSpec(L, 6));
 		return 0;
 	}
 	if (type3 == LUA_TTABLE) {
@@ -2376,13 +2768,11 @@ static int implot_plotBars(lua_State* L) {
 		std::vector<double> v2;
 		if (!luaval_to_native(L, 3, &v2))
 			return lua_param_error(3);
-		const int size = std::min(v1.size(), v2.size());
-		IMPLOT_COUNT_OFFSET(4, 7, size);
+		const auto count = lua_check_count(L, 4, std::min(v1.size(), v2.size()));
 		if (count > 0)
 			ImPlot::PlotBars<double>(label_id, v1.data(), v2.data(), count,
 				luaL_checknumber(L, 5),
-				lua_opt_int(args, 6, 0),
-				offset);
+				lua_toImPlotSpec(L, 6));
 		return 0;
 	}
 	return lua_param_error(3);
@@ -2468,12 +2858,11 @@ static int implot_plotErrorBars(lua_State* L) {
 	const auto type5 = lua_type(L, 5);
 	if (type5 == LUA_TNUMBER) {
 		// xs, ys, err
-		const int size = std::min({ v1.size(), v2.size(), v3.size() });
-		IMPLOT_COUNT_OFFSET(5, 7, size);
+		const auto count = lua_check_count(L, 5,
+			std::min({ v1.size(), v2.size(), v3.size() }));
 		if (count > 0)
 			ImPlot::PlotErrorBars<double>(label_id, v1.data(), v2.data(), v3.data(), count,
-				lua_opt_int(args, 6, 0),
-				offset);
+				lua_toImPlotSpec(L, 6));
 		return 0;
 	}
 	if (type5 == LUA_TTABLE) {
@@ -2481,12 +2870,11 @@ static int implot_plotErrorBars(lua_State* L) {
 		std::vector<double> v4;
 		if (!luaval_to_native(L, 5, &v4))
 			return lua_param_error(5);
-		const int size = std::min({ v1.size(), v2.size(), v3.size(), v4.size() });
-		IMPLOT_COUNT_OFFSET(6, 8, size);
+		const auto count = lua_check_count(L, 6,
+			std::min({ v1.size(), v2.size(), v3.size(), v4.size() }));
 		if (count > 0)
 			ImPlot::PlotErrorBars<double>(label_id, v1.data(), v2.data(), v3.data(), v4.data(), count,
-				lua_opt_int(args, 7, 0),
-				offset);
+				lua_toImPlotSpec(L, 7));
 		return 0;
 	}
 	return lua_param_error(3);
@@ -2529,28 +2917,24 @@ static int implot_plotStems(lua_State* L) {
 	const auto type3 = lua_type(L, 3);
 	if (type3 == LUA_TNUMBER) {
 		// values
-		const int size = v1.size();
-		IMPLOT_COUNT_OFFSET(3, 8, size);
+		const auto count = lua_check_count(L, 3, v1.size());
 		if (count > 0)
 			ImPlot::PlotStems<double>(label_id, v1.data(), count,
 				lua_opt_number(args, 4, 0),
 				lua_opt_number(args, 5, 1),
 				lua_opt_number(args, 6, 0),
-				lua_opt_int(args, 7, 0),
-				offset);
+				lua_toImPlotSpec(L, 7));
 		return 0;
 	}
 	std::vector<double> v2;
 	if (!luaval_to_native(L, 3, &v2))
 		return lua_param_error(3);
 	// xs, ys
-	const int size = std::min(v1.size(), v2.size());
-	IMPLOT_COUNT_OFFSET(4, 7, size);
+	const auto count = lua_check_count(L, 4, std::min(v1.size(), v2.size()));
 	if (count > 0)
 		ImPlot::PlotStems<double>(label_id, v1.data(), v2.data(), count,
 			lua_opt_number(args, 5, 0),
-			lua_opt_int(args, 6, 0),
-			offset);
+			lua_toImPlotSpec(L, 6));
 	return 0;
 }
 DEF_PLOT_T(implot_plotStems) {
@@ -2588,12 +2972,12 @@ static int implot_plotInfLines(lua_State* L) {
 	std::vector<double> xs;
 	if (!luaval_to_native(L, 2, &xs))
 		return lua_param_error(2);
-	const int size = xs.size();
-	IMPLOT_COUNT_OFFSET(3, 5, size);
+	const auto count = lua_check_count(L, 3, xs.size());
 	if (count > 0)
-		ImPlot::PlotInfLines<double>(label_id, xs.data(), count,
-			lua_opt_int(args, 4, 0),
-			offset);
+		ImPlot::PlotInfLines<double>(
+			label_id, xs.data(),
+			count,
+			lua_toImPlotSpec(L, 4));
 	return 0;
 }
 DEF_PLOT_T(implot_plotInfLines) {
@@ -2759,11 +3143,12 @@ static int implot_plotDigital(lua_State* L) {
 	std::vector<double> v2;
 	if (!luaval_to_native(L, 3, &v2))
 		return lua_param_error(3);
-	const int size = std::min({ v1.size(), v2.size() });
-	IMPLOT_COUNT_OFFSET(4, 6, size);
-	ImPlot::PlotDigital(label_id, v1.data(), v2.data(), count,
-		lua_opt_int(args, 5, 0),
-		offset);
+	const auto count = lua_check_count(L, 4, std::min({ v1.size(), v2.size() }));
+	if (count > 0)
+		ImPlot::PlotDigital(
+			label_id, v1.data(), v2.data(),
+			count,
+			lua_toImPlotSpec(L, 5));
 	return 0;
 }
 DEF_PLOT_T(implot_plotDigital) {
@@ -2956,13 +3341,14 @@ static int implot_pushStyleColor(lua_State* L) {
 static int implot_pushStyleVar(lua_State* L) {
 	enum class ImPlotStyleVarType { Int, Float, ImVec2 };
 	const auto idx = (ImPlotStyleVar)luaL_checkinteger(L, 1);
-	if (idx < ImPlotStyleVar_LineWeight || idx >= ImPlotStyleVar_COUNT)
+	if (idx < 0 || idx >= ImPlotStyleVar_COUNT)
 		return lua_param_error(1);
-	ImPlotStyleVarType type = ImPlotStyleVarType::Float;
-	if (idx == ImPlotStyleVar_Marker)
-		type = ImPlotStyleVarType::Int;
-	else if (idx >= ImPlotStyleVar_MajorTickLen)
-		type = ImPlotStyleVarType::ImVec2;
+	ImPlotStyleVarType type = ImPlotStyleVarType::ImVec2;
+	if (idx == ImPlotStyleVar_PlotBorderSize
+		|| idx == ImPlotStyleVar_MinorAlpha
+		|| idx == ImPlotStyleVar_DigitalPadding
+		|| idx == ImPlotStyleVar_DigitalSpacing)
+		type = ImPlotStyleVarType::Float;
 
 	switch (type)
 	{
@@ -3042,7 +3428,7 @@ static int implot_colormapSlider(lua_State* L) {
 		ImPlot::ColormapSlider(
 			luaL_checkstring(L, 1), &t, &out, lua_opt_string(args, 4, ""), lua_opt_int(args, 5, IMPLOT_AUTO)));
 	lua_pushnumber(L, (lua_Number)t);
-	ImVec4_to_luaval(L, out);
+	native_to_luaval(L, out);
 	return 3;
 }
 static int implot_bustColorCache(lua_State* L) {
@@ -3126,8 +3512,12 @@ int luaopen_imgui(lua_State *L)
 	luaReg_imguiStyle(L);
 	luaReg_imguiIO(L);
 	luaReg_imguiFont(L);
+	luaReg_imguiFontConfigManual(L);
+	luaReg_imguiFontAtlasManual(L);
 	luaReg_imguiViewport(L);
 	luaReg_imguiDrawList(L);
+	luaReg_imguiTableSortSpecs(L);
+	luaReg_imguiMultiSelectIO(L);
 
 	lua_pushstring(L, "imgui.ImDrawList");
 	lua_rawget(L, LUA_REGISTRYINDEX);
@@ -3143,6 +3533,15 @@ int luaopen_imgui(lua_State *L)
 	if (lua_istable(L, -1))
 	{
 		for (auto&& reg : font_methods)
+			tolua_function(L, reg.name, reg.func);
+	}
+	lua_pop(L, 1);
+
+	lua_pushliteral(L, "imgui.ImFontBaked");
+	lua_rawget(L, LUA_REGISTRYINDEX);
+	if (lua_istable(L, -1))
+	{
+		for (auto&& reg : font_baked_methods)
 			tolua_function(L, reg.name, reg.func);
 	}
 	lua_pop(L, 1);

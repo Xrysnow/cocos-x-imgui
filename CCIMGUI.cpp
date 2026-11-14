@@ -26,8 +26,9 @@ void CCIMGUI::destroyInstance()
 {
 	if (_instance)
 	{
-		delete _instance;
+		// Font range storage must outlive the atlas/context using it.
 		ImGui_ImplCocos2dx_Shutdown();
+		delete _instance;
 		_instance = nullptr;
 	}
 }
@@ -88,7 +89,7 @@ void CCIMGUI::image(Texture2D* tex, const ImVec2& size, const ImVec2& uv0, const
 	if (size_.x <= 0.f) size_.x = tex->getPixelsWide();
 	if (size_.y <= 0.f) size_.y = tex->getPixelsHigh();
 	ImGui::PushID(getCCRefId(tex));
-	ImGui::Image((ImTextureID)tex, size_, uv0, uv1, tint_col, border_col);
+	ImGui::Image(ImTextureRef{(ImTextureID)tex}, size_, uv0, uv1, tint_col, border_col);
 	ImGui::PopID();
 }
 
@@ -103,12 +104,45 @@ void CCIMGUI::image(Sprite* sprite, const ImVec2& size, const ImVec4& tint_col, 
 	ImVec2 uv0, uv1;
 	std::tie(uv0, uv1) = getTextureUV(sprite);
 	ImGui::PushID(getCCRefId(sprite));
-	ImGui::Image((ImTextureID)sprite->getTexture(), size_, uv0, uv1, tint_col, border_col);
+	ImGui::Image(
+		ImTextureRef{(ImTextureID)sprite->getTexture()},
+		size_, uv0, uv1, tint_col, border_col);
 	ImGui::PopID();
 }
 
-bool CCIMGUI::imageButton(Texture2D* tex, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1,
-	int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col)
+void CCIMGUI::imageWithBg(Texture2D* tex, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1,
+	const ImVec4& bg_col, const ImVec4& tint_col)
+{
+	if (!tex)
+		return;
+	auto size_ = size;
+	if (size_.x <= 0.f) size_.x = tex->getPixelsWide();
+	if (size_.y <= 0.f) size_.y = tex->getPixelsHigh();
+	ImGui::PushID(getCCRefId(tex));
+	ImGui::ImageWithBg(ImTextureRef{(ImTextureID)tex}, size_, uv0, uv1, bg_col, tint_col);
+	ImGui::PopID();
+}
+
+void CCIMGUI::imageWithBg(Sprite* sprite, const ImVec2& size, const ImVec4& bg_col, const ImVec4& tint_col)
+{
+	if (!sprite || !sprite->getTexture())
+		return;
+	auto size_ = size;
+	const auto& rect = sprite->getTextureRect();
+	if (size_.x <= 0.f) size_.x = rect.size.width;
+	if (size_.y <= 0.f) size_.y = rect.size.height;
+	ImVec2 uv0, uv1;
+	std::tie(uv0, uv1) = getTextureUV(sprite);
+	ImGui::PushID(getCCRefId(sprite));
+	ImGui::ImageWithBg(
+		ImTextureRef{(ImTextureID)sprite->getTexture()},
+		size_, uv0, uv1, bg_col, tint_col);
+	ImGui::PopID();
+}
+
+bool CCIMGUI::imageButton(const char* str_id, Texture2D* tex, const ImVec2& size,
+	const ImVec2& uv0, const ImVec2& uv1,
+	const ImVec4& bg_col, const ImVec4& tint_col)
 {
 	if (!tex)
 		return false;
@@ -116,14 +150,16 @@ bool CCIMGUI::imageButton(Texture2D* tex, const ImVec2& size, const ImVec2& uv0,
 	if (size_.x <= 0.f) size_.x = tex->getPixelsWide();
 	if (size_.y <= 0.f) size_.y = tex->getPixelsHigh();
 	ImGui::PushID(getCCRefId(tex));
-	const auto ret = ImGui::ImageButton((ImTextureID)tex,
-		size_, uv0, uv1, frame_padding, bg_col, tint_col);
+	const auto ret = ImGui::ImageButton(
+		str_id,
+		ImTextureRef{(ImTextureID)tex},
+		size_, uv0, uv1, bg_col, tint_col);
 	ImGui::PopID();
 	return ret;
 }
 
-bool CCIMGUI::imageButton(Sprite* sprite, const ImVec2& size, int frame_padding, const ImVec4& bg_col,
-	const ImVec4& tint_col)
+bool CCIMGUI::imageButton(const char* str_id, Sprite* sprite, const ImVec2& size,
+	const ImVec4& bg_col, const ImVec4& tint_col)
 {
 	if (!sprite || !sprite->getTexture())
 		return false;
@@ -134,8 +170,10 @@ bool CCIMGUI::imageButton(Sprite* sprite, const ImVec2& size, int frame_padding,
 	ImVec2 uv0, uv1;
 	std::tie(uv0, uv1) = getTextureUV(sprite);
 	ImGui::PushID(getCCRefId(sprite));
-	const auto ret = ImGui::ImageButton((ImTextureID)sprite->getTexture(),
-		size_, uv0, uv1, frame_padding, bg_col, tint_col);
+	const auto ret = ImGui::ImageButton(
+		str_id,
+		ImTextureRef{(ImTextureID)sprite->getTexture()},
+		size_, uv0, uv1, bg_col, tint_col);
 	ImGui::PopID();
 	return ret;
 }
@@ -157,12 +195,12 @@ void CCIMGUI::node(Node* node, const ImVec4& tint_col, const ImVec4& border_col)
 	}
 	node->setNodeToParentTransform(tr);
 	ImGui::PushID(getCCRefId(node));
-	ImGui::Image((ImTextureID)node,
+	ImGui::Image(ImTextureRef{(ImTextureID)node},
 		ImVec2(size.width, size.height), ImVec2(0, 0), ImVec2(1, 1), tint_col, border_col);
 	ImGui::PopID();
 }
 
-bool CCIMGUI::nodeButton(Node* node, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col)
+bool CCIMGUI::nodeButton(const char* str_id, Node* node, const ImVec4& bg_col, const ImVec4& tint_col)
 {
 	if (!node)
 		return false;
@@ -172,20 +210,12 @@ bool CCIMGUI::nodeButton(Node* node, int frame_padding, const ImVec4& bg_col, co
 	tr.m[5] = -1;
 	tr.m[12] = pos.x;
 	tr.m[13] = pos.y + size.height;
-	if (frame_padding >= 0)
-	{
-		tr.m[12] += (float)frame_padding;
-		tr.m[13] += (float)frame_padding;
-	}
-	else
-	{
-		tr.m[12] += ImGui::GetStyle().FramePadding.x;
-		tr.m[13] += ImGui::GetStyle().FramePadding.y;
-	}
 	node->setNodeToParentTransform(tr);
 	ImGui::PushID(getCCRefId(node));
-	const auto ret = ImGui::ImageButton((ImTextureID)node,
-		ImVec2(size.width, size.height), ImVec2(0, 0), ImVec2(1, 1), frame_padding, bg_col, tint_col);
+	const auto ret = ImGui::ImageButton(
+		str_id,
+		ImTextureRef{(ImTextureID)node},
+		ImVec2(size.width, size.height), ImVec2(0, 0), ImVec2(1, 1), bg_col, tint_col);
 	ImGui::PopID();
 	return ret;
 }
@@ -193,14 +223,14 @@ bool CCIMGUI::nodeButton(Node* node, int frame_padding, const ImVec4& bg_col, co
 std::tuple<ImTextureID, int> CCIMGUI::useTexture(Texture2D* texture)
 {
 	if (!texture)
-		return { nullptr,0 };
+		return { 0,0 };
 	return { (ImTextureID)texture,getCCRefId(texture) };
 }
 
 std::tuple<ImTextureID, ImVec2, ImVec2, int> CCIMGUI::useSprite(Sprite* sprite)
 {
 	if (!sprite || !sprite->getTexture())
-		return { nullptr,{},{},0 };
+		return { 0,{},{},0 };
 	ImVec2 uv0, uv1;
 	std::tie(uv0, uv1) = getTextureUV(sprite);
 	return { (ImTextureID)sprite->getTexture(),uv0,uv1,getCCRefId(sprite) };
@@ -209,7 +239,7 @@ std::tuple<ImTextureID, ImVec2, ImVec2, int> CCIMGUI::useSprite(Sprite* sprite)
 std::tuple<ImTextureID, ImVec2, ImVec2, int> CCIMGUI::useNode(Node* node, const ImVec2& pos)
 {
 	if (!node)
-		return { nullptr,{},{},0 };
+		return { 0,{},{},0 };
 	const auto size = node->getContentSize();
 	Mat4 tr;
 	tr.m[5] = -1;

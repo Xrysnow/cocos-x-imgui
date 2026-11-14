@@ -72,32 +72,130 @@ int lua_ImGuiIO_BackendRendererName_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->BackendRendererName, 2);
 	return 0;
 }
-int lua_ImGuiIO_BackendUsingLegacyKeyArrays_getter(lua_State* lua_S)
+int lua_ImGuiIO_ConfigColorEditFlags_getter(lua_State* lua_S)
 {
-	LUA_CUR_FNAME("imgui.ImGuiIO.BackendUsingLegacyKeyArrays/getter");
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigColorEditFlags/getter");
 	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_PUSH_NATIVE(cobj->BackendUsingLegacyKeyArrays);
+	LUA_PUSH_NATIVE(cobj->ConfigColorEditFlags);
 	return 1;
 }
-int lua_ImGuiIO_BackendUsingLegacyKeyArrays_setter(lua_State* lua_S)
+int lua_ImGuiIO_ConfigColorEditFlags_setter(lua_State* lua_S)
 {
-	LUA_CUR_FNAME("imgui.ImGuiIO.BackendUsingLegacyKeyArrays/setter");
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigColorEditFlags/setter");
 	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_NATIVE_SETTER(cobj->BackendUsingLegacyKeyArrays, 2);
+	LUA_NATIVE_SETTER(cobj->ConfigColorEditFlags, 2);
 	return 0;
 }
-int lua_ImGuiIO_BackendUsingLegacyNavInputArray_getter(lua_State* lua_S)
+int lua_ImGuiIO_ConfigDebugBeginReturnValueLoop_getter(lua_State* lua_S)
 {
-	LUA_CUR_FNAME("imgui.ImGuiIO.BackendUsingLegacyNavInputArray/getter");
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugBeginReturnValueLoop/getter");
 	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_PUSH_NATIVE(cobj->BackendUsingLegacyNavInputArray);
+	LUA_PUSH_NATIVE(cobj->ConfigDebugBeginReturnValueLoop);
 	return 1;
 }
-int lua_ImGuiIO_BackendUsingLegacyNavInputArray_setter(lua_State* lua_S)
+int lua_ImGuiIO_ConfigDebugBeginReturnValueLoop_setter(lua_State* lua_S)
 {
-	LUA_CUR_FNAME("imgui.ImGuiIO.BackendUsingLegacyNavInputArray/setter");
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugBeginReturnValueLoop/setter");
 	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_NATIVE_SETTER(cobj->BackendUsingLegacyNavInputArray, 2);
+	LUA_NATIVE_SETTER(cobj->ConfigDebugBeginReturnValueLoop, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigDebugBeginReturnValueOnce_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugBeginReturnValueOnce/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigDebugBeginReturnValueOnce);
+	return 1;
+}
+int lua_ImGuiIO_ConfigDebugBeginReturnValueOnce_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugBeginReturnValueOnce/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigDebugBeginReturnValueOnce, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigDebugDrawListDefaultsToStrokeLegacy_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugDrawListDefaultsToStrokeLegacy/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigDebugDrawListDefaultsToStrokeLegacy);
+	return 1;
+}
+int lua_ImGuiIO_ConfigDebugDrawListDefaultsToStrokeLegacy_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugDrawListDefaultsToStrokeLegacy/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigDebugDrawListDefaultsToStrokeLegacy, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigDebugHighlightIdConflicts_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugHighlightIdConflicts/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigDebugHighlightIdConflicts);
+	return 1;
+}
+int lua_ImGuiIO_ConfigDebugHighlightIdConflicts_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugHighlightIdConflicts/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigDebugHighlightIdConflicts, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigDebugHighlightIdConflictsShowItemPicker_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugHighlightIdConflictsShowItemPicker/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigDebugHighlightIdConflictsShowItemPicker);
+	return 1;
+}
+int lua_ImGuiIO_ConfigDebugHighlightIdConflictsShowItemPicker_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugHighlightIdConflictsShowItemPicker/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigDebugHighlightIdConflictsShowItemPicker, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigDebugIgnoreFocusLoss_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugIgnoreFocusLoss/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigDebugIgnoreFocusLoss);
+	return 1;
+}
+int lua_ImGuiIO_ConfigDebugIgnoreFocusLoss_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugIgnoreFocusLoss/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigDebugIgnoreFocusLoss, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigDebugIniSettings_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugIniSettings/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigDebugIniSettings);
+	return 1;
+}
+int lua_ImGuiIO_ConfigDebugIniSettings_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugIniSettings/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigDebugIniSettings, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigDebugIsDebuggerPresent_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugIsDebuggerPresent/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigDebugIsDebuggerPresent);
+	return 1;
+}
+int lua_ImGuiIO_ConfigDebugIsDebuggerPresent_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDebugIsDebuggerPresent/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigDebugIsDebuggerPresent, 2);
 	return 0;
 }
 int lua_ImGuiIO_ConfigDockingAlwaysTabBar_getter(lua_State* lua_S)
@@ -112,6 +210,20 @@ int lua_ImGuiIO_ConfigDockingAlwaysTabBar_setter(lua_State* lua_S)
 	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDockingAlwaysTabBar/setter");
 	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
 	LUA_NATIVE_SETTER(cobj->ConfigDockingAlwaysTabBar, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigDockingNoDockingOver_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDockingNoDockingOver/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigDockingNoDockingOver);
+	return 1;
+}
+int lua_ImGuiIO_ConfigDockingNoDockingOver_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDockingNoDockingOver/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigDockingNoDockingOver, 2);
 	return 0;
 }
 int lua_ImGuiIO_ConfigDockingNoSplit_getter(lua_State* lua_S)
@@ -156,6 +268,34 @@ int lua_ImGuiIO_ConfigDockingWithShift_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->ConfigDockingWithShift, 2);
 	return 0;
 }
+int lua_ImGuiIO_ConfigDpiScaleFonts_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDpiScaleFonts/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigDpiScaleFonts);
+	return 1;
+}
+int lua_ImGuiIO_ConfigDpiScaleFonts_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDpiScaleFonts/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigDpiScaleFonts, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigDpiScaleViewports_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDpiScaleViewports/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigDpiScaleViewports);
+	return 1;
+}
+int lua_ImGuiIO_ConfigDpiScaleViewports_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDpiScaleViewports/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigDpiScaleViewports, 2);
+	return 0;
+}
 int lua_ImGuiIO_ConfigDragClickToInputText_getter(lua_State* lua_S)
 {
 	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigDragClickToInputText/getter");
@@ -170,6 +310,62 @@ int lua_ImGuiIO_ConfigDragClickToInputText_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->ConfigDragClickToInputText, 2);
 	return 0;
 }
+int lua_ImGuiIO_ConfigErrorRecovery_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigErrorRecovery/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigErrorRecovery);
+	return 1;
+}
+int lua_ImGuiIO_ConfigErrorRecovery_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigErrorRecovery/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigErrorRecovery, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigErrorRecoveryEnableAssert_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigErrorRecoveryEnableAssert/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigErrorRecoveryEnableAssert);
+	return 1;
+}
+int lua_ImGuiIO_ConfigErrorRecoveryEnableAssert_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigErrorRecoveryEnableAssert/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigErrorRecoveryEnableAssert, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigErrorRecoveryEnableDebugLog_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigErrorRecoveryEnableDebugLog/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigErrorRecoveryEnableDebugLog);
+	return 1;
+}
+int lua_ImGuiIO_ConfigErrorRecoveryEnableDebugLog_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigErrorRecoveryEnableDebugLog/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigErrorRecoveryEnableDebugLog, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigErrorRecoveryEnableTooltip_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigErrorRecoveryEnableTooltip/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigErrorRecoveryEnableTooltip);
+	return 1;
+}
+int lua_ImGuiIO_ConfigErrorRecoveryEnableTooltip_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigErrorRecoveryEnableTooltip/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigErrorRecoveryEnableTooltip, 2);
+	return 0;
+}
 int lua_ImGuiIO_ConfigFlags_getter(lua_State* lua_S)
 {
 	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigFlags/getter");
@@ -182,6 +378,34 @@ int lua_ImGuiIO_ConfigFlags_setter(lua_State* lua_S)
 	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigFlags/setter");
 	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
 	LUA_NATIVE_SETTER(cobj->ConfigFlags, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigIniSettingsAutoDiscardMonths_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigIniSettingsAutoDiscardMonths/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigIniSettingsAutoDiscardMonths);
+	return 1;
+}
+int lua_ImGuiIO_ConfigIniSettingsAutoDiscardMonths_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigIniSettingsAutoDiscardMonths/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigIniSettingsAutoDiscardMonths, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigIniSettingsSaveLastUsedDate_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigIniSettingsSaveLastUsedDate/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigIniSettingsSaveLastUsedDate);
+	return 1;
+}
+int lua_ImGuiIO_ConfigIniSettingsSaveLastUsedDate_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigIniSettingsSaveLastUsedDate/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigIniSettingsSaveLastUsedDate, 2);
 	return 0;
 }
 int lua_ImGuiIO_ConfigInputTextCursorBlink_getter(lua_State* lua_S)
@@ -254,6 +478,118 @@ int lua_ImGuiIO_ConfigMemoryCompactTimer_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->ConfigMemoryCompactTimer, 2);
 	return 0;
 }
+int lua_ImGuiIO_ConfigNavCaptureKeyboard_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavCaptureKeyboard/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigNavCaptureKeyboard);
+	return 1;
+}
+int lua_ImGuiIO_ConfigNavCaptureKeyboard_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavCaptureKeyboard/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigNavCaptureKeyboard, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigNavCursorVisibleAlways_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavCursorVisibleAlways/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigNavCursorVisibleAlways);
+	return 1;
+}
+int lua_ImGuiIO_ConfigNavCursorVisibleAlways_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavCursorVisibleAlways/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigNavCursorVisibleAlways, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigNavCursorVisibleAuto_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavCursorVisibleAuto/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigNavCursorVisibleAuto);
+	return 1;
+}
+int lua_ImGuiIO_ConfigNavCursorVisibleAuto_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavCursorVisibleAuto/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigNavCursorVisibleAuto, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigNavEscapeClearFocusItem_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavEscapeClearFocusItem/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigNavEscapeClearFocusItem);
+	return 1;
+}
+int lua_ImGuiIO_ConfigNavEscapeClearFocusItem_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavEscapeClearFocusItem/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigNavEscapeClearFocusItem, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigNavEscapeClearFocusWindow_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavEscapeClearFocusWindow/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigNavEscapeClearFocusWindow);
+	return 1;
+}
+int lua_ImGuiIO_ConfigNavEscapeClearFocusWindow_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavEscapeClearFocusWindow/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigNavEscapeClearFocusWindow, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigNavMoveSetMousePos_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavMoveSetMousePos/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigNavMoveSetMousePos);
+	return 1;
+}
+int lua_ImGuiIO_ConfigNavMoveSetMousePos_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavMoveSetMousePos/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigNavMoveSetMousePos, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigNavSwapGamepadButtons_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavSwapGamepadButtons/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigNavSwapGamepadButtons);
+	return 1;
+}
+int lua_ImGuiIO_ConfigNavSwapGamepadButtons_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigNavSwapGamepadButtons/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigNavSwapGamepadButtons, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigScrollbarScrollByPage_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigScrollbarScrollByPage/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigScrollbarScrollByPage);
+	return 1;
+}
+int lua_ImGuiIO_ConfigScrollbarScrollByPage_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigScrollbarScrollByPage/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigScrollbarScrollByPage, 2);
+	return 0;
+}
 int lua_ImGuiIO_ConfigViewportsNoAutoMerge_getter(lua_State* lua_S)
 {
 	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigViewportsNoAutoMerge/getter");
@@ -308,6 +644,34 @@ int lua_ImGuiIO_ConfigViewportsNoTaskBarIcon_setter(lua_State* lua_S)
 	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigViewportsNoTaskBarIcon/setter");
 	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
 	LUA_NATIVE_SETTER(cobj->ConfigViewportsNoTaskBarIcon, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigViewportsPlatformFocusSetsImGuiFocus_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigViewportsPlatformFocusSetsImGuiFocus/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigViewportsPlatformFocusSetsImGuiFocus);
+	return 1;
+}
+int lua_ImGuiIO_ConfigViewportsPlatformFocusSetsImGuiFocus_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigViewportsPlatformFocusSetsImGuiFocus/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigViewportsPlatformFocusSetsImGuiFocus, 2);
+	return 0;
+}
+int lua_ImGuiIO_ConfigWindowsCopyContentsWithCtrlC_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigWindowsCopyContentsWithCtrlC/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->ConfigWindowsCopyContentsWithCtrlC);
+	return 1;
+}
+int lua_ImGuiIO_ConfigWindowsCopyContentsWithCtrlC_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.ConfigWindowsCopyContentsWithCtrlC/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->ConfigWindowsCopyContentsWithCtrlC, 2);
 	return 0;
 }
 int lua_ImGuiIO_ConfigWindowsMoveFromTitleBarOnly_getter(lua_State* lua_S)
@@ -408,20 +772,6 @@ int lua_ImGuiIO_FontDefault_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->FontDefault, 2);
 	return 0;
 }
-int lua_ImGuiIO_FontGlobalScale_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("imgui.ImGuiIO.FontGlobalScale/getter");
-	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_PUSH_NATIVE(cobj->FontGlobalScale);
-	return 1;
-}
-int lua_ImGuiIO_FontGlobalScale_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("imgui.ImGuiIO.FontGlobalScale/setter");
-	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_NATIVE_SETTER(cobj->FontGlobalScale, 2);
-	return 0;
-}
 int lua_ImGuiIO_Fonts_getter(lua_State* lua_S)
 {
 	LUA_CUR_FNAME("imgui.ImGuiIO.Fonts/getter");
@@ -448,34 +798,6 @@ int lua_ImGuiIO_Framerate_setter(lua_State* lua_S)
 	LUA_CUR_FNAME("imgui.ImGuiIO.Framerate/setter");
 	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
 	LUA_NATIVE_SETTER(cobj->Framerate, 2);
-	return 0;
-}
-int lua_ImGuiIO_HoverDelayNormal_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("imgui.ImGuiIO.HoverDelayNormal/getter");
-	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_PUSH_NATIVE(cobj->HoverDelayNormal);
-	return 1;
-}
-int lua_ImGuiIO_HoverDelayNormal_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("imgui.ImGuiIO.HoverDelayNormal/setter");
-	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_NATIVE_SETTER(cobj->HoverDelayNormal, 2);
-	return 0;
-}
-int lua_ImGuiIO_HoverDelayShort_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("imgui.ImGuiIO.HoverDelayShort/getter");
-	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_PUSH_NATIVE(cobj->HoverDelayShort);
-	return 1;
-}
-int lua_ImGuiIO_HoverDelayShort_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("imgui.ImGuiIO.HoverDelayShort/setter");
-	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_NATIVE_SETTER(cobj->HoverDelayShort, 2);
 	return 0;
 }
 int lua_ImGuiIO_IniFilename_getter(lua_State* lua_S)
@@ -632,20 +954,6 @@ int lua_ImGuiIO_LogFilename_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->LogFilename, 2);
 	return 0;
 }
-int lua_ImGuiIO_MetricsActiveAllocations_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("imgui.ImGuiIO.MetricsActiveAllocations/getter");
-	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_PUSH_NATIVE(cobj->MetricsActiveAllocations);
-	return 1;
-}
-int lua_ImGuiIO_MetricsActiveAllocations_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("imgui.ImGuiIO.MetricsActiveAllocations/setter");
-	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
-	LUA_NATIVE_SETTER(cobj->MetricsActiveAllocations, 2);
-	return 0;
-}
 int lua_ImGuiIO_MetricsActiveWindows_getter(lua_State* lua_S)
 {
 	LUA_CUR_FNAME("imgui.ImGuiIO.MetricsActiveWindows/getter");
@@ -700,6 +1008,20 @@ int lua_ImGuiIO_MetricsRenderWindows_setter(lua_State* lua_S)
 	LUA_CUR_FNAME("imgui.ImGuiIO.MetricsRenderWindows/setter");
 	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
 	LUA_NATIVE_SETTER(cobj->MetricsRenderWindows, 2);
+	return 0;
+}
+int lua_ImGuiIO_MouseCtrlLeftAsRightClick_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.MouseCtrlLeftAsRightClick/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->MouseCtrlLeftAsRightClick);
+	return 1;
+}
+int lua_ImGuiIO_MouseCtrlLeftAsRightClick_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.MouseCtrlLeftAsRightClick/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->MouseCtrlLeftAsRightClick, 2);
 	return 0;
 }
 int lua_ImGuiIO_MouseDelta_getter(lua_State* lua_S)
@@ -814,6 +1136,34 @@ int lua_ImGuiIO_MousePosPrev_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->MousePosPrev, 2);
 	return 0;
 }
+int lua_ImGuiIO_MouseSingleClickDelay_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.MouseSingleClickDelay/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->MouseSingleClickDelay);
+	return 1;
+}
+int lua_ImGuiIO_MouseSingleClickDelay_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.MouseSingleClickDelay/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->MouseSingleClickDelay, 2);
+	return 0;
+}
+int lua_ImGuiIO_MouseSource_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.MouseSource/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->MouseSource);
+	return 1;
+}
+int lua_ImGuiIO_MouseSource_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.MouseSource/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->MouseSource, 2);
+	return 0;
+}
 int lua_ImGuiIO_MouseWheel_getter(lua_State* lua_S)
 {
 	LUA_CUR_FNAME("imgui.ImGuiIO.MouseWheel/getter");
@@ -840,6 +1190,20 @@ int lua_ImGuiIO_MouseWheelH_setter(lua_State* lua_S)
 	LUA_CUR_FNAME("imgui.ImGuiIO.MouseWheelH/setter");
 	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
 	LUA_NATIVE_SETTER(cobj->MouseWheelH, 2);
+	return 0;
+}
+int lua_ImGuiIO_MouseWheelRequestAxisSwap_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.MouseWheelRequestAxisSwap/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_PUSH_NATIVE(cobj->MouseWheelRequestAxisSwap);
+	return 1;
+}
+int lua_ImGuiIO_MouseWheelRequestAxisSwap_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiIO.MouseWheelRequestAxisSwap/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiIO*, 1);
+	LUA_NATIVE_SETTER(cobj->MouseWheelRequestAxisSwap, 2);
 	return 0;
 }
 int lua_ImGuiIO_NavActive_getter(lua_State* lua_S)
@@ -1016,6 +1380,12 @@ int lua_ImGuiIO_addMousePosEvent(lua_State* lua_S)
 	LUA_TRY_INVOKE(2, &ImGuiIO::AddMousePosEvent);
 	LUA_INVOKE_FOOTER("2");
 }
+int lua_ImGuiIO_addMouseSourceEvent(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("imgui.ImGuiIO", "imgui.ImGuiIO:addMouseSourceEvent");
+	LUA_TRY_INVOKE(1, &ImGuiIO::AddMouseSourceEvent);
+	LUA_INVOKE_FOOTER("1");
+}
 int lua_ImGuiIO_addMouseViewportEvent(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ImGuiIO", "imgui.ImGuiIO:addMouseViewportEvent");
@@ -1028,16 +1398,22 @@ int lua_ImGuiIO_addMouseWheelEvent(lua_State* lua_S)
 	LUA_TRY_INVOKE(2, &ImGuiIO::AddMouseWheelEvent);
 	LUA_INVOKE_FOOTER("2");
 }
-int lua_ImGuiIO_clearInputCharacters(lua_State* lua_S)
+int lua_ImGuiIO_clearEventsQueue(lua_State* lua_S)
 {
-	LUA_INVOKE_HEADER("imgui.ImGuiIO", "imgui.ImGuiIO:clearInputCharacters");
-	LUA_TRY_INVOKE(0, &ImGuiIO::ClearInputCharacters);
+	LUA_INVOKE_HEADER("imgui.ImGuiIO", "imgui.ImGuiIO:clearEventsQueue");
+	LUA_TRY_INVOKE(0, &ImGuiIO::ClearEventsQueue);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_ImGuiIO_clearInputKeys(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ImGuiIO", "imgui.ImGuiIO:clearInputKeys");
 	LUA_TRY_INVOKE(0, &ImGuiIO::ClearInputKeys);
+	LUA_INVOKE_FOOTER("0");
+}
+int lua_ImGuiIO_clearInputMouse(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("imgui.ImGuiIO", "imgui.ImGuiIO:clearInputMouse");
+	LUA_TRY_INVOKE(0, &ImGuiIO::ClearInputMouse);
 	LUA_INVOKE_FOOTER("0");
 }
 int lua_ImGuiIO_setAppAcceptingEvents(lua_State* lua_S)
@@ -1049,8 +1425,8 @@ int lua_ImGuiIO_setAppAcceptingEvents(lua_State* lua_S)
 int lua_ImGuiIO_setKeyEventNativeData(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ImGuiIO", "imgui.ImGuiIO:setKeyEventNativeData");
-	LUA_TRY_INVOKE(4, static_cast<void(ImGuiIO::*)(ImGuiKey, int, int, int)>(&ImGuiIO::SetKeyEventNativeData));
-	LUA_TRY_INVOKE(3, [](ImGuiIO* obj,ImGuiKey arg0,int arg1,int arg2){{return obj->SetKeyEventNativeData(std::move(arg0),std::move(arg1),std::move(arg2));}});
+	LUA_TRY_INVOKE(4, &ImGuiIO::SetKeyEventNativeData);
+	LUA_TRY_INVOKE(3, ([](ImGuiIO* obj,ImGuiKey arg0,int arg1,int arg2){{return obj->SetKeyEventNativeData(std::move(arg0),std::move(arg1),std::move(arg2));}}));
 	LUA_INVOKE_FOOTER("3,4");
 }
 int luaReg_imguiIO_imguiImGuiIO(lua_State* lua_S)
@@ -1063,23 +1439,49 @@ int luaReg_imguiIO_imguiImGuiIO(lua_State* lua_S)
 	LUA_FIELD("BackendFlags", lua_ImGuiIO_BackendFlags_getter, lua_ImGuiIO_BackendFlags_setter);
 	LUA_FIELD("BackendPlatformName", lua_ImGuiIO_BackendPlatformName_getter, lua_ImGuiIO_BackendPlatformName_setter);
 	LUA_FIELD("BackendRendererName", lua_ImGuiIO_BackendRendererName_getter, lua_ImGuiIO_BackendRendererName_setter);
-	LUA_FIELD("BackendUsingLegacyKeyArrays", lua_ImGuiIO_BackendUsingLegacyKeyArrays_getter, lua_ImGuiIO_BackendUsingLegacyKeyArrays_setter);
-	LUA_FIELD("BackendUsingLegacyNavInputArray", lua_ImGuiIO_BackendUsingLegacyNavInputArray_getter, lua_ImGuiIO_BackendUsingLegacyNavInputArray_setter);
+	LUA_FIELD("ConfigColorEditFlags", lua_ImGuiIO_ConfigColorEditFlags_getter, lua_ImGuiIO_ConfigColorEditFlags_setter);
+	LUA_FIELD("ConfigDebugBeginReturnValueLoop", lua_ImGuiIO_ConfigDebugBeginReturnValueLoop_getter, lua_ImGuiIO_ConfigDebugBeginReturnValueLoop_setter);
+	LUA_FIELD("ConfigDebugBeginReturnValueOnce", lua_ImGuiIO_ConfigDebugBeginReturnValueOnce_getter, lua_ImGuiIO_ConfigDebugBeginReturnValueOnce_setter);
+	LUA_FIELD("ConfigDebugDrawListDefaultsToStrokeLegacy", lua_ImGuiIO_ConfigDebugDrawListDefaultsToStrokeLegacy_getter, lua_ImGuiIO_ConfigDebugDrawListDefaultsToStrokeLegacy_setter);
+	LUA_FIELD("ConfigDebugHighlightIdConflicts", lua_ImGuiIO_ConfigDebugHighlightIdConflicts_getter, lua_ImGuiIO_ConfigDebugHighlightIdConflicts_setter);
+	LUA_FIELD("ConfigDebugHighlightIdConflictsShowItemPicker", lua_ImGuiIO_ConfigDebugHighlightIdConflictsShowItemPicker_getter, lua_ImGuiIO_ConfigDebugHighlightIdConflictsShowItemPicker_setter);
+	LUA_FIELD("ConfigDebugIgnoreFocusLoss", lua_ImGuiIO_ConfigDebugIgnoreFocusLoss_getter, lua_ImGuiIO_ConfigDebugIgnoreFocusLoss_setter);
+	LUA_FIELD("ConfigDebugIniSettings", lua_ImGuiIO_ConfigDebugIniSettings_getter, lua_ImGuiIO_ConfigDebugIniSettings_setter);
+	LUA_FIELD("ConfigDebugIsDebuggerPresent", lua_ImGuiIO_ConfigDebugIsDebuggerPresent_getter, lua_ImGuiIO_ConfigDebugIsDebuggerPresent_setter);
 	LUA_FIELD("ConfigDockingAlwaysTabBar", lua_ImGuiIO_ConfigDockingAlwaysTabBar_getter, lua_ImGuiIO_ConfigDockingAlwaysTabBar_setter);
+	LUA_FIELD("ConfigDockingNoDockingOver", lua_ImGuiIO_ConfigDockingNoDockingOver_getter, lua_ImGuiIO_ConfigDockingNoDockingOver_setter);
 	LUA_FIELD("ConfigDockingNoSplit", lua_ImGuiIO_ConfigDockingNoSplit_getter, lua_ImGuiIO_ConfigDockingNoSplit_setter);
 	LUA_FIELD("ConfigDockingTransparentPayload", lua_ImGuiIO_ConfigDockingTransparentPayload_getter, lua_ImGuiIO_ConfigDockingTransparentPayload_setter);
 	LUA_FIELD("ConfigDockingWithShift", lua_ImGuiIO_ConfigDockingWithShift_getter, lua_ImGuiIO_ConfigDockingWithShift_setter);
+	LUA_FIELD("ConfigDpiScaleFonts", lua_ImGuiIO_ConfigDpiScaleFonts_getter, lua_ImGuiIO_ConfigDpiScaleFonts_setter);
+	LUA_FIELD("ConfigDpiScaleViewports", lua_ImGuiIO_ConfigDpiScaleViewports_getter, lua_ImGuiIO_ConfigDpiScaleViewports_setter);
 	LUA_FIELD("ConfigDragClickToInputText", lua_ImGuiIO_ConfigDragClickToInputText_getter, lua_ImGuiIO_ConfigDragClickToInputText_setter);
+	LUA_FIELD("ConfigErrorRecovery", lua_ImGuiIO_ConfigErrorRecovery_getter, lua_ImGuiIO_ConfigErrorRecovery_setter);
+	LUA_FIELD("ConfigErrorRecoveryEnableAssert", lua_ImGuiIO_ConfigErrorRecoveryEnableAssert_getter, lua_ImGuiIO_ConfigErrorRecoveryEnableAssert_setter);
+	LUA_FIELD("ConfigErrorRecoveryEnableDebugLog", lua_ImGuiIO_ConfigErrorRecoveryEnableDebugLog_getter, lua_ImGuiIO_ConfigErrorRecoveryEnableDebugLog_setter);
+	LUA_FIELD("ConfigErrorRecoveryEnableTooltip", lua_ImGuiIO_ConfigErrorRecoveryEnableTooltip_getter, lua_ImGuiIO_ConfigErrorRecoveryEnableTooltip_setter);
 	LUA_FIELD("ConfigFlags", lua_ImGuiIO_ConfigFlags_getter, lua_ImGuiIO_ConfigFlags_setter);
+	LUA_FIELD("ConfigIniSettingsAutoDiscardMonths", lua_ImGuiIO_ConfigIniSettingsAutoDiscardMonths_getter, lua_ImGuiIO_ConfigIniSettingsAutoDiscardMonths_setter);
+	LUA_FIELD("ConfigIniSettingsSaveLastUsedDate", lua_ImGuiIO_ConfigIniSettingsSaveLastUsedDate_getter, lua_ImGuiIO_ConfigIniSettingsSaveLastUsedDate_setter);
 	LUA_FIELD("ConfigInputTextCursorBlink", lua_ImGuiIO_ConfigInputTextCursorBlink_getter, lua_ImGuiIO_ConfigInputTextCursorBlink_setter);
 	LUA_FIELD("ConfigInputTextEnterKeepActive", lua_ImGuiIO_ConfigInputTextEnterKeepActive_getter, lua_ImGuiIO_ConfigInputTextEnterKeepActive_setter);
 	LUA_FIELD("ConfigInputTrickleEventQueue", lua_ImGuiIO_ConfigInputTrickleEventQueue_getter, lua_ImGuiIO_ConfigInputTrickleEventQueue_setter);
 	LUA_FIELD("ConfigMacOSXBehaviors", lua_ImGuiIO_ConfigMacOSXBehaviors_getter, lua_ImGuiIO_ConfigMacOSXBehaviors_setter);
 	LUA_FIELD("ConfigMemoryCompactTimer", lua_ImGuiIO_ConfigMemoryCompactTimer_getter, lua_ImGuiIO_ConfigMemoryCompactTimer_setter);
+	LUA_FIELD("ConfigNavCaptureKeyboard", lua_ImGuiIO_ConfigNavCaptureKeyboard_getter, lua_ImGuiIO_ConfigNavCaptureKeyboard_setter);
+	LUA_FIELD("ConfigNavCursorVisibleAlways", lua_ImGuiIO_ConfigNavCursorVisibleAlways_getter, lua_ImGuiIO_ConfigNavCursorVisibleAlways_setter);
+	LUA_FIELD("ConfigNavCursorVisibleAuto", lua_ImGuiIO_ConfigNavCursorVisibleAuto_getter, lua_ImGuiIO_ConfigNavCursorVisibleAuto_setter);
+	LUA_FIELD("ConfigNavEscapeClearFocusItem", lua_ImGuiIO_ConfigNavEscapeClearFocusItem_getter, lua_ImGuiIO_ConfigNavEscapeClearFocusItem_setter);
+	LUA_FIELD("ConfigNavEscapeClearFocusWindow", lua_ImGuiIO_ConfigNavEscapeClearFocusWindow_getter, lua_ImGuiIO_ConfigNavEscapeClearFocusWindow_setter);
+	LUA_FIELD("ConfigNavMoveSetMousePos", lua_ImGuiIO_ConfigNavMoveSetMousePos_getter, lua_ImGuiIO_ConfigNavMoveSetMousePos_setter);
+	LUA_FIELD("ConfigNavSwapGamepadButtons", lua_ImGuiIO_ConfigNavSwapGamepadButtons_getter, lua_ImGuiIO_ConfigNavSwapGamepadButtons_setter);
+	LUA_FIELD("ConfigScrollbarScrollByPage", lua_ImGuiIO_ConfigScrollbarScrollByPage_getter, lua_ImGuiIO_ConfigScrollbarScrollByPage_setter);
 	LUA_FIELD("ConfigViewportsNoAutoMerge", lua_ImGuiIO_ConfigViewportsNoAutoMerge_getter, lua_ImGuiIO_ConfigViewportsNoAutoMerge_setter);
 	LUA_FIELD("ConfigViewportsNoDecoration", lua_ImGuiIO_ConfigViewportsNoDecoration_getter, lua_ImGuiIO_ConfigViewportsNoDecoration_setter);
 	LUA_FIELD("ConfigViewportsNoDefaultParent", lua_ImGuiIO_ConfigViewportsNoDefaultParent_getter, lua_ImGuiIO_ConfigViewportsNoDefaultParent_setter);
 	LUA_FIELD("ConfigViewportsNoTaskBarIcon", lua_ImGuiIO_ConfigViewportsNoTaskBarIcon_getter, lua_ImGuiIO_ConfigViewportsNoTaskBarIcon_setter);
+	LUA_FIELD("ConfigViewportsPlatformFocusSetsImGuiFocus", lua_ImGuiIO_ConfigViewportsPlatformFocusSetsImGuiFocus_getter, lua_ImGuiIO_ConfigViewportsPlatformFocusSetsImGuiFocus_setter);
+	LUA_FIELD("ConfigWindowsCopyContentsWithCtrlC", lua_ImGuiIO_ConfigWindowsCopyContentsWithCtrlC_getter, lua_ImGuiIO_ConfigWindowsCopyContentsWithCtrlC_setter);
 	LUA_FIELD("ConfigWindowsMoveFromTitleBarOnly", lua_ImGuiIO_ConfigWindowsMoveFromTitleBarOnly_getter, lua_ImGuiIO_ConfigWindowsMoveFromTitleBarOnly_setter);
 	LUA_FIELD("ConfigWindowsResizeFromEdges", lua_ImGuiIO_ConfigWindowsResizeFromEdges_getter, lua_ImGuiIO_ConfigWindowsResizeFromEdges_setter);
 	LUA_FIELD("DeltaTime", lua_ImGuiIO_DeltaTime_getter, lua_ImGuiIO_DeltaTime_setter);
@@ -1087,11 +1489,8 @@ int luaReg_imguiIO_imguiImGuiIO(lua_State* lua_S)
 	LUA_FIELD("DisplaySize", lua_ImGuiIO_DisplaySize_getter, lua_ImGuiIO_DisplaySize_setter);
 	LUA_FIELD("FontAllowUserScaling", lua_ImGuiIO_FontAllowUserScaling_getter, lua_ImGuiIO_FontAllowUserScaling_setter);
 	LUA_FIELD("FontDefault", lua_ImGuiIO_FontDefault_getter, lua_ImGuiIO_FontDefault_setter);
-	LUA_FIELD("FontGlobalScale", lua_ImGuiIO_FontGlobalScale_getter, lua_ImGuiIO_FontGlobalScale_setter);
 	LUA_FIELD("Fonts", lua_ImGuiIO_Fonts_getter, lua_ImGuiIO_Fonts_setter);
 	LUA_FIELD("Framerate", lua_ImGuiIO_Framerate_getter, lua_ImGuiIO_Framerate_setter);
-	LUA_FIELD("HoverDelayNormal", lua_ImGuiIO_HoverDelayNormal_getter, lua_ImGuiIO_HoverDelayNormal_setter);
-	LUA_FIELD("HoverDelayShort", lua_ImGuiIO_HoverDelayShort_getter, lua_ImGuiIO_HoverDelayShort_setter);
 	LUA_FIELD("IniFilename", lua_ImGuiIO_IniFilename_getter, lua_ImGuiIO_IniFilename_setter);
 	LUA_FIELD("IniSavingRate", lua_ImGuiIO_IniSavingRate_getter, lua_ImGuiIO_IniSavingRate_setter);
 	LUA_FIELD("InputQueueSurrogate", lua_ImGuiIO_InputQueueSurrogate_getter, lua_ImGuiIO_InputQueueSurrogate_setter);
@@ -1103,11 +1502,11 @@ int luaReg_imguiIO_imguiImGuiIO(lua_State* lua_S)
 	LUA_FIELD("KeyShift", lua_ImGuiIO_KeyShift_getter, lua_ImGuiIO_KeyShift_setter);
 	LUA_FIELD("KeySuper", lua_ImGuiIO_KeySuper_getter, lua_ImGuiIO_KeySuper_setter);
 	LUA_FIELD("LogFilename", lua_ImGuiIO_LogFilename_getter, lua_ImGuiIO_LogFilename_setter);
-	LUA_FIELD("MetricsActiveAllocations", lua_ImGuiIO_MetricsActiveAllocations_getter, lua_ImGuiIO_MetricsActiveAllocations_setter);
 	LUA_FIELD("MetricsActiveWindows", lua_ImGuiIO_MetricsActiveWindows_getter, lua_ImGuiIO_MetricsActiveWindows_setter);
 	LUA_FIELD("MetricsRenderIndices", lua_ImGuiIO_MetricsRenderIndices_getter, lua_ImGuiIO_MetricsRenderIndices_setter);
 	LUA_FIELD("MetricsRenderVertices", lua_ImGuiIO_MetricsRenderVertices_getter, lua_ImGuiIO_MetricsRenderVertices_setter);
 	LUA_FIELD("MetricsRenderWindows", lua_ImGuiIO_MetricsRenderWindows_getter, lua_ImGuiIO_MetricsRenderWindows_setter);
+	LUA_FIELD("MouseCtrlLeftAsRightClick", lua_ImGuiIO_MouseCtrlLeftAsRightClick_getter, lua_ImGuiIO_MouseCtrlLeftAsRightClick_setter);
 	LUA_FIELD("MouseDelta", lua_ImGuiIO_MouseDelta_getter, lua_ImGuiIO_MouseDelta_setter);
 	LUA_FIELD("MouseDoubleClickMaxDist", lua_ImGuiIO_MouseDoubleClickMaxDist_getter, lua_ImGuiIO_MouseDoubleClickMaxDist_setter);
 	LUA_FIELD("MouseDoubleClickTime", lua_ImGuiIO_MouseDoubleClickTime_getter, lua_ImGuiIO_MouseDoubleClickTime_setter);
@@ -1116,8 +1515,11 @@ int luaReg_imguiIO_imguiImGuiIO(lua_State* lua_S)
 	LUA_FIELD("MouseHoveredViewport", lua_ImGuiIO_MouseHoveredViewport_getter, lua_ImGuiIO_MouseHoveredViewport_setter);
 	LUA_FIELD("MousePos", lua_ImGuiIO_MousePos_getter, lua_ImGuiIO_MousePos_setter);
 	LUA_FIELD("MousePosPrev", lua_ImGuiIO_MousePosPrev_getter, lua_ImGuiIO_MousePosPrev_setter);
+	LUA_FIELD("MouseSingleClickDelay", lua_ImGuiIO_MouseSingleClickDelay_getter, lua_ImGuiIO_MouseSingleClickDelay_setter);
+	LUA_FIELD("MouseSource", lua_ImGuiIO_MouseSource_getter, lua_ImGuiIO_MouseSource_setter);
 	LUA_FIELD("MouseWheel", lua_ImGuiIO_MouseWheel_getter, lua_ImGuiIO_MouseWheel_setter);
 	LUA_FIELD("MouseWheelH", lua_ImGuiIO_MouseWheelH_getter, lua_ImGuiIO_MouseWheelH_setter);
+	LUA_FIELD("MouseWheelRequestAxisSwap", lua_ImGuiIO_MouseWheelRequestAxisSwap_getter, lua_ImGuiIO_MouseWheelRequestAxisSwap_setter);
 	LUA_FIELD("NavActive", lua_ImGuiIO_NavActive_getter, lua_ImGuiIO_NavActive_setter);
 	LUA_FIELD("NavVisible", lua_ImGuiIO_NavVisible_getter, lua_ImGuiIO_NavVisible_setter);
 	LUA_FIELD("PenPressure", lua_ImGuiIO_PenPressure_getter, lua_ImGuiIO_PenPressure_setter);
@@ -1135,10 +1537,12 @@ int luaReg_imguiIO_imguiImGuiIO(lua_State* lua_S)
 	LUA_METHOD("addKeyEvent", lua_ImGuiIO_addKeyEvent);
 	LUA_METHOD("addMouseButtonEvent", lua_ImGuiIO_addMouseButtonEvent);
 	LUA_METHOD("addMousePosEvent", lua_ImGuiIO_addMousePosEvent);
+	LUA_METHOD("addMouseSourceEvent", lua_ImGuiIO_addMouseSourceEvent);
 	LUA_METHOD("addMouseViewportEvent", lua_ImGuiIO_addMouseViewportEvent);
 	LUA_METHOD("addMouseWheelEvent", lua_ImGuiIO_addMouseWheelEvent);
-	LUA_METHOD("clearInputCharacters", lua_ImGuiIO_clearInputCharacters);
+	LUA_METHOD("clearEventsQueue", lua_ImGuiIO_clearEventsQueue);
 	LUA_METHOD("clearInputKeys", lua_ImGuiIO_clearInputKeys);
+	LUA_METHOD("clearInputMouse", lua_ImGuiIO_clearInputMouse);
 	LUA_METHOD("setAppAcceptingEvents", lua_ImGuiIO_setAppAcceptingEvents);
 	LUA_METHOD("setKeyEventNativeData", lua_ImGuiIO_setKeyEventNativeData);
 	LUA_CLS_END();

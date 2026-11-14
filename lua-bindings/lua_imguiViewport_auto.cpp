@@ -16,10 +16,11 @@ int luaReg_imguiViewport_imguiImGuiViewportFlags(lua_State* lua_S)
 	LUA_ENUM_ENTRY("NoFocusOnClick", ImGuiViewportFlags_::ImGuiViewportFlags_NoFocusOnClick);
 	LUA_ENUM_ENTRY("NoInputs", ImGuiViewportFlags_::ImGuiViewportFlags_NoInputs);
 	LUA_ENUM_ENTRY("NoRendererClear", ImGuiViewportFlags_::ImGuiViewportFlags_NoRendererClear);
-	LUA_ENUM_ENTRY("TopMost", ImGuiViewportFlags_::ImGuiViewportFlags_TopMost);
-	LUA_ENUM_ENTRY("Minimized", ImGuiViewportFlags_::ImGuiViewportFlags_Minimized);
 	LUA_ENUM_ENTRY("NoAutoMerge", ImGuiViewportFlags_::ImGuiViewportFlags_NoAutoMerge);
+	LUA_ENUM_ENTRY("TopMost", ImGuiViewportFlags_::ImGuiViewportFlags_TopMost);
 	LUA_ENUM_ENTRY("CanHostOtherWindows", ImGuiViewportFlags_::ImGuiViewportFlags_CanHostOtherWindows);
+	LUA_ENUM_ENTRY("IsMinimized", ImGuiViewportFlags_::ImGuiViewportFlags_IsMinimized);
+	LUA_ENUM_ENTRY("IsFocused", ImGuiViewportFlags_::ImGuiViewportFlags_IsFocused);
 	LUA_ENUM_END();
 	LUA_ENTRY_END(1);
 	return 0;
@@ -52,6 +53,20 @@ int lua_ImGuiViewport_Flags_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->Flags, 2);
 	return 0;
 }
+int lua_ImGuiViewport_FramebufferScale_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiViewport.FramebufferScale/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiViewport*, 1);
+	LUA_PUSH_NATIVE(cobj->FramebufferScale);
+	return 1;
+}
+int lua_ImGuiViewport_FramebufferScale_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiViewport.FramebufferScale/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiViewport*, 1);
+	LUA_NATIVE_SETTER(cobj->FramebufferScale, 2);
+	return 0;
+}
 int lua_ImGuiViewport_ID_getter(lua_State* lua_S)
 {
 	LUA_CUR_FNAME("imgui.ImGuiViewport.ID/getter");
@@ -64,6 +79,20 @@ int lua_ImGuiViewport_ID_setter(lua_State* lua_S)
 	LUA_CUR_FNAME("imgui.ImGuiViewport.ID/setter");
 	auto cobj = LUA_TO_COBJ(ImGuiViewport*, 1);
 	LUA_NATIVE_SETTER(cobj->ID, 2);
+	return 0;
+}
+int lua_ImGuiViewport_ParentViewport_getter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiViewport.ParentViewport/getter");
+	auto cobj = LUA_TO_COBJ(ImGuiViewport*, 1);
+	LUA_PUSH_NATIVE(cobj->ParentViewport);
+	return 1;
+}
+int lua_ImGuiViewport_ParentViewport_setter(lua_State* lua_S)
+{
+	LUA_CUR_FNAME("imgui.ImGuiViewport.ParentViewport/setter");
+	auto cobj = LUA_TO_COBJ(ImGuiViewport*, 1);
+	LUA_NATIVE_SETTER(cobj->ParentViewport, 2);
 	return 0;
 }
 int lua_ImGuiViewport_ParentViewportId_getter(lua_State* lua_S)
@@ -198,6 +227,12 @@ int lua_ImGuiViewport_getCenter(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, &ImGuiViewport::GetCenter);
 	LUA_INVOKE_FOOTER("0");
 }
+int lua_ImGuiViewport_getDebugName(lua_State* lua_S)
+{
+	LUA_INVOKE_HEADER("imgui.ImGuiViewport", "imgui.ImGuiViewport:getDebugName");
+	LUA_TRY_INVOKE_R(0, &ImGuiViewport::GetDebugName);
+	LUA_INVOKE_FOOTER("0");
+}
 int lua_ImGuiViewport_getWorkCenter(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ImGuiViewport", "imgui.ImGuiViewport:getWorkCenter");
@@ -211,7 +246,9 @@ int luaReg_imguiViewport_imguiImGuiViewport(lua_State* lua_S)
 		nullptr, nullptr);
 	LUA_FIELD("DpiScale", lua_ImGuiViewport_DpiScale_getter, lua_ImGuiViewport_DpiScale_setter);
 	LUA_FIELD("Flags", lua_ImGuiViewport_Flags_getter, lua_ImGuiViewport_Flags_setter);
+	LUA_FIELD("FramebufferScale", lua_ImGuiViewport_FramebufferScale_getter, lua_ImGuiViewport_FramebufferScale_setter);
 	LUA_FIELD("ID", lua_ImGuiViewport_ID_getter, lua_ImGuiViewport_ID_setter);
+	LUA_FIELD("ParentViewport", lua_ImGuiViewport_ParentViewport_getter, lua_ImGuiViewport_ParentViewport_setter);
 	LUA_FIELD("ParentViewportId", lua_ImGuiViewport_ParentViewportId_getter, lua_ImGuiViewport_ParentViewportId_setter);
 	LUA_FIELD("PlatformRequestClose", lua_ImGuiViewport_PlatformRequestClose_getter, lua_ImGuiViewport_PlatformRequestClose_setter);
 	LUA_FIELD("PlatformRequestMove", lua_ImGuiViewport_PlatformRequestMove_getter, lua_ImGuiViewport_PlatformRequestMove_setter);
@@ -222,6 +259,7 @@ int luaReg_imguiViewport_imguiImGuiViewport(lua_State* lua_S)
 	LUA_FIELD("WorkPos", lua_ImGuiViewport_WorkPos_getter, lua_ImGuiViewport_WorkPos_setter);
 	LUA_FIELD("WorkSize", lua_ImGuiViewport_WorkSize_getter, lua_ImGuiViewport_WorkSize_setter);
 	LUA_METHOD("getCenter", lua_ImGuiViewport_getCenter);
+	LUA_METHOD("getDebugName", lua_ImGuiViewport_getDebugName);
 	LUA_METHOD("getWorkCenter", lua_ImGuiViewport_getWorkCenter);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);

@@ -76,9 +76,13 @@ end
 -- Parameters stacks (shared)
 --
 
---- use NULL as a shortcut to push default font
----@param font imgui.ImFont
-function imgui.pushFont(font)
+--- A nil font keeps the current font. Explicit size is unscaled; global font scales apply afterward.
+--- Size 0 keeps the current size. When size is omitted, use font.LegacySize or keep the current size for nil.
+---@param font imgui.ImFont|nil
+---@param font_size_base_unscaled number
+---@overload fun(font:imgui.ImFont|nil)
+---@overload fun()
+function imgui.pushFont(font, font_size_base_unscaled)
 end
 
 --- get current font
@@ -111,6 +115,17 @@ end
 ---@param border_color ImVec4
 ---@overload fun(sp:cc.Sprite,size:ImVec2,tint_color:ImVec4,border_color:ImVec4)
 function imgui.image(tex, size, uv0, uv1, tint_color, border_color)
+end
+
+---
+---@param tex cc.Texture2D
+---@param size ImVec2? defaults to texture size
+---@param uv0 ImVec2? defaults to (0, 0)
+---@param uv1 ImVec2? defaults to (1, 1)
+---@param bg_color ImVec4? defaults to (0, 0, 0, 0)
+---@param tint_color ImVec4? defaults to (1, 1, 1, 1)
+---@overload fun(sp:cc.Sprite,size:ImVec2?,bg_color:ImVec4?,tint_color:ImVec4?)
+function imgui.imageWithBg(tex, size, uv0, uv1, bg_color, tint_color)
 end
 
 ---
@@ -526,6 +541,105 @@ function imgui.beginPopupModal(name, open, flags)
 end
 
 --
+-- Docking
+--
+
+--- Native field names; missing or nil fields retain the native constructor defaults.
+--- An empty table uses all native defaults.
+---@class ImGuiWindowClass
+---@field ClassId? number Defaults to 0.
+---@field ParentViewportId? number Defaults to 4294967295 (native -1).
+---@field FocusRouteParentWindowId? number Defaults to 0.
+---@field ViewportFlagsOverrideSet? number Defaults to 0.
+---@field ViewportFlagsOverrideClear? number Defaults to 0.
+---@field TabItemFlagsOverrideSet? number Defaults to 0.
+---@field DockNodeFlagsOverrideSet? number Defaults to 0.
+---@field DockingAlwaysTabBar? boolean Defaults to false.
+---@field DockingAllowUnclassed? boolean Defaults to true.
+local ImGuiWindowClass = {}
+
+--- Trailing arguments may be omitted; size and flags must be supplied when passing window_class.
+---@param dockspace_id number
+---@param size ImVec2 Defaults to {x = 0, y = 0} when omitted.
+---@param flags number ImGuiDockNodeFlags, defaults to 0 when omitted.
+---@param window_class ImGuiWindowClass|nil Omitted or nil uses the native default class.
+---@return number
+---@overload fun(dockspace_id:number):number
+---@overload fun(dockspace_id:number, size:ImVec2):number
+---@overload fun(dockspace_id:number, size:ImVec2, flags:number):number
+function imgui.dockSpace(dockspace_id, size, flags, window_class)
+end
+
+--- Trailing arguments may be omitted; only viewport and window_class accept nil.
+---@param dockspace_id number Defaults to 0 when omitted.
+---@param viewport imgui.ImGuiViewport|nil Omitted or nil uses the main viewport.
+---@param flags number ImGuiDockNodeFlags, defaults to 0 when omitted.
+---@param window_class ImGuiWindowClass|nil Omitted or nil uses the native default class.
+---@return number
+---@overload fun():number
+---@overload fun(dockspace_id:number):number
+---@overload fun(dockspace_id:number, viewport:imgui.ImGuiViewport|nil):number
+---@overload fun(dockspace_id:number, viewport:imgui.ImGuiViewport|nil, flags:number):number
+function imgui.dockSpaceOverViewport(dockspace_id, viewport, flags, window_class)
+end
+
+--- Set the class for the next window; window_class must be a non-nil table.
+---@param window_class ImGuiWindowClass
+function imgui.setNextWindowClass(window_class)
+end
+
+--
+-- Tables
+--
+
+--- Get the current table's sorting specifications, or nil if sorting is disabled.
+--- Call inside BeginTable()/EndTable(); do not retain the result across frames or subsequent BeginTable() calls.
+---@return imgui.ImGuiTableSortSpecs|nil
+function imgui.tableGetSortSpecs()
+end
+
+--
+-- Multi-selection
+--
+
+--- Signed 64-bit item identifier, not a Lua object or an owning pointer.
+--- Numbers must be finite integers in [-9007199254740991, 9007199254740991].
+--- Use signed ffi int64_t cdata for larger values; never pass them through tonumber().
+--- Zero is valid. -1 is an output sentinel and cannot be submitted as an item identifier.
+--- Item identifiers are preserved verbatim; no automatic 0-based/1-based conversion occurs.
+--- Normalize large-ID table keys explicitly instead of using freshly boxed cdata as keys.
+---@alias ImGuiSelectionUserData integer|ffi.cdata
+
+--- Independent table snapshot of one native selection request.
+--- Range endpoints are inclusive. For SetAll, endpoints are -1 and RangeDirection is 0.
+---@class imgui.ImGuiSelectionRequest
+---@field Type imgui.ImGuiSelectionRequestType
+---@field Selected boolean
+---@field RangeDirection integer +1 or -1 for SetRange, indicating selection direction.
+---@field RangeFirstItem ImGuiSelectionUserData
+---@field RangeLastItem ImGuiSelectionUserData
+local ImGuiSelectionRequest
+
+--- Borrowed IO returned by beginMultiSelect()/endMultiSelect(); never construct or destroy it in Lua.
+--- Valid only until any subsequent beginMultiSelect()/endMultiSelect() call, or the next frame.
+--- Read and apply Begin's Requests before submitting any items; item submission may clear or replace them.
+--- Also read and apply End's Requests immediately after endMultiSelect(); request snapshots are independent.
+---@class imgui.ImGuiMultiSelectIO
+---@field Requests imgui.ImGuiSelectionRequest[] Read-only property; each read returns a 1-based deep copy.
+---@field RangeSrcItem ImGuiSelectionUserData Read-only source item, or -1; ensure it is submitted when clipping.
+---@field NavIdItem ImGuiSelectionUserData Read-only navigation item, or -1.
+---@field NavIdSelected boolean Read-only navigation selection state.
+---@field ItemsCount integer Read-only item count passed to beginMultiSelect(), or -1 if unknown.
+---@field RangeSrcReset boolean Writable; set on Begin's IO before endMultiSelect() when deleting the range source.
+local ImGuiMultiSelectIO
+
+--- Set the next item's exact identifier. Rejects nil, strings, fractions, unsafe numbers,
+--- non-int64 cdata, and the reserved -1 value, including with binding checks disabled.
+---@param selection_user_data ImGuiSelectionUserData
+function imgui.setNextItemSelectionUserData(selection_user_data)
+end
+
+--
 -- Tab Bars, Tabs
 -- [BETA API] API may evolve!
 -- Note: Tabs are automatically created by the docking system. Use this to create tab bars/tabs yourself without docking being involved.
@@ -623,7 +737,9 @@ end
 ---@param path string
 ---@param size number
 ---@param config table
----@param ranges number
+--- Ranges are dense start/end pairs with inclusive endpoints; an optional final 0 is accepted.
+--- Invalid endpoints/presets raise an error. Arrays are copied into persistent native storage.
+---@param ranges integer|integer[] Preset 0..7 or ranges; omitted defaults to ChineseFull.
 ---@return imgui.ImFont
 function imgui.addFontTTF(path, size, config, ranges)
 end
@@ -691,6 +807,70 @@ end
 ---
 ---@param content string
 function imgui.markdown(content)
+end
+
+---@class imgui.ImGuiTableSortSpecs
+---@field Specs ImGuiTableColumnSortSpecs[] Read-only property; returns a 1-based copy of the sort specification array.
+---@field SpecsCount integer Read-only sort specification count; may be zero with SortTristate.
+---@field SpecsDirty boolean Set to false after sorting the data.
+local ImGuiTableSortSpecs
+
+---@class ImGuiTableColumnSortSpecs
+---@field ColumnUserID integer User data passed to TableSetupColumn().
+---@field ColumnIndex integer Zero-based column index.
+---@field SortOrder integer Zero-based sort priority.
+---@field SortDirection imgui.ImGuiSortDirection
+local ImGuiTableColumnSortSpecs
+
+--- The plain configuration table accepted by imgui.addFontTTF() also supports Name.
+--- Omitted or nil Name keeps the native default; an empty Name uses the generated file/size name.
+---@class imgui.ImFontConfig
+---@field Name string Debug name, readable and writable. Writes keep at most 39 bytes plus the terminating NUL; embedded NUL bytes are rejected.
+local ImFontConfig
+
+---@type imgui.ImFontAtlas
+local ImFontAtlas
+
+--- Returns a fresh 1-based snapshot of inclusive start/end pairs, without the native terminating zero.
+--- The default ranges are {0x0020, 0x00FF}; changing the table does not affect native storage.
+--- The result can be passed directly as imgui.addFontTTF()'s ranges argument.
+---@return integer[]
+function ImFontAtlas:getGlyphRangesDefault()
+end
+
+--- Independent glyph data copied before returning to Lua.
+--- UV values describe the atlas at lookup time; reacquire after atlas/texture changes.
+---@class imgui.ImFontGlyphSnapshot
+---@field Colored boolean
+---@field Visible boolean
+---@field SourceIdx integer
+---@field Codepoint integer
+---@field AdvanceX number
+---@field X0 number
+---@field Y0 number
+---@field X1 number
+---@field Y1 number
+---@field U0 number
+---@field V0 number
+---@field U1 number
+---@field V1 number
+local ImFontGlyphSnapshot
+
+---@type imgui.ImFontBaked
+local ImFontBaked
+
+--- Look up (and possibly load) a glyph, returning a copy or the fallback glyph's copy.
+--- The borrowed baked font must belong to the current frame and a still-valid font/atlas.
+---@param codepoint integer Unicode code point supported by this build's ImWchar.
+---@return imgui.ImFontGlyphSnapshot
+function ImFontBaked:findGlyph(codepoint)
+end
+
+--- Look up (and possibly load) a glyph, returning nil when the font has no such glyph.
+--- The returned table does not refer to the native Glyphs array.
+---@param codepoint integer Unicode code point supported by this build's ImWchar.
+---@return imgui.ImFontGlyphSnapshot|nil
+function ImFontBaked:findGlyphNoFallback(codepoint)
 end
 
 ---@class ImVec2:vec2_table

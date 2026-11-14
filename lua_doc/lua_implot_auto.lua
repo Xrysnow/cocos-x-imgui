@@ -1,6 +1,5 @@
 ------------------------------
 --- Tag: implot
---- Date: 2023-03-10
 ------------------------------
 
 ---@class implot
@@ -11,6 +10,12 @@ local ImPlotPoint = { x = 0, y = 0 }
 local ImPlotRange = { min = 0, max = 0 }
 ---@class ImPlotRect
 local ImPlotRect = { x = 0, y = 0 }
+
+---@type number (const int, readonly)
+implot.IMPLOT_AUTO = nil
+
+---@type ImVec4 (const ImVec4, readonly)
+implot.IMPLOT_AUTO_COL = nil
 
 local ImAxis = {
 	X1 = 0,
@@ -25,6 +30,29 @@ local ImAxis = {
 ---@class implot.ImAxis
 implot.ImAxis = ImAxis
 
+local ImPlotProp = {
+	ImPlotProp_LineColor = 0,
+	ImPlotProp_LineColors = 1,
+	ImPlotProp_LineWeight = 2,
+	ImPlotProp_FillColor = 3,
+	ImPlotProp_FillColors = 4,
+	ImPlotProp_FillAlpha = 5,
+	ImPlotProp_Marker = 6,
+	ImPlotProp_MarkerSize = 7,
+	ImPlotProp_MarkerSizes = 8,
+	ImPlotProp_MarkerLineColor = 9,
+	ImPlotProp_MarkerLineColors = 10,
+	ImPlotProp_MarkerFillColor = 11,
+	ImPlotProp_MarkerFillColors = 12,
+	ImPlotProp_Size = 13,
+	ImPlotProp_Offset = 14,
+	ImPlotProp_Stride = 15,
+	ImPlotProp_Flags = 16,
+}
+---
+---@class implot.ImPlotProp
+implot.ImPlotProp = ImPlotProp
+
 local ImPlotFlags = {
 	None = 0,
 	NoTitle = 1,
@@ -33,10 +61,9 @@ local ImPlotFlags = {
 	NoInputs = 8,
 	NoMenus = 16,
 	NoBoxSelect = 32,
-	NoChild = 64,
-	NoFrame = 128,
-	Equal = 256,
-	Crosshairs = 512,
+	NoFrame = 64,
+	Equal = 128,
+	Crosshairs = 256,
 	CanvasOnly = 55,
 }
 ---
@@ -61,6 +88,7 @@ local ImPlotAxisFlags = {
 	PanStretch = 8192,
 	LockMin = 16384,
 	LockMax = 32768,
+	TickLabelsInside = 65536,
 	Lock = 49152,
 	NoDecorations = 15,
 	AuxDefault = 258,
@@ -96,6 +124,7 @@ local ImPlotLegendFlags = {
 	Outside = 16,
 	Horizontal = 32,
 	Sort = 64,
+	Reverse = 128,
 }
 ---
 ---@class implot.ImPlotLegendFlags
@@ -117,6 +146,8 @@ local ImPlotDragToolFlags = {
 	NoFit = 2,
 	NoInputs = 4,
 	Delayed = 8,
+	NoMove = 16,
+	NoResize = 32,
 }
 ---
 ---@class implot.ImPlotDragToolFlags
@@ -160,6 +191,21 @@ local ImPlotScatterFlags = {
 ---
 ---@class implot.ImPlotScatterFlags
 implot.ImPlotScatterFlags = ImPlotScatterFlags
+
+local ImPlotBubblesFlags = {
+	ImPlotBubblesFlags_None = 0,
+}
+---
+---@class implot.ImPlotBubblesFlags
+implot.ImPlotBubblesFlags = ImPlotBubblesFlags
+
+local ImPlotPolygonFlags = {
+	ImPlotPolygonFlags_None = 0,
+	ImPlotPolygonFlags_Concave = 1024,
+}
+---
+---@class implot.ImPlotPolygonFlags
+implot.ImPlotPolygonFlags = ImPlotPolygonFlags
 
 local ImPlotStairsFlags = {
 	None = 0,
@@ -221,6 +267,9 @@ implot.ImPlotInfLinesFlags = ImPlotInfLinesFlags
 local ImPlotPieChartFlags = {
 	None = 0,
 	Normalize = 1024,
+	IgnoreHidden = 2048,
+	Exploding = 4096,
+	NoSliceBorder = 8192,
 }
 ---
 ---@class implot.ImPlotPieChartFlags
@@ -285,62 +334,50 @@ local ImPlotCond = {
 implot.ImPlotCond = ImPlotCond
 
 local ImPlotCol = {
-	Line = 0,
-	Fill = 1,
-	MarkerOutline = 2,
-	MarkerFill = 3,
-	ErrorBar = 4,
-	FrameBg = 5,
-	PlotBg = 6,
-	PlotBorder = 7,
-	LegendBg = 8,
-	LegendBorder = 9,
-	LegendText = 10,
-	TitleText = 11,
-	InlayText = 12,
-	AxisText = 13,
-	AxisGrid = 14,
-	AxisTick = 15,
-	AxisBg = 16,
-	AxisBgHovered = 17,
-	AxisBgActive = 18,
-	Selection = 19,
-	Crosshairs = 20,
-	COUNT = 21,
+	FrameBg = 0,
+	PlotBg = 1,
+	PlotBorder = 2,
+	LegendBg = 3,
+	LegendBorder = 4,
+	LegendText = 5,
+	TitleText = 6,
+	InlayText = 7,
+	AxisText = 8,
+	AxisGrid = 9,
+	AxisTick = 10,
+	AxisBg = 11,
+	AxisBgHovered = 12,
+	AxisBgActive = 13,
+	Selection = 14,
+	Crosshairs = 15,
+	COUNT = 16,
 }
 ---
 ---@class implot.ImPlotCol
 implot.ImPlotCol = ImPlotCol
 
 local ImPlotStyleVar = {
-	LineWeight = 0,
-	Marker = 1,
-	MarkerSize = 2,
-	MarkerWeight = 3,
-	FillAlpha = 4,
-	ErrorBarSize = 5,
-	ErrorBarWeight = 6,
-	DigitalBitHeight = 7,
-	DigitalBitGap = 8,
-	PlotBorderSize = 9,
-	MinorAlpha = 10,
-	MajorTickLen = 11,
-	MinorTickLen = 12,
-	MajorTickSize = 13,
-	MinorTickSize = 14,
-	MajorGridSize = 15,
-	MinorGridSize = 16,
-	PlotPadding = 17,
-	LabelPadding = 18,
-	LegendPadding = 19,
-	LegendInnerPadding = 20,
-	LegendSpacing = 21,
-	MousePosPadding = 22,
-	AnnotationPadding = 23,
-	FitPadding = 24,
-	PlotDefaultSize = 25,
-	PlotMinSize = 26,
-	COUNT = 27,
+	PlotDefaultSize = 0,
+	PlotMinSize = 1,
+	PlotBorderSize = 2,
+	MinorAlpha = 3,
+	MajorTickLen = 4,
+	MinorTickLen = 5,
+	MajorTickSize = 6,
+	MinorTickSize = 7,
+	MajorGridSize = 8,
+	MinorGridSize = 9,
+	PlotPadding = 10,
+	LabelPadding = 11,
+	LegendPadding = 12,
+	LegendInnerPadding = 13,
+	LegendSpacing = 14,
+	MousePosPadding = 15,
+	AnnotationPadding = 16,
+	FitPadding = 17,
+	DigitalPadding = 18,
+	DigitalSpacing = 19,
+	COUNT = 20,
 }
 ---
 ---@class implot.ImPlotStyleVar
@@ -357,7 +394,8 @@ local ImPlotScale = {
 implot.ImPlotScale = ImPlotScale
 
 local ImPlotMarker = {
-	None = -1,
+	None = -2,
+	Auto = -1,
 	Circle = 0,
 	Square = 1,
 	Diamond = 2,
@@ -368,7 +406,9 @@ local ImPlotMarker = {
 	Cross = 7,
 	Plus = 8,
 	Asterisk = 9,
-	COUNT = 10,
+	Vertical = 10,
+	Horizontal = 11,
+	COUNT = 12,
 }
 ---
 ---@class implot.ImPlotMarker
@@ -433,19 +473,10 @@ ImPlotStyle.AnnotationPadding = nil
 ImPlotStyle.Colormap = nil
 
 ---@type number (float)
-ImPlotStyle.DigitalBitGap = nil
+ImPlotStyle.DigitalPadding = nil
 
 ---@type number (float)
-ImPlotStyle.DigitalBitHeight = nil
-
----@type number (float)
-ImPlotStyle.ErrorBarSize = nil
-
----@type number (float)
-ImPlotStyle.ErrorBarWeight = nil
-
----@type number (float)
-ImPlotStyle.FillAlpha = nil
+ImPlotStyle.DigitalSpacing = nil
 
 ---@type ImVec2 (ImVec2)
 ImPlotStyle.FitPadding = nil
@@ -462,9 +493,6 @@ ImPlotStyle.LegendPadding = nil
 ---@type ImVec2 (ImVec2)
 ImPlotStyle.LegendSpacing = nil
 
----@type number (float)
-ImPlotStyle.LineWeight = nil
-
 ---@type ImVec2 (ImVec2)
 ImPlotStyle.MajorGridSize = nil
 
@@ -473,15 +501,6 @@ ImPlotStyle.MajorTickLen = nil
 
 ---@type ImVec2 (ImVec2)
 ImPlotStyle.MajorTickSize = nil
-
----@type number (int)
-ImPlotStyle.Marker = nil
-
----@type number (float)
-ImPlotStyle.MarkerSize = nil
-
----@type number (float)
-ImPlotStyle.MarkerWeight = nil
 
 ---@type number (float)
 ImPlotStyle.MinorAlpha = nil
@@ -642,23 +661,6 @@ end
 ---@param title_id string @(const char*)
 ---@return boolean @(bool)
 function implot.beginPlot(title_id)
-end
-
----@param title_id string @(const char*)
----@param rows number @(int)
----@param cols number @(int)
----@param size ImVec2 @(ImVec2)
----@param flags number @(ImPlotSubplotFlags)
----@return boolean @(bool)
-function implot.beginSubplots(title_id, rows, cols, size, flags)
-end
-
----@param title_id string @(const char*)
----@param rows number @(int)
----@param cols number @(int)
----@param size ImVec2 @(ImVec2)
----@return boolean @(bool)
-function implot.beginSubplots(title_id, rows, cols, size)
 end
 
 ---@return nil @(void)
@@ -884,6 +886,15 @@ end
 
 ---@param label_id string @(const char*)
 ---@return boolean @(bool)
+function implot.isItemHidden(label_id)
+end
+
+---@return boolean @(bool)
+function implot.isLastItemHidden()
+end
+
+---@param label_id string @(const char*)
+---@return boolean @(bool)
 function implot.isLegendEntryHovered(label_id)
 end
 
@@ -901,6 +912,10 @@ end
 
 ---@return ImVec4 @(ImVec4)
 function implot.nextColormapColor()
+end
+
+---@return number @(ImPlotMarker)
+function implot.nextMarker()
 end
 
 ---@param x number @(float)
@@ -943,23 +958,8 @@ function implot.pixelsToPlot(pix)
 end
 
 ---@param label_id string @(const char*)
----@param flags number @(ImPlotDummyFlags)
----@return nil @(void)
-function implot.plotDummy(label_id, flags)
-end
-
----@param label_id string @(const char*)
 ---@return nil @(void)
 function implot.plotDummy(label_id)
-end
-
----@param text string @(const char*)
----@param x number @(double)
----@param y number @(double)
----@param pix_offset ImVec2 @(ImVec2)
----@param flags number @(ImPlotTextFlags)
----@return nil @(void)
-function implot.plotText(text, x, y, pix_offset, flags)
 end
 
 ---@param text string @(const char*)
@@ -1119,97 +1119,6 @@ end
 function implot.setNextAxisToFit(axis)
 end
 
----@param col ImVec4 @(ImVec4)
----@param size number @(float)
----@param weight number @(float)
----@return nil @(void)
-function implot.setNextErrorBarStyle(col, size, weight)
-end
-
----@param col ImVec4 @(ImVec4)
----@param size number @(float)
----@return nil @(void)
-function implot.setNextErrorBarStyle(col, size)
-end
-
----@param col ImVec4 @(ImVec4)
----@return nil @(void)
-function implot.setNextErrorBarStyle(col)
-end
-
----@return nil @(void)
-function implot.setNextErrorBarStyle()
-end
-
----@param col ImVec4 @(ImVec4)
----@param alpha_mod number @(float)
----@return nil @(void)
-function implot.setNextFillStyle(col, alpha_mod)
-end
-
----@param col ImVec4 @(ImVec4)
----@return nil @(void)
-function implot.setNextFillStyle(col)
-end
-
----@return nil @(void)
-function implot.setNextFillStyle()
-end
-
----@param col ImVec4 @(ImVec4)
----@param weight number @(float)
----@return nil @(void)
-function implot.setNextLineStyle(col, weight)
-end
-
----@param col ImVec4 @(ImVec4)
----@return nil @(void)
-function implot.setNextLineStyle(col)
-end
-
----@return nil @(void)
-function implot.setNextLineStyle()
-end
-
----@param marker number @(ImPlotMarker)
----@param size number @(float)
----@param fill ImVec4 @(ImVec4)
----@param weight number @(float)
----@param outline ImVec4 @(ImVec4)
----@return nil @(void)
-function implot.setNextMarkerStyle(marker, size, fill, weight, outline)
-end
-
----@param marker number @(ImPlotMarker)
----@param size number @(float)
----@param fill ImVec4 @(ImVec4)
----@param weight number @(float)
----@return nil @(void)
-function implot.setNextMarkerStyle(marker, size, fill, weight)
-end
-
----@param marker number @(ImPlotMarker)
----@param size number @(float)
----@param fill ImVec4 @(ImVec4)
----@return nil @(void)
-function implot.setNextMarkerStyle(marker, size, fill)
-end
-
----@param marker number @(ImPlotMarker)
----@param size number @(float)
----@return nil @(void)
-function implot.setNextMarkerStyle(marker, size)
-end
-
----@param marker number @(ImPlotMarker)
----@return nil @(void)
-function implot.setNextMarkerStyle(marker)
-end
-
----@return nil @(void)
-function implot.setNextMarkerStyle()
-end
-
 ---@param x_label string @(const char*)
 ---@param y_label string @(const char*)
 ---@param x_flags number @(ImPlotAxisFlags)
@@ -1267,12 +1176,6 @@ function implot.setupAxis(axis)
 end
 
 ---@param axis number @(ImAxis)
----@param formatter int ()(double, char , int, void ) @(ImPlotFormatter)
----@return nil @(void)
-function implot.setupAxisFormat(axis, formatter)
-end
-
----@param axis number @(ImAxis)
 ---@param fmt string @(const char*)
 ---@return nil @(void)
 function implot.setupAxisFormat(axis, fmt)
@@ -1298,13 +1201,6 @@ end
 ---@param v_max number @(double)
 ---@return nil @(void)
 function implot.setupAxisLimitsConstraints(axis, v_min, v_max)
-end
-
----@param axis number @(ImAxis)
----@param forward double ()(double, void ) @(ImPlotTransform)
----@param inverse double ()(double, void ) @(ImPlotTransform)
----@return nil @(void)
-function implot.setupAxisScale(axis, forward, inverse)
 end
 
 ---@param axis number @(ImAxis)
