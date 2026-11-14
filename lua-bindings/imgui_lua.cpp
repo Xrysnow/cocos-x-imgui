@@ -874,6 +874,19 @@ static int imgui_inputFloat(lua_State *L) {
     lua_pushnumber(L, v);
     return 2;
 }
+static int imgui_inputDouble(lua_State *L) {
+	const int args = lua_gettop(L);
+	const char* label = luaL_checkstring(L, 1);
+	double v = luaL_checknumber(L, 2);
+	lua_pushboolean(L,
+		ImGui::InputDouble(label, &v,
+			lua_opt_number(args, 3, 0.0),
+			lua_opt_number(args, 4, 0.0),
+			lua_opt_string(args, 5, "%.6f"),
+			lua_opt_int(args, 6, 0)));
+	lua_pushnumber(L, v);
+	return 2;
+}
 static int imgui_inputFloatN(lua_State *L) {
 	const int args = lua_gettop(L);
 	const char* label = luaL_checkstring(L, 1);
@@ -2133,7 +2146,7 @@ static const luaL_Reg imgui_methods[] = {
 
     // Widgets: Input with Keyboard
     M(inputText),M(inputTextMultiline),M(inputTextWithHint),M(inputFloat),
-    M(inputFloatN),M(inputInt),M(inputIntN),
+    M(inputFloatN),M(inputDouble),M(inputInt),M(inputIntN),
 
 	// Widgets: Color Editor/Picker
 	M(colorEdit3),M(colorEdit4),M(colorPicker3),M(colorPicker4),

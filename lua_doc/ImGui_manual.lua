@@ -365,6 +365,17 @@ end
 function imgui.inputFloat(label, v, step, step_fase, format, flags)
 end
 
+--- Edit a double-precision value; returns the native result flag and the updated value.
+---@param label string
+---@param v number
+---@param step number? Defaults to 0.
+---@param step_fast number? Defaults to 0.
+---@param format string? Defaults to "%.6f".
+---@param flags imgui.ImGuiInputTextFlags? Defaults to 0.
+---@return boolean,number
+function imgui.inputDouble(label, v, step, step_fast, format, flags)
+end
+
 ---
 ---@param label string
 ---@param v number[]
