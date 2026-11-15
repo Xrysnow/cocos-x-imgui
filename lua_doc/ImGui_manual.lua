@@ -200,8 +200,9 @@ end
 -- the input table. Read consecutive raw indices from 1, silently stopping at the first nil;
 -- extra keys are ignored. An empty prefix returns false, {} without submitting a widget. No void* or cdata
 -- buffer is exposed. Optional arguments accept nil and use their documented defaults.
--- Values must be finite and fit the selected type; integer inputs must be integral.
+-- Typed values, bounds and steps must be finite and fit the selected type; integers must be integral.
 -- Invalid conversion is an error even when general binding checks are disabled.
+-- Data type, speed and flags use the usual Lua numeric conversions.
 -- S64/U64 accept numbers only within +/- (2^53 - 1), or matching signed/unsigned
 -- ffi int64_t/uint64_t cdata for the full range. Outputs outside the safe number range
 -- are matching cdata; do not pass them through tonumber(). Arrays use the same rules.
@@ -1124,7 +1125,7 @@ end
 ---@type imgui.ImFont
 local ImFont
 
---- Measure using this live font/atlas. size must be positive; numeric arguments must be finite.
+--- Measure using this live font/atlas. size must be finite and positive.
 --- The explicit text boundary is derived from the Lua string length; no text_end/out pointer is accepted.
 --- Returns size and the zero-based BYTE offset of the first unmeasured byte, in [0, #text].
 --- This is not a character index. text:sub(remaining_offset + 1) gives the remaining text.
@@ -1139,7 +1140,7 @@ function ImFont:calcTextSizeA(size, max_width, wrap_width, text)
 end
 
 --- Return a zero-based BYTE offset in [0, #text], not a pointer or a string suffix.
---- size must be positive; size/wrap_width must be finite. Requires a live font/atlas.
+--- size must be finite and positive. Requires a live font/atlas.
 --- #text means end of input; 0 is valid (e.g. an initial newline), so handle line breaks explicitly.
 --- text:sub(1, offset) is the prefix; text:sub(offset + 1) starts at the returned position.
 ---@param size number Pixel font size, not the obsolete scale argument.
@@ -1151,7 +1152,7 @@ end
 
 --- Render a bounded Lua string; no separate text_end pointer/string is accepted.
 --- Requires a live font/atlas and draw list with the font atlas texture bound, as in native RenderText.
---- size must be positive. No string pointer is retained after this call; no values are returned.
+--- size must be finite and positive. No string pointer is retained after this call; no values are returned.
 ---@param draw_list imgui.ImDrawList
 ---@param size number Pixel font size.
 ---@param pos ImVec2

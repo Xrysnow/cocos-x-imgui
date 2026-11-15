@@ -639,6 +639,7 @@ end
 template<typename T>
 T check_scalar(lua_State* L, int index)
 {
+	// Typed widget values/bounds/steps need range checks and exact 64-bit conversion.
 	T value{};
 	if (!read_scalar(L, index, &value))
 		luaL_error(L, "invalid scalar argument #%d: expected a finite value within the selected type's range", index);
@@ -739,18 +740,18 @@ int scalar_widget(lua_State* L, int value_index, bool alias = false)
 	const char* format = nullptr;
 	int flags = 0;
 	if constexpr (W == Widget::Drag) {
-		speed = optional_scalar<float>(L, value_index + 1, 1.0f);
+		speed = (float)luaL_optnumber(L, value_index + 1, 1.0f);
 		if (!lua_isnoneornil(L, value_index + 2)) { low = check_scalar<T>(L, value_index + 2); p_low = &low; }
 		if (!lua_isnoneornil(L, value_index + 3)) { high = check_scalar<T>(L, value_index + 3); p_high = &high; }
 		format = luaL_optstring(L, value_index + 4, nullptr);
-		flags = optional_scalar<int>(L, value_index + 5);
+		flags = luaL_optint(L, value_index + 5, 0);
 	} else if constexpr (W == Widget::Input) {
 		low = optional_scalar<T>(L, value_index + 1, short_input ? T(1) : T(0));
 		high = optional_scalar<T>(L, value_index + 2, short_input ? T(100) : T(0));
 		if (low < 0 || high < 0) return luaL_error(L, "input steps must be non-negative");
 		if (low > 0) p_low = &low;
 		if (high > 0) p_high = &high;
-		flags = optional_scalar<int>(L, value_index + (short_input ? 3 : 4));
+		flags = luaL_optint(L, value_index + (short_input ? 3 : 4), 0);
 		if (short_input)
 			format = (flags & ImGuiInputTextFlags_CharsHexadecimal) ? "%08X" : "%d";
 		else
@@ -763,7 +764,7 @@ int scalar_widget(lua_State* L, int value_index, bool alias = false)
 		p_low = &low;
 		p_high = &high;
 		format = luaL_optstring(L, value_index + 3, nullptr);
-		flags = optional_scalar<int>(L, value_index + 4);
+		flags = luaL_optint(L, value_index + 4, 0);
 	}
 	T value{};
 	T* data = &value;
@@ -800,7 +801,7 @@ template<Widget W, bool Array>
 int dispatch_scalar(lua_State* L)
 {
 	constexpr int type_index = W == Widget::Vertical ? 3 : 2;
-	const int type = check_scalar<int>(L, type_index);
+	const int type = luaL_checkint(L, type_index);
 #define SCALAR_CASE(Name, T) case ImGuiDataType_##Name: return scalar_widget<W, Array, T, ImGuiDataType_##Name>(L, type_index + 1)
 	switch (type) {
 	SCALAR_CASE(S8, ImS8); SCALAR_CASE(U8, ImU8);
@@ -911,7 +912,7 @@ static int imgui_inputTextValue(lua_State* L) {
 	const char* value = luaL_checklstring(L, value_index, &length);
 	if (std::memchr(value, '\0', length))
 		return luaL_error(L, "text input cannot contain embedded NUL bytes");
-	const int flags = optional_scalar<int>(L, flags_index);
+	const int flags = luaL_optint(L, flags_index, 0);
 	if (flags & input_callback_flags) return luaL_error(L, "text input does not accept callback flags");
 	ImVec2 size(0, 0);
 	if constexpr (Mode == 1) {
@@ -2159,8 +2160,8 @@ static LuaTextRange imgui_checkTextRange(lua_State* L, int index)
 
 static float imgui_checkTextSize(lua_State* L, int index)
 {
-	const float size = check_scalar<float>(L, index);
-	if (size <= 0) luaL_error(L, "font size must be positive");
+	const float size = (float)luaL_checknumber(L, index);
+	if (!std::isfinite(size) || size <= 0) luaL_error(L, "font size must be finite and positive");
 	return size;
 }
 
@@ -2180,7 +2181,7 @@ static int imgui_calcTextSize(lua_State* lua_S)
 	const auto text = imgui_checkTextRange(lua_S, 1);
 	bool hide = false;
 	if (!lua_isnoneornil(lua_S, 2)) { LUA_NATIVE_SETTER(hide, 2); }
-	const float wrap = optional_scalar<float>(lua_S, 3, -1.0f);
+	const float wrap = (float)luaL_optnumber(lua_S, 3, -1.0f);
 	LUA_PUSH_NATIVE(ImGui::CalcTextSize(text.begin, text.end, hide, wrap));
 	return 1;
 }
@@ -2191,8 +2192,8 @@ static int font_calcTextSizeA(lua_State* lua_S)
 		return luaL_error(lua_S, "calcTextSizeA expects size, max_width, wrap_width and text");
 	auto* font = imgui_checkFont(lua_S, 1);
 	const float size = imgui_checkTextSize(lua_S, 2);
-	const float max_width = check_scalar<float>(lua_S, 3);
-	const float wrap = check_scalar<float>(lua_S, 4);
+	const float max_width = (float)luaL_checknumber(lua_S, 3);
+	const float wrap = (float)luaL_checknumber(lua_S, 4);
 	const auto text = imgui_checkTextRange(lua_S, 5);
 	const char* remaining = text.begin;
 	const auto measured = font->CalcTextSizeA(size, max_width, wrap, text.begin, text.end, &remaining);
@@ -2208,7 +2209,7 @@ static int font_calcWordWrapPosition(lua_State* lua_S)
 	auto* font = imgui_checkFont(lua_S, 1);
 	const float size = imgui_checkTextSize(lua_S, 2);
 	const auto text = imgui_checkTextRange(lua_S, 3);
-	const float wrap = check_scalar<float>(lua_S, 4);
+	const float wrap = (float)luaL_checknumber(lua_S, 4);
 	const char* position = font->CalcWordWrapPosition(size, text.begin, text.end, wrap);
 	lua_pushinteger(lua_S, static_cast<lua_Integer>(position - text.begin));
 	return 1;
@@ -2227,11 +2228,11 @@ static int font_renderText(lua_State* lua_S)
 	ImVec2 pos;
 	ImVec4 clip;
 	LUA_NATIVE_SETTER(pos, 4);
-	const ImU32 col = check_scalar<ImU32>(lua_S, 5);
+	const ImU32 col = lua_tou32(lua_S, 5);
 	LUA_NATIVE_SETTER(clip, 6);
 	const auto text = imgui_checkTextRange(lua_S, 7);
-	const float wrap = optional_scalar<float>(lua_S, 8);
-	const int flags = optional_scalar<int>(lua_S, 9);
+	const float wrap = (float)luaL_optnumber(lua_S, 8, 0);
+	const int flags = luaL_optint(lua_S, 9, 0);
 	font->RenderText(draw_list, size, pos, col, clip, text.begin, text.end, wrap, flags);
 	return 0;
 }
@@ -2649,16 +2650,16 @@ static int fontAtlas_customRect(lua_State* lua_S)
 	ImFontAtlasRect rect;
 	bool found;
 	if constexpr (Add) {
-		const int width = check_scalar<int>(lua_S, 2);
-		const int height = check_scalar<int>(lua_S, 3);
+		const int width = luaL_checkint(lua_S, 2);
+		const int height = luaL_checkint(lua_S, 3);
 		if (width <= 0 || width > 0xffff || height <= 0 || height > 0xffff)
-			return luaL_error(lua_S, "rectangle dimensions must be integers in 1..65535");
+			return luaL_error(lua_S, "rectangle dimensions must be in 1..65535");
 		if (atlas->Locked) return luaL_error(lua_S, "font atlas is locked");
 		const auto id = atlas->AddCustomRect(width, height, &rect);
 		found = id != ImFontAtlasRectId_Invalid;
 		LUA_PUSH_NATIVE(id);
 	} else {
-		found = atlas->GetCustomRect(check_scalar<int>(lua_S, 2), &rect);
+		found = atlas->GetCustomRect(luaL_checkint(lua_S, 2), &rect);
 		LUA_PUSH_NATIVE(found);
 	}
 	if (found) { LUA_PUSH_NATIVE(rect); }
