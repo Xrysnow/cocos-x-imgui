@@ -1153,20 +1153,6 @@ int lua_ImFont_addRemapCodepointToGlyphIndex(lua_State* lua_S)
 	LUA_TRY_INVOKE(3, &ImFont::AddRemapCodepointToGlyphIndex);
 	LUA_INVOKE_FOOTER("3");
 }
-int lua_ImFont_calcTextSizeA(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("imgui.ImFont", "imgui.ImFont:calcTextSizeA");
-	LUA_TRY_INVOKE_R(6, &ImFont::CalcTextSizeA);
-	LUA_TRY_INVOKE_R(5, ([](ImFont* obj,float arg0,float arg1,float arg2,const char* arg3,const char* arg4){{return obj->CalcTextSizeA(std::move(arg0),std::move(arg1),std::move(arg2),arg3,arg4);}}));
-	LUA_TRY_INVOKE_R(4, ([](ImFont* obj,float arg0,float arg1,float arg2,const char* arg3){{return obj->CalcTextSizeA(std::move(arg0),std::move(arg1),std::move(arg2),arg3);}}));
-	LUA_INVOKE_FOOTER("4,5,6");
-}
-int lua_ImFont_calcWordWrapPosition(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("imgui.ImFont", "imgui.ImFont:calcWordWrapPosition");
-	LUA_TRY_INVOKE_R(4, &ImFont::CalcWordWrapPosition);
-	LUA_INVOKE_FOOTER("4");
-}
 int lua_ImFont_clearOutputData(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ImFont", "imgui.ImFont:clearOutputData");
@@ -1211,14 +1197,6 @@ int lua_ImFont_renderChar(lua_State* lua_S)
 	LUA_TRY_INVOKE(5, ([](ImFont* obj,ImDrawList* arg0,float arg1,const ImVec2& arg2,ImU32 arg3,ImWchar arg4){{return obj->RenderChar(arg0,std::move(arg1),arg2,std::move(arg3),std::move(arg4));}}));
 	LUA_INVOKE_FOOTER("5,6");
 }
-int lua_ImFont_renderText(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("imgui.ImFont", "imgui.ImFont:renderText");
-	LUA_TRY_INVOKE(9, &ImFont::RenderText);
-	LUA_TRY_INVOKE(8, ([](ImFont* obj,ImDrawList* arg0,float arg1,const ImVec2& arg2,ImU32 arg3,const ImVec4& arg4,const char* arg5,const char* arg6,float arg7){{return obj->RenderText(arg0,std::move(arg1),arg2,std::move(arg3),arg4,arg5,arg6,std::move(arg7));}}));
-	LUA_TRY_INVOKE(7, ([](ImFont* obj,ImDrawList* arg0,float arg1,const ImVec2& arg2,ImU32 arg3,const ImVec4& arg4,const char* arg5,const char* arg6){{return obj->RenderText(arg0,std::move(arg1),arg2,std::move(arg3),arg4,arg5,arg6);}}));
-	LUA_INVOKE_FOOTER("7,8,9");
-}
 int luaReg_imguiFont_imguiImFont(lua_State* lua_S)
 {
 	LUA_ENTRY("imgui");
@@ -1234,8 +1212,6 @@ int luaReg_imguiFont_imguiImFont(lua_State* lua_S)
 	LUA_FIELD("OwnerAtlas", lua_ImFont_OwnerAtlas_getter, lua_ImFont_OwnerAtlas_setter);
 	LUA_METHOD("addRemapCodepoint", lua_ImFont_addRemapCodepoint);
 	LUA_METHOD("addRemapCodepointToGlyphIndex", lua_ImFont_addRemapCodepointToGlyphIndex);
-	LUA_METHOD("calcTextSizeA", lua_ImFont_calcTextSizeA);
-	LUA_METHOD("calcWordWrapPosition", lua_ImFont_calcWordWrapPosition);
 	LUA_METHOD("clearOutputData", lua_ImFont_clearOutputData);
 	LUA_METHOD("getDebugName", lua_ImFont_getDebugName);
 	LUA_METHOD("getFontBaked", lua_ImFont_getFontBaked);
@@ -1243,7 +1219,6 @@ int luaReg_imguiFont_imguiImFont(lua_State* lua_S)
 	LUA_METHOD("isGlyphRangeUnused", lua_ImFont_isGlyphRangeUnused);
 	LUA_METHOD("isLoaded", lua_ImFont_isLoaded);
 	LUA_METHOD("renderChar", lua_ImFont_renderChar);
-	LUA_METHOD("renderText", lua_ImFont_renderText);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;

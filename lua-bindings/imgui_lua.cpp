@@ -2087,8 +2087,105 @@ static int imgui_markdown(lua_State* L)
 	return 0;
 }
 
+struct LuaTextRange
+{
+	const char* begin;
+	const char* end;
+};
+
+static LuaTextRange imgui_checkTextRange(lua_State* L, int index)
+{
+	luaL_checktype(L, index, LUA_TSTRING);
+	size_t length = 0;
+	const char* text = lua_tolstring(L, index, &length);
+	if (length > static_cast<size_t>((std::numeric_limits<int>::max)()))
+		luaL_error(L, "text exceeds the native length limit");
+	// The original Lua argument roots the bytes throughout the synchronous call.
+	return { text, text + length };
+}
+
+static ImFont* imgui_checkTextFont(lua_State* lua_S)
+{
+	luaL_checkudata(lua_S, 1, "imgui.ImFont");
+	auto* font = LUA_TO_COBJ(ImFont*, 1);
+	if (!font) luaL_error(lua_S, "invalid imgui.ImFont");
+	return font;
+}
+
+static float imgui_checkTextSize(lua_State* L, int index)
+{
+	const float size = check_scalar<float>(L, index);
+	if (size <= 0) luaL_error(L, "font size must be positive");
+	return size;
+}
+
+static int imgui_calcTextSize(lua_State* lua_S)
+{
+	if (lua_gettop(lua_S) < 1 || lua_gettop(lua_S) > 3)
+		return luaL_error(lua_S, "calcTextSize expects text, optional hide_text_after_double_hash and wrap_width");
+	LUA_CUR_FNAME("imgui.calcTextSize");
+	const auto text = imgui_checkTextRange(lua_S, 1);
+	bool hide = false;
+	if (!lua_isnoneornil(lua_S, 2)) { LUA_NATIVE_SETTER(hide, 2); }
+	const float wrap = optional_scalar<float>(lua_S, 3, -1.0f);
+	LUA_PUSH_NATIVE(ImGui::CalcTextSize(text.begin, text.end, hide, wrap));
+	return 1;
+}
+
+static int font_calcTextSizeA(lua_State* lua_S)
+{
+	if (lua_gettop(lua_S) != 5)
+		return luaL_error(lua_S, "calcTextSizeA expects size, max_width, wrap_width and text");
+	auto* font = imgui_checkTextFont(lua_S);
+	const float size = imgui_checkTextSize(lua_S, 2);
+	const float max_width = check_scalar<float>(lua_S, 3);
+	const float wrap = check_scalar<float>(lua_S, 4);
+	const auto text = imgui_checkTextRange(lua_S, 5);
+	const char* remaining = text.begin;
+	const auto measured = font->CalcTextSizeA(size, max_width, wrap, text.begin, text.end, &remaining);
+	LUA_PUSH_NATIVE(measured);
+	lua_pushinteger(lua_S, static_cast<lua_Integer>(remaining - text.begin));
+	return 2;
+}
+
+static int font_calcWordWrapPosition(lua_State* lua_S)
+{
+	if (lua_gettop(lua_S) != 4)
+		return luaL_error(lua_S, "calcWordWrapPosition expects size, text and wrap_width");
+	auto* font = imgui_checkTextFont(lua_S);
+	const float size = imgui_checkTextSize(lua_S, 2);
+	const auto text = imgui_checkTextRange(lua_S, 3);
+	const float wrap = check_scalar<float>(lua_S, 4);
+	const char* position = font->CalcWordWrapPosition(size, text.begin, text.end, wrap);
+	lua_pushinteger(lua_S, static_cast<lua_Integer>(position - text.begin));
+	return 1;
+}
+
+static int font_renderText(lua_State* lua_S)
+{
+	if (lua_gettop(lua_S) < 7 || lua_gettop(lua_S) > 9)
+		return luaL_error(lua_S, "renderText expects draw_list, size, pos, col, clip_rect, text, optional wrap_width and flags");
+	LUA_CUR_FNAME("imgui.ImFont:renderText");
+	auto* font = imgui_checkTextFont(lua_S);
+	luaL_checkudata(lua_S, 2, "imgui.ImDrawList");
+	auto* draw_list = LUA_TO_COBJ(ImDrawList*, 2);
+	if (!draw_list) return luaL_error(lua_S, "invalid imgui.ImDrawList");
+	const float size = imgui_checkTextSize(lua_S, 3);
+	ImVec2 pos;
+	ImVec4 clip;
+	LUA_NATIVE_SETTER(pos, 4);
+	const ImU32 col = check_scalar<ImU32>(lua_S, 5);
+	LUA_NATIVE_SETTER(clip, 6);
+	const auto text = imgui_checkTextRange(lua_S, 7);
+	const float wrap = optional_scalar<float>(lua_S, 8);
+	const int flags = optional_scalar<int>(lua_S, 9);
+	font->RenderText(draw_list, size, pos, col, clip, text.begin, text.end, wrap, flags);
+	return 0;
+}
+
 #define M(n) {#n, imgui_##n}
 static const luaL_Reg imgui_methods[] = {
+	M(calcTextSize),
 	// Main
 	M(showStyleEditor),
 
@@ -2524,7 +2621,7 @@ static int font_mergeGlyphs(lua_State* L)
 #undef M
 #define M(n) {#n, font_##n}
 static const luaL_Reg font_methods[] = {
-	M(mergeGlyphs)
+	M(mergeGlyphs), M(calcTextSizeA), M(calcWordWrapPosition), M(renderText)
 };
 
 static int fontBaked_findGlyph(lua_State* lua_S)

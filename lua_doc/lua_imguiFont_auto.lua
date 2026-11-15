@@ -399,41 +399,6 @@ end
 function ImFont:addRemapCodepointToGlyphIndex(from_codepoint, font_src_idx, glyph_idx)
 end
 
----@param size number @(float)
----@param max_width number @(float)
----@param wrap_width number @(float)
----@param text_begin string @(const char*)
----@param text_end string @(const char*)
----@param out_remaining char @(const char**)
----@return ImVec2 @(ImVec2)
-function ImFont:calcTextSizeA(size, max_width, wrap_width, text_begin, text_end, out_remaining)
-end
-
----@param size number @(float)
----@param max_width number @(float)
----@param wrap_width number @(float)
----@param text_begin string @(const char*)
----@param text_end string @(const char*)
----@return ImVec2 @(ImVec2)
-function ImFont:calcTextSizeA(size, max_width, wrap_width, text_begin, text_end)
-end
-
----@param size number @(float)
----@param max_width number @(float)
----@param wrap_width number @(float)
----@param text_begin string @(const char*)
----@return ImVec2 @(ImVec2)
-function ImFont:calcTextSizeA(size, max_width, wrap_width, text_begin)
-end
-
----@param size number @(float)
----@param text string @(const char*)
----@param text_end string @(const char*)
----@param wrap_width number @(float)
----@return string @(const char*)
-function ImFont:calcWordWrapPosition(size, text, text_end, wrap_width)
-end
-
 ---@return nil @(void)
 function ImFont:clearOutputData()
 end
@@ -485,41 +450,5 @@ end
 ---@param c number @(ImWchar)
 ---@return nil @(void)
 function ImFont:renderChar(draw_list, size, pos, col, c)
-end
-
----@param draw_list ImDrawList @(ImDrawList*)
----@param size number @(float)
----@param pos ImVec2 @(ImVec2)
----@param col number @(ImU32)
----@param clip_rect ImVec4 @(ImVec4)
----@param text_begin string @(const char*)
----@param text_end string @(const char*)
----@param wrap_width number @(float)
----@param flags number @(ImDrawTextFlags)
----@return nil @(void)
-function ImFont:renderText(draw_list, size, pos, col, clip_rect, text_begin, text_end, wrap_width, flags)
-end
-
----@param draw_list ImDrawList @(ImDrawList*)
----@param size number @(float)
----@param pos ImVec2 @(ImVec2)
----@param col number @(ImU32)
----@param clip_rect ImVec4 @(ImVec4)
----@param text_begin string @(const char*)
----@param text_end string @(const char*)
----@param wrap_width number @(float)
----@return nil @(void)
-function ImFont:renderText(draw_list, size, pos, col, clip_rect, text_begin, text_end, wrap_width)
-end
-
----@param draw_list ImDrawList @(ImDrawList*)
----@param size number @(float)
----@param pos ImVec2 @(ImVec2)
----@param col number @(ImU32)
----@param clip_rect ImVec4 @(ImVec4)
----@param text_begin string @(const char*)
----@param text_end string @(const char*)
----@return nil @(void)
-function ImFont:renderText(draw_list, size, pos, col, clip_rect, text_begin, text_end)
 end
 

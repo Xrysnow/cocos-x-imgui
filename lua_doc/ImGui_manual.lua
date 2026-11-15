@@ -1074,6 +1074,58 @@ local ImGuiTableSortSpecs
 ---@field SortDirection imgui.ImGuiSortDirection
 local ImGuiTableColumnSortSpecs
 
+--- Measure UTF-8 text with the current font/size; requires a current ImGui context.
+--- The entire Lua string supplies begin/end from its byte length, never a separate end string.
+--- Use string.sub() to select a subrange. Native handling of NUL/control bytes is unchanged.
+---@param text string
+---@param hide_text_after_double_hash? boolean Defaults to false.
+---@param wrap_width? number Defaults to -1 (no wrapping).
+---@return ImVec2
+function imgui.calcTextSize(text, hide_text_after_double_hash, wrap_width)
+end
+
+---@type imgui.ImFont
+local ImFont
+
+--- Measure using this live font/atlas. size must be positive; numeric arguments must be finite.
+--- The explicit text boundary is derived from the Lua string length; no text_end/out pointer is accepted.
+--- Returns size and the zero-based BYTE offset of the first unmeasured byte, in [0, #text].
+--- This is not a character index. text:sub(remaining_offset + 1) gives the remaining text.
+--- May load missing glyph metrics. Native interpretation of embedded NUL/control bytes is unchanged.
+---@param size number Pixel font size.
+---@param max_width number Width limit; use a large finite float to measure the entire string.
+---@param wrap_width number <= 0 disables wrapping.
+---@param text string UTF-8 input; use string.sub() for a subrange.
+---@return ImVec2 measured_size
+---@return integer remaining_offset
+function ImFont:calcTextSizeA(size, max_width, wrap_width, text)
+end
+
+--- Return a zero-based BYTE offset in [0, #text], not a pointer or a string suffix.
+--- size must be positive; size/wrap_width must be finite. Requires a live font/atlas.
+--- #text means end of input; 0 is valid (e.g. an initial newline), so handle line breaks explicitly.
+--- text:sub(1, offset) is the prefix; text:sub(offset + 1) starts at the returned position.
+---@param size number Pixel font size, not the obsolete scale argument.
+---@param text string UTF-8 input with an explicit boundary derived from its byte length.
+---@param wrap_width number
+---@return integer offset
+function ImFont:calcWordWrapPosition(size, text, wrap_width)
+end
+
+--- Render a bounded Lua string; no separate text_end pointer/string is accepted.
+--- Requires a live font/atlas and draw list with the font atlas texture bound, as in native RenderText.
+--- size must be positive. No string pointer is retained after this call; no values are returned.
+---@param draw_list imgui.ImDrawList
+---@param size number Pixel font size.
+---@param pos ImVec2
+---@param col integer Unsigned 32-bit packed color.
+---@param clip_rect ImVec4
+---@param text string UTF-8 input; use string.sub() to select a subrange.
+---@param wrap_width? number Defaults to 0 (no wrapping).
+---@param flags? imgui.ImDrawTextFlags Defaults to 0.
+function ImFont:renderText(draw_list, size, pos, col, clip_rect, text, wrap_width, flags)
+end
+
 --- The plain configuration table accepted by imgui.addFontTTF() also supports Name.
 --- Omitted or nil Name keeps the native default; an empty Name uses the generated file/size name.
 ---@class imgui.ImFontConfig
