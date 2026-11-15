@@ -176,10 +176,123 @@ function imgui.combo(label, current_item, items, popup_max_height_in_items)
 end
 
 
+-- Scalar widgets (generic interfaces and float/int convenience wrappers)
+-- All return changed, value; N variants return a fresh 1-based array and never mutate
+-- the input table. Components are inferred from a dense array, with no extra keys;
+-- an empty array returns false, {} without submitting a widget. No void* or cdata
+-- buffer is exposed. Optional arguments accept nil and use their documented defaults.
+-- Values must be finite and fit the selected type; integer inputs must be integral.
+-- Invalid conversion is an error even when general binding checks are disabled.
+-- S64/U64 accept numbers only within +/- (2^53 - 1), or matching signed/unsigned
+-- ffi int64_t/uint64_t cdata for the full range. Outputs outside the safe number range
+-- are matching cdata; do not pass them through tonumber(). Arrays use the same rules.
+-- Slider bounds are required and ordered. For S32/U32/S64/U64/Float/Double they must
+-- stay within half the native type's range, as required by ImGui's slider implementation.
+-- Input steps are non-negative; 0 disables the corresponding step pointer.
+-- nil uses defaults: 0/0 for generic/float/double inputs, 1/100 for int wrappers.
+-- step_fast only applies when step is enabled. Input callback flags are unsupported.
+-- Formats must match the selected native data type. All slider tails are flags (default
+-- 0), not the obsolete power parameter. Existing float/int wrappers share this contract.
+---@alias ImGuiScalarValue number|ffi.cdata
+
+--- Typed scalar widget; see the shared scalar contract above.
+---@param label string
+---@param data_type imgui.ImGuiDataType One of S8/U8/S16/U16/S32/U32/S64/U64/Float/Double.
+---@param value ImGuiScalarValue
+---@param v_speed? number Defaults to 1.
+---@param v_min? ImGuiScalarValue nil: no lower bound.
+---@param v_max? ImGuiScalarValue nil: no upper bound.
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return ImGuiScalarValue value
+function imgui.dragScalar(label, data_type, value, v_speed, v_min, v_max, format, flags)
+end
+
+--- Typed scalar widget; see the shared scalar contract above.
+---@param label string
+---@param data_type imgui.ImGuiDataType One of S8/U8/S16/U16/S32/U32/S64/U64/Float/Double.
+---@param values ImGuiScalarValue[]
+---@param v_speed? number Defaults to 1.
+---@param v_min? ImGuiScalarValue nil: no lower bound.
+---@param v_max? ImGuiScalarValue nil: no upper bound.
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return ImGuiScalarValue[] values
+function imgui.dragScalarN(label, data_type, values, v_speed, v_min, v_max, format, flags)
+end
+
+--- Typed scalar widget; see the shared scalar contract above.
+---@param label string
+---@param data_type imgui.ImGuiDataType One of S8/U8/S16/U16/S32/U32/S64/U64/Float/Double.
+---@param value ImGuiScalarValue
+---@param v_min ImGuiScalarValue
+---@param v_max ImGuiScalarValue
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return ImGuiScalarValue value
+function imgui.sliderScalar(label, data_type, value, v_min, v_max, format, flags)
+end
+
+--- Typed scalar widget; see the shared scalar contract above.
+---@param label string
+---@param data_type imgui.ImGuiDataType One of S8/U8/S16/U16/S32/U32/S64/U64/Float/Double.
+---@param values ImGuiScalarValue[]
+---@param v_min ImGuiScalarValue
+---@param v_max ImGuiScalarValue
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return ImGuiScalarValue[] values
+function imgui.sliderScalarN(label, data_type, values, v_min, v_max, format, flags)
+end
+
+--- Typed scalar widget; see the shared scalar contract above.
+---@param label string
+---@param size ImVec2
+---@param data_type imgui.ImGuiDataType One of S8/U8/S16/U16/S32/U32/S64/U64/Float/Double.
+---@param value ImGuiScalarValue
+---@param v_min ImGuiScalarValue
+---@param v_max ImGuiScalarValue
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return ImGuiScalarValue value
+function imgui.vSliderScalar(label, size, data_type, value, v_min, v_max, format, flags)
+end
+
+--- Typed scalar widget; see the shared scalar contract above.
+---@param label string
+---@param data_type imgui.ImGuiDataType One of S8/U8/S16/U16/S32/U32/S64/U64/Float/Double.
+---@param value ImGuiScalarValue
+---@param step? ImGuiScalarValue Defaults to 0 (disabled).
+---@param step_fast? ImGuiScalarValue Defaults to 0 (disabled).
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiInputTextFlags Defaults to 0.
+---@return boolean changed
+---@return ImGuiScalarValue value
+function imgui.inputScalar(label, data_type, value, step, step_fast, format, flags)
+end
+
+--- Typed scalar widget; see the shared scalar contract above.
+---@param label string
+---@param data_type imgui.ImGuiDataType One of S8/U8/S16/U16/S32/U32/S64/U64/Float/Double.
+---@param values ImGuiScalarValue[]
+---@param step? ImGuiScalarValue Defaults to 0 (disabled).
+---@param step_fast? ImGuiScalarValue Defaults to 0 (disabled).
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiInputTextFlags Defaults to 0.
+---@return boolean changed
+---@return ImGuiScalarValue[] values
+function imgui.inputScalarN(label, data_type, values, step, step_fast, format, flags)
+end
+
 --
 -- Widgets: Drag Sliders
 -- - CTRL+Click on any drag box to turn them into an input box. Manually input values aren't clamped and can go off-bounds.
--- - For all the Float2/Float3/Float4/Int2/Int3/Int4 versions of every functions, note that a 'float v[X]' function argument is the same as 'float* v', the array syntax is just a way to document the number of elements that are expected to be accessible. You can pass address of your first element out of a contiguous set, e.g. &myvector.x
+-- - N variants take dense Lua arrays; they do not accept native pointers or a separate component count.
 -- - Adjust format string to decorate the value with a prefix, a suffix, or adapt the editing and display precision e.g. "%.3f" -> 1.234; "%5.2f secs" -> 01.23 secs; "Biscuit: %.0f" -> Biscuit: 1; etc.
 -- - Format string may also be set to NULL or use the default format ("%f" or "%d").
 -- - Speed are per-pixel of mouse movement (v_speed=0.2f: mouse needs to move by 5 pixels to increase value by 1). For gamepad/keyboard navigation, minimum speed is Max(v_speed, minimum_step_at_given_precision).
@@ -190,15 +303,16 @@ end
 --   If you get a warning converting a float to ImGuiSliderFlags, read https://github.com/ocornut/imgui/issues/3361
 --
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
 ---@param value number
----@param v_speed number @optional
----@param v_min number @optional
----@param v_max number @optional
----@param format string @optional
----@param flags number @optional, ImGuiSliderFlags
----@return boolean,number
+---@param v_speed? number Defaults to 1.
+---@param v_min? number nil: no lower bound.
+---@param v_max? number nil: no upper bound.
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return number value
 function imgui.dragFloat(label, value, v_speed, v_min, v_max, format, flags)
 end
 
@@ -219,27 +333,29 @@ end
 function imgui.dragFloatRange2(label, current_min, current_max, v_speed, v_min, v_max, format, format_max, flags)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
----@param array number[]
----@param v_speed number
----@param v_min number
----@param v_max number
----@param format string
----@param flags number
----@return boolean,number[]
-function imgui.dragFloatN(label, array, v_speed, v_min, v_max, format, flags)
+---@param values number[]
+---@param v_speed? number Defaults to 1.
+---@param v_min? number nil: no lower bound.
+---@param v_max? number nil: no upper bound.
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return number[] values
+function imgui.dragFloatN(label, values, v_speed, v_min, v_max, format, flags)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
----@param value number
----@param v_speed number @optional
----@param v_min number @optional
----@param v_max number @optional
----@param format string @optional
----@param flags number @optional, ImGuiSliderFlags
----@return boolean,number
+---@param value integer
+---@param v_speed? number Defaults to 1.
+---@param v_min? integer nil: no lower bound.
+---@param v_max? integer nil: no upper bound.
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return integer value
 function imgui.dragInt(label, value, v_speed, v_min, v_max, format, flags)
 end
 
@@ -260,16 +376,17 @@ end
 function imgui.dragIntRange2(label, current_min, current_max, v_speed, v_min, v_max, format, format_max, flags)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
----@param array number[]
----@param v_speed number @optional
----@param v_min number @optional
----@param v_max number @optional
----@param format string @optional
----@param flags number @optional, ImGuiSliderFlags
----@return boolean,number[]
-function imgui.dragIntN(label, array, v_speed, v_min, v_max, format, flags)
+---@param values integer[]
+---@param v_speed? number Defaults to 1.
+---@param v_min? integer nil: no lower bound.
+---@param v_max? integer nil: no upper bound.
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return integer[] values
+function imgui.dragIntN(label, values, v_speed, v_min, v_max, format, flags)
 end
 
 --
@@ -281,26 +398,28 @@ end
 --   If you get a warning converting a float to ImGuiSliderFlags, read https://github.com/ocornut/imgui/issues/3361
 --
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
 ---@param value number
 ---@param v_min number
 ---@param v_max number
----@param format string @optional
----@param flags number @optional, ImGuiSliderFlags
----@return boolean,number
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return number value
 function imgui.sliderFloat(label, value, v_min, v_max, format, flags)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
----@param array number[]
+---@param values number[]
 ---@param v_min number
 ---@param v_max number
----@param format string @optional
----@param flags number @optional, ImGuiSliderFlags
----@return boolean,number[]
-function imgui.sliderFloatN(label, array, v_min, v_max, format, flags)
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return number[] values
+function imgui.sliderFloatN(label, values, v_min, v_max, format, flags)
 end
 
 ---
@@ -313,47 +432,54 @@ end
 function imgui.sliderAngle(label, v_rad, v_deg_min, v_deg_max, format)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
----@param value number
----@param v_min number
----@param v_max number
----@param format string
----@return boolean,number
-function imgui.sliderInt(label, value, v_min, v_max, format)
+---@param value integer
+---@param v_min integer
+---@param v_max integer
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return integer value
+function imgui.sliderInt(label, value, v_min, v_max, format, flags)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
----@param array number[]
----@param v_min number
----@param v_max number
----@param format string
----@return boolean,number[]
-function imgui.sliderIntN(label, array, v_min, v_max, format, power)
+---@param values integer[]
+---@param v_min integer
+---@param v_max integer
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return integer[] values
+function imgui.sliderIntN(label, values, v_min, v_max, format, flags)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
 ---@param size ImVec2
 ---@param value number
 ---@param v_min number
 ---@param v_max number
----@param format string
----@param power number
----@return boolean,number
-function imgui.vSliderFloat(label, size, value, v_min, v_max, format, power)
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return number value
+function imgui.vSliderFloat(label, size, value, v_min, v_max, format, flags)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
 ---@param size ImVec2
----@param value number
----@param v_min number
----@param v_max number
----@param format string
----@return boolean,number
-function imgui.vSliderInt(label, size, value, v_min, v_max, format)
+---@param value integer
+---@param v_min integer
+---@param v_max integer
+---@param format? string Native type default.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return integer value
+function imgui.vSliderInt(label, size, value, v_min, v_max, format, flags)
 end
 
 --
@@ -388,57 +514,76 @@ end
 function imgui.inputTextWithHint(label, hint, str, flags)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
----@param v number
----@param step number
----@param step_fase number
----@param format string
----@param flags number
----@return boolean,number
-function imgui.inputFloat(label, v, step, step_fase, format, flags)
+---@param value number
+---@param step? number Defaults to 0 (disabled).
+---@param step_fast? number Defaults to 0 (disabled).
+---@param format? string Defaults to "%.3f".
+---@param flags? imgui.ImGuiInputTextFlags Defaults to 0.
+---@return boolean changed
+---@return number value
+function imgui.inputFloat(label, value, step, step_fast, format, flags)
 end
 
---- Edit a double-precision value; returns the native result flag and the updated value.
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
----@param v number
----@param step number? Defaults to 0.
----@param step_fast number? Defaults to 0.
----@param format string? Defaults to "%.6f".
----@param flags imgui.ImGuiInputTextFlags? Defaults to 0.
----@return boolean,number
-function imgui.inputDouble(label, v, step, step_fast, format, flags)
+---@param value number
+---@param step? number Defaults to 0 (disabled).
+---@param step_fast? number Defaults to 0 (disabled).
+---@param format? string Defaults to "%.6f".
+---@param flags? imgui.ImGuiInputTextFlags Defaults to 0.
+---@return boolean changed
+---@return number value
+function imgui.inputDouble(label, value, step, step_fast, format, flags)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
 ---@param label string
----@param v number[]
----@param step number
----@param step_fase number
----@param format string
----@param flags number
----@return boolean,number[]
-function imgui.inputFloatN(label, v, step, step_fase, format, flags)
+---@param values number[]
+---@param step? number Defaults to 0 (disabled).
+---@param step_fast? number Defaults to 0 (disabled).
+---@param format? string Defaults to "%.3f".
+---@param flags? imgui.ImGuiInputTextFlags Defaults to 0.
+---@return boolean changed
+---@return number[] values
+function imgui.inputFloatN(label, values, step, step_fast, format, flags)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
+--- Uses %d, or %08X when CharsHexadecimal is set.
 ---@param label string
----@param v number
----@param step number
----@param step_fast number
----@param flags number
----@return boolean,number
-function imgui.inputInt(label, v, step, step_fast, flags)
+---@param value integer
+---@param step? integer Defaults to 1.
+---@param step_fast? integer Defaults to 100.
+---@param flags? imgui.ImGuiInputTextFlags Defaults to 0.
+---@return boolean changed
+---@return integer value
+function imgui.inputInt(label, value, step, step_fast, flags)
 end
 
----
+--- Convenience wrapper using the shared scalar contract above.
+--- Uses %d, or %08X when CharsHexadecimal is set.
 ---@param label string
----@param v number[]
----@param step number
----@param step_fase number
----@param flags number
----@return boolean,number[]
-function imgui.inputIntN(label, v, step, step_fase, flags)
+---@param values integer[]
+---@param step? integer Defaults to 1.
+---@param step_fast? integer Defaults to 100.
+---@param flags? imgui.ImGuiInputTextFlags Defaults to 0.
+---@return boolean changed
+---@return integer[] values
+function imgui.inputIntN(label, values, step, step_fast, flags)
+end
+
+--- Convenience wrapper using the shared scalar contract above.
+---@param label string
+---@param values number[]
+---@param step? number Defaults to 0 (disabled).
+---@param step_fast? number Defaults to 0 (disabled).
+---@param format? string Defaults to "%.6f".
+---@param flags? imgui.ImGuiInputTextFlags Defaults to 0.
+---@return boolean changed
+---@return number[] values
+function imgui.inputDoubleN(label, values, step, step_fast, format, flags)
 end
 
 --

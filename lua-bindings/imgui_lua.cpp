@@ -2,8 +2,6 @@
 #include "../imgui/misc/cpp/imgui_stdlib.h"
 #include "scripting/lua-bindings/manual/CCLuaEngine.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
-//#include "scripting/lua-bindings/manual/lua_conversion/detail/base.hpp"
-//#include "scripting/lua-bindings/manual/lua_conversion/detail/conversion.hpp"
 #include "lua_imgui_auto.hpp"
 #include "lua_imguiStyle_auto.hpp"
 #include "lua_imguiIO_auto.hpp"
@@ -19,6 +17,7 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
@@ -542,6 +541,7 @@ static int imgui_combo(lua_State *L) {
 	std::vector<std::string> arr;
 	luaval_to_std_vector_string(L, 3, &arr);
 	std::vector<const char*> items;
+	items.reserve(arr.size());
 	for (auto&& str : arr)
 		items.push_back(str.c_str());
     lua_pushboolean(L,
@@ -551,43 +551,286 @@ static int imgui_combo(lua_State *L) {
     return 2;
 }
 
-// Widgets: Drags
+// Shared scalar widget bindings
 
-static int imgui_dragFloat(lua_State *L) {
-	const int args = lua_gettop(L);
-	const auto label = luaL_checkstring(L, 1);
-	float v = luaL_checknumber(L, 2);
-	const float v_speed = lua_opt_number(args, 3, 1.0f);
-	float v_min, v_max;
-	float* p_min = nullptr;
-	float* p_max = nullptr;
-	if (!lua_isnoneornil(L, 4))
-	{
-		v_min = luaL_checknumber(L, 4);
-		p_min = &v_min;
+namespace
+{
+enum class Widget { Drag, Slider, Vertical, Input };
+constexpr double max_safe_integer = 9007199254740991.0;
+
+// The common arithmetic output converter uses lua_Number. Preserve wide integers
+// with byte copies instead; neither direction converts wide cdata through double.
+template<typename T>
+bool read_scalar(lua_State* L, int index, T* out)
+{
+	if constexpr (std::is_integral_v<T> && sizeof(T) == 8) {
+		if (lua_type(L, index) == lua::LUA_TCDATA) {
+			const int top = lua_gettop(L);
+			if (index < 0) index += top + 1;
+			static constexpr auto code = R"__(
+local ffi = require('ffi')
+return function(value, signed)
+    local name = signed and 'int64_t' or 'uint64_t'
+    if not ffi.istype(name, value) then return nil end
+    local copy = ffi.new(name .. '[1]')
+    copy[0] = value
+    return ffi.string(copy, 8)
+end
+)__";
+			if (!lua::_try_get_internal_helper(L, "imgui.scalar.read64", code)) return false;
+			lua_pushvalue(L, index);
+			lua_pushboolean(L, std::is_signed_v<T>);
+			bool ok = lua_pcall(L, 2, 1, 0) == 0 && lua_type(L, -1) == LUA_TSTRING;
+			size_t size = 0;
+			const char* bytes = ok ? lua_tolstring(L, -1, &size) : nullptr;
+			ok = bytes && size == sizeof(T);
+			if (ok) std::memcpy(out, bytes, sizeof(T));
+			lua_settop(L, top);
+			return ok;
+		}
 	}
-	if (!lua_isnoneornil(L, 5))
-	{
-		v_max = luaL_checknumber(L, 5);
-		p_max = &v_max;
+	if (lua_type(L, index) != LUA_TNUMBER) return false;
+	const double value = lua_tonumber(L, index);
+	if (!std::isfinite(value)) return false;
+	if constexpr (std::is_integral_v<T>) {
+		const double upper = std::ldexp(1.0, std::numeric_limits<T>::digits);
+		if (std::trunc(value) != value || value < (std::is_signed_v<T> ? -upper : 0.0) || value >= upper)
+			return false;
+		if constexpr (sizeof(T) == 8)
+			if (std::abs(value) > max_safe_integer) return false;
+	} else if (std::abs(value) > (std::numeric_limits<T>::max)()) return false;
+	*out = static_cast<T>(value);
+	return true;
+}
+
+template<typename T>
+T check_scalar(lua_State* L, int index)
+{
+	T value{};
+	if (!read_scalar(L, index, &value))
+		luaL_error(L, "invalid scalar argument #%d: expected a finite value within the selected type's range", index);
+	return value;
+}
+
+template<typename T>
+T optional_scalar(lua_State* L, int index, T fallback = T{})
+{
+	return lua_isnoneornil(L, index) ? fallback : check_scalar<T>(L, index);
+}
+
+template<typename T>
+void push_scalar(lua_State* L, T value)
+{
+	if constexpr (std::is_integral_v<T> && sizeof(T) == 8) {
+		bool safe;
+		if constexpr (std::is_signed_v<T>)
+			safe = value >= -static_cast<T>(max_safe_integer) && value <= static_cast<T>(max_safe_integer);
+		else safe = value <= static_cast<T>(max_safe_integer);
+		if (!safe) {
+			static constexpr auto code = R"__(
+local ffi = require('ffi')
+return function(bytes, signed)
+    local value = ffi.new(signed and 'int64_t[1]' or 'uint64_t[1]')
+    ffi.copy(value, bytes, 8)
+    return value[0]
+end
+)__";
+			if (!lua::_try_get_internal_helper(L, "imgui.scalar.push64", code))
+				luaL_error(L, "cannot initialize exact scalar output");
+			lua_pushlstring(L, reinterpret_cast<const char*>(&value), sizeof(T));
+			lua_pushboolean(L, std::is_signed_v<T>);
+			if (lua_pcall(L, 2, 1, 0) != 0) lua_error(L);
+			return;
+		}
 	}
-	lua_pushboolean(L,
-		ImGui::DragScalar(label, ImGuiDataType_Float, &v,
-			v_speed, p_min, p_max,
-			lua_opt_string_null(args, 6, nullptr),
-			lua_opt_int(args, 7, 0)));
-	lua_pushnumber(L, v);
+	lua::native_to_luaval(L, value);
+}
+
+// Raw dense arrays only. The temporary buffer is Lua-owned, so a Lua error during
+// conversion/output cannot bypass a vector destructor and leak its allocation.
+template<typename T>
+T* read_array(lua_State* L, int index, int* count)
+{
+	luaL_checktype(L, index, LUA_TTABLE);
+	const size_t size = lua_objlen(L, index);
+	if (size > static_cast<size_t>((std::numeric_limits<int>::max)()) || size > SIZE_MAX / sizeof(T))
+		luaL_error(L, "scalar array is too large");
+	size_t keys = 0;
+	lua_pushnil(L);
+	while (lua_next(L, index)) {
+		const double key = lua_type(L, -2) == LUA_TNUMBER ? lua_tonumber(L, -2) : 0;
+		if (!(key >= 1 && key <= size && std::trunc(key) == key))
+			luaL_error(L, "expected a dense 1-based scalar array without extra keys");
+		++keys;
+		lua_pop(L, 1);
+	}
+	if (keys != size) luaL_error(L, "scalar array contains holes");
+	*count = static_cast<int>(size);
+	auto* data = static_cast<T*>(lua_newuserdata(L, size * sizeof(T)));
+	for (int i = 0; i < *count; ++i) {
+		lua_rawgeti(L, index, i + 1);
+		if (!read_scalar(L, -1, data + i))
+			luaL_error(L, "invalid scalar array element #%d", i + 1);
+		lua_pop(L, 1);
+	}
+	return data;
+}
+
+template<typename T>
+void check_slider_bounds(lua_State* L, T low, T high)
+{
+	// These are native SliderBehavior limits, including for vertical sliders.
+	const T min = (std::numeric_limits<T>::lowest)();
+	const T max = (std::numeric_limits<T>::max)();
+	if (low > high) luaL_error(L, "slider minimum must not exceed maximum");
+	if constexpr (std::is_floating_point_v<T> || sizeof(T) >= 4)
+		if (low < min / 2 || high > max / 2)
+			luaL_error(L, "slider bounds must stay within half the selected type's range");
+}
+
+template<Widget W, bool Array, typename T, ImGuiDataType Type>
+int scalar_widget(lua_State* L, int value_index, bool alias = false)
+{
+	constexpr bool int_input = W == Widget::Input && Type == ImGuiDataType_S32;
+	const bool short_input = alias && int_input;
+	const int tail = W == Widget::Drag ? 5 : (short_input ? 3 : 4);
+	const int required = (W == Widget::Slider || W == Widget::Vertical) ? value_index + 2 : value_index;
+	if (lua_gettop(L) < required || lua_gettop(L) > value_index + tail)
+		return luaL_error(L, "wrong number of scalar widget arguments");
+	const char* label = luaL_checkstring(L, 1);
+	ImVec2 size;
+	if constexpr (W == Widget::Vertical) {
+		if (!lua::luaval_to_native(L, 2, &size) || !std::isfinite(size.x) || !std::isfinite(size.y))
+			return luaL_error(L, "invalid vertical slider size");
+	}
+	T low{}, high{};
+	const T* p_low = nullptr;
+	const T* p_high = nullptr;
+	float speed = 1.0f;
+	const char* format = nullptr;
+	int flags = 0;
+	if constexpr (W == Widget::Drag) {
+		speed = optional_scalar<float>(L, value_index + 1, 1.0f);
+		if (!lua_isnoneornil(L, value_index + 2)) { low = check_scalar<T>(L, value_index + 2); p_low = &low; }
+		if (!lua_isnoneornil(L, value_index + 3)) { high = check_scalar<T>(L, value_index + 3); p_high = &high; }
+		format = luaL_optstring(L, value_index + 4, nullptr);
+		flags = optional_scalar<int>(L, value_index + 5);
+	} else if constexpr (W == Widget::Input) {
+		low = optional_scalar<T>(L, value_index + 1, short_input ? T(1) : T(0));
+		high = optional_scalar<T>(L, value_index + 2, short_input ? T(100) : T(0));
+		if (low < 0 || high < 0) return luaL_error(L, "input steps must be non-negative");
+		if (low > 0) p_low = &low;
+		if (high > 0) p_high = &high;
+		flags = optional_scalar<int>(L, value_index + (short_input ? 3 : 4));
+		if (short_input)
+			format = (flags & ImGuiInputTextFlags_CharsHexadecimal) ? "%08X" : "%d";
+		else
+			format = luaL_optstring(L, value_index + 3, alias ? (Type == ImGuiDataType_Double ? "%.6f" : "%.3f") : nullptr);
+		constexpr int callbacks = ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory |
+			ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_CallbackCharFilter |
+			ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackEdit;
+		if (flags & callbacks) return luaL_error(L, "scalar input does not accept callback flags");
+	} else {
+		low = check_scalar<T>(L, value_index + 1);
+		high = check_scalar<T>(L, value_index + 2);
+		check_slider_bounds(L, low, high);
+		p_low = &low;
+		p_high = &high;
+		format = luaL_optstring(L, value_index + 3, nullptr);
+		flags = optional_scalar<int>(L, value_index + 4);
+	}
+	T value{};
+	T* data = &value;
+	int count = 1;
+	if constexpr (Array) data = read_array<T>(L, value_index, &count);
+	else value = check_scalar<T>(L, value_index);
+	bool changed = false;
+	if (count != 0) {
+		if constexpr (W == Widget::Drag) {
+			if constexpr (Array) changed = ImGui::DragScalarN(label, Type, data, count, speed, p_low, p_high, format, flags);
+			else changed = ImGui::DragScalar(label, Type, data, speed, p_low, p_high, format, flags);
+		} else if constexpr (W == Widget::Slider) {
+			if constexpr (Array) changed = ImGui::SliderScalarN(label, Type, data, count, p_low, p_high, format, flags);
+			else changed = ImGui::SliderScalar(label, Type, data, p_low, p_high, format, flags);
+		} else if constexpr (W == Widget::Vertical) {
+			changed = ImGui::VSliderScalar(label, size, Type, data, p_low, p_high, format, flags);
+		} else {
+			if constexpr (Array) changed = ImGui::InputScalarN(label, Type, data, count, p_low, p_high, format, flags);
+			else changed = ImGui::InputScalar(label, Type, data, p_low, p_high, format, flags);
+		}
+	}
+	lua_pushboolean(L, changed);
+	if constexpr (Array) {
+		lua_createtable(L, count, 0);
+		for (int i = 0; i < count; ++i) {
+			push_scalar(L, data[i]);
+			lua_rawseti(L, -2, i + 1);
+		}
+	} else push_scalar(L, value);
 	return 2;
 }
+
+template<Widget W, bool Array>
+int dispatch_scalar(lua_State* L)
+{
+	constexpr int type_index = W == Widget::Vertical ? 3 : 2;
+	const int type = check_scalar<int>(L, type_index);
+#define SCALAR_CASE(Name, T) case ImGuiDataType_##Name: return scalar_widget<W, Array, T, ImGuiDataType_##Name>(L, type_index + 1)
+	switch (type) {
+	SCALAR_CASE(S8, ImS8); SCALAR_CASE(U8, ImU8);
+	SCALAR_CASE(S16, ImS16); SCALAR_CASE(U16, ImU16);
+	SCALAR_CASE(S32, ImS32); SCALAR_CASE(U32, ImU32);
+	SCALAR_CASE(S64, ImS64); SCALAR_CASE(U64, ImU64);
+	SCALAR_CASE(Float, float); SCALAR_CASE(Double, double);
+	default: return luaL_error(L, "unsupported ImGuiDataType");
+	}
+#undef SCALAR_CASE
+}
+
+template<Widget W, bool Array, typename T, ImGuiDataType Type>
+int scalar_alias(lua_State* L)
+{
+	return scalar_widget<W, Array, T, Type>(L, W == Widget::Vertical ? 3 : 2, true);
+}
+
+#define GENERIC(Name, W, N) { #Name, dispatch_scalar<Widget::W, N> }
+#define ALIAS(Name, W, N, T, Type) { #Name, scalar_alias<Widget::W, N, T, ImGuiDataType_##Type> }
+const luaL_Reg methods[] = {
+	GENERIC(dragScalar, Drag, false), GENERIC(dragScalarN, Drag, true),
+	GENERIC(sliderScalar, Slider, false), GENERIC(sliderScalarN, Slider, true),
+	GENERIC(vSliderScalar, Vertical, false),
+	GENERIC(inputScalar, Input, false), GENERIC(inputScalarN, Input, true),
+	ALIAS(dragFloat, Drag, false, float, Float), ALIAS(dragFloatN, Drag, true, float, Float),
+	ALIAS(dragInt, Drag, false, ImS32, S32), ALIAS(dragIntN, Drag, true, ImS32, S32),
+	ALIAS(sliderFloat, Slider, false, float, Float), ALIAS(sliderFloatN, Slider, true, float, Float),
+	ALIAS(sliderInt, Slider, false, ImS32, S32), ALIAS(sliderIntN, Slider, true, ImS32, S32),
+	ALIAS(vSliderFloat, Vertical, false, float, Float), ALIAS(vSliderInt, Vertical, false, ImS32, S32),
+	ALIAS(inputFloat, Input, false, float, Float), ALIAS(inputFloatN, Input, true, float, Float),
+	ALIAS(inputDouble, Input, false, double, Double), ALIAS(inputDoubleN, Input, true, double, Double),
+	ALIAS(inputInt, Input, false, ImS32, S32), ALIAS(inputIntN, Input, true, ImS32, S32),
+	{ nullptr, nullptr }
+};
+#undef ALIAS
+#undef GENERIC
+} // namespace
+
+static void luaReg_imguiScalarManual(lua_State* L)
+{
+	luaL_register(L, "imgui", methods);
+	lua_pop(L, 1);
+}
+
+// Widgets: Drags
+
 static int imgui_dragFloatRange2(lua_State *L) {
 	const char* label = luaL_checkstring(L, 1);
 	float current_min = luaL_checknumber(L, 2);
 	float current_max = luaL_checknumber(L, 3);
 	lua_pushboolean(L,
 		ImGui::DragFloatRange2(label, &current_min, &current_max,
-			luaL_optnumber(L, 4, 1.0f),
-			luaL_optnumber(L, 5, 0.0f),
-			luaL_optnumber(L, 6, 0.0f),
+			luaL_optnumber(L, 4, 1.0),
+			luaL_optnumber(L, 5, 0.0),
+			luaL_optnumber(L, 6, 0.0),
 			luaL_optstring(L, 7, "%.3f"),
 			luaL_optstring(L, 8, nullptr),
 			luaL_optint(L, 9, 0)));
@@ -595,66 +838,13 @@ static int imgui_dragFloatRange2(lua_State *L) {
 	lua_pushnumber(L, current_max);
 	return 3;
 }
-static int imgui_dragFloatN(lua_State *L) {
-	const int args = lua_gettop(L);
-	auto label = luaL_checkstring(L, 1);
-	std::vector<float> arr;
-	luaval_to_std_vector_float(L, 2, &arr);
-	const float v_speed = lua_opt_number(args, 3, 1.0f);
-	float v_min, v_max;
-	float* p_min = nullptr;
-	float* p_max = nullptr;
-	if (!lua_isnoneornil(L, 4))
-	{
-		v_min = luaL_checknumber(L, 4);
-		p_min = &v_min;
-	}
-	if (!lua_isnoneornil(L, 5))
-	{
-		v_max = luaL_checknumber(L, 5);
-		p_max = &v_max;
-	}
-	lua_pushboolean(L,
-		ImGui::DragScalarN(label, ImGuiDataType_Float, arr.data(), arr.size(),
-			v_speed, p_min, p_max,
-			lua_opt_string_null(args, 6, nullptr),
-			lua_opt_int(args, 7, 0)));
-	ccvector_float_to_luaval(L, arr);
-	return 2;
-}
-static int imgui_dragInt(lua_State *L) {
-	const int args = lua_gettop(L);
-	auto label = luaL_checkstring(L, 1);
-	int32_t v = luaL_checkinteger(L, 2);
-	const float v_speed = lua_opt_number(args, 3, 1.0f);
-	int32_t v_min, v_max;
-	int32_t* p_min = nullptr;
-	int32_t* p_max = nullptr;
-	if (!lua_isnoneornil(L, 4))
-	{
-		v_min = luaL_checkinteger(L, 4);
-		p_min = &v_min;
-	}
-	if (!lua_isnoneornil(L, 5))
-	{
-		v_max = luaL_checkinteger(L, 5);
-		p_max = &v_max;
-	}
-	lua_pushboolean(L,
-		ImGui::DragScalar(label, ImGuiDataType_S32, &v,
-			v_speed, p_min, p_max,
-			lua_opt_string_null(args, 6, nullptr),
-			lua_opt_int(args, 7, 0)));
-	lua_pushnumber(L, v);
-	return 2;
-}
 static int imgui_dragIntRange2(lua_State *L) {
 	const char* label = luaL_checkstring(L, 1);
 	int current_min = luaL_checkint(L, 2);
 	int current_max = luaL_checkint(L, 3);
 	lua_pushboolean(L,
 		ImGui::DragIntRange2(label, &current_min, &current_max,
-			luaL_optnumber(L, 4, 1.0f),
+			(float)luaL_optnumber(L, 4, 1.0),
 			luaL_optint(L, 5, 0),
 			luaL_optint(L, 6, 0),
 			luaL_optstring(L, 7, "%d"),
@@ -664,129 +854,19 @@ static int imgui_dragIntRange2(lua_State *L) {
 	lua_pushinteger(L, current_max);
 	return 3;
 }
-static int imgui_dragIntN(lua_State *L) {
-	const int args = lua_gettop(L);
-	auto label = luaL_checkstring(L, 1);
-	std::vector<int> arr;
-	luaval_to_std_vector_int(L, 2, &arr);
-	const float v_speed = lua_opt_number(args, 3, 1.0f);
-	int32_t v_min, v_max;
-	int32_t* p_min = nullptr;
-	int32_t* p_max = nullptr;
-	if (!lua_isnoneornil(L, 4))
-	{
-		v_min = luaL_checkinteger(L, 4);
-		p_min = &v_min;
-	}
-	if (!lua_isnoneornil(L, 5))
-	{
-		v_max = luaL_checkinteger(L, 5);
-		p_max = &v_max;
-	}
-	lua_pushboolean(L,
-		ImGui::DragScalarN(label, ImGuiDataType_S32, arr.data(), arr.size(),
-			v_speed, p_min, p_max,
-			lua_opt_string_null(args, 6, nullptr),
-			lua_opt_int(args, 7, 0)));
-	ccvector_int_to_luaval(L, arr);
-	return 2;
-}
 
 // Widgets: Sliders
 
-static int imgui_sliderFloat(lua_State *L) {
-	const int args = lua_gettop(L);
-    float f = luaL_checknumber(L, 2);
-	lua_pushboolean(L,
-		ImGui::SliderFloat(luaL_checkstring(L, 1),
-			&f,
-			luaL_checknumber(L, 3),
-			luaL_checknumber(L, 4),
-			lua_opt_string(args, 5, "%.3f"),
-			lua_opt_int(args, 6, 0)));
-    lua_pushnumber(L, f);
-    return 2;
-}
-static int imgui_sliderFloatN(lua_State *L) {
-	const int args = lua_gettop(L);
-	std::vector<float> arr;
-	luaval_to_std_vector_float(L, 2, &arr);
-    float v_min = luaL_checknumber(L, 3);
-    float v_max = luaL_checknumber(L, 4);
-    lua_pushboolean(L,
-		ImGui::SliderScalarN(luaL_checkstring(L, 1),
-			ImGuiDataType_Float, arr.data(), arr.size(),
-			&v_min, &v_max,
-			lua_opt_string_null(args, 5, nullptr),
-			lua_opt_int(args, 6, 0)));
-	ccvector_float_to_luaval(L, arr);
-	return 2;
-}
 static int imgui_sliderAngle(lua_State *L) {
 	const int args = lua_gettop(L);
-    float v_rad = luaL_checknumber(L, 2);
+    float v_rad = (float)luaL_checknumber(L, 2);
 	lua_pushboolean(L,
 		ImGui::SliderAngle(luaL_checkstring(L, 1),
 			&v_rad,
 			lua_opt_number(args, 3, -360.0f),
 			lua_opt_number(args, 4, 360.0f),
 			lua_opt_string(args, 5, "%.0f deg")));
-    lua_pushnumber(L, v_rad);
-    return 2;
-}
-static int imgui_sliderInt(lua_State *L) {
-	const int args = lua_gettop(L);
-	int v = luaL_checkinteger(L, 2);
-	lua_pushboolean(L,
-		ImGui::SliderInt(luaL_checkstring(L, 1),
-			&v,
-			luaL_checkinteger(L, 3),
-			luaL_checkinteger(L, 4),
-			lua_opt_string(args, 5, "%d")));
-    lua_pushinteger(L, v);
-    return 2;
-}
-static int imgui_sliderIntN(lua_State *L) {
-	const int args = lua_gettop(L);
-	std::vector<int> arr;
-	luaval_to_std_vector_int(L, 2, &arr);
-    int v_min = luaL_checkinteger(L, 3);
-    int v_max = luaL_checkinteger(L, 4);
-	lua_pushboolean(L,
-		ImGui::SliderScalarN(luaL_checkstring(L, 1),
-			ImGuiDataType_S32, arr.data(), arr.size(),
-			&v_min, &v_max,
-			lua_opt_string_null(args, 5, nullptr)));
-	ccvector_int_to_luaval(L, arr);
-	return 2;
-}
-static int imgui_vSliderFloat(lua_State *L) {
-	const int args = lua_gettop(L);
-    float v = luaL_checknumber(L, 3);
-	lua_pushboolean(L,
-		ImGui::VSliderFloat(
-			luaL_checkstring(L, 1),
-			_luaval_to_imvec2(L, 2),
-			&v,
-			luaL_checknumber(L, 4),
-			luaL_checknumber(L, 5),
-			lua_opt_string(args, 6, "%.3f"),
-			lua_opt_number(args, 7, 1.0f)));
-    lua_pushnumber(L, v);
-    return 2;
-}
-static int imgui_vSliderInt(lua_State *L) {
-	const int args = lua_gettop(L);
-    int v = luaL_checkinteger(L, 3);
-	lua_pushboolean(L,
-		ImGui::VSliderInt(
-			luaL_checkstring(L, 1),
-			_luaval_to_imvec2(L, 2),
-			&v,
-			luaL_checkinteger(L, 4),
-			luaL_checkinteger(L, 5),
-			lua_opt_string(args, 6, "%d")));
-    lua_pushinteger(L, v);
+    lua_pushnumber(L, (lua_Number)v_rad);
     return 2;
 }
 
@@ -824,77 +904,6 @@ static int imgui_inputTextWithHint(lua_State *L) {
 			lua_opt_int(args, 3, 0)));
 	lua_pushlstring(L, buf.c_str(), buf.size());
 	return 2;
-}
-static int imgui_inputFloat(lua_State *L) {
-	const int args = lua_gettop(L);
-	auto label = luaL_checkstring(L, 1);
-    float v = luaL_checknumber(L, 2);
-    lua_pushboolean(L,
-		ImGui::InputFloat(label, &v,
-			lua_opt_number(args, 3, 0.f),
-			lua_opt_number(args, 4, 0.f),
-			lua_opt_string(args, 5, "%.3f"),
-			lua_opt_int(args, 6, 0)));
-    lua_pushnumber(L, v);
-    return 2;
-}
-static int imgui_inputDouble(lua_State *L) {
-	const int args = lua_gettop(L);
-	const char* label = luaL_checkstring(L, 1);
-	double v = luaL_checknumber(L, 2);
-	lua_pushboolean(L,
-		ImGui::InputDouble(label, &v,
-			lua_opt_number(args, 3, 0.0),
-			lua_opt_number(args, 4, 0.0),
-			lua_opt_string(args, 5, "%.6f"),
-			lua_opt_int(args, 6, 0)));
-	lua_pushnumber(L, v);
-	return 2;
-}
-static int imgui_inputFloatN(lua_State *L) {
-	const int args = lua_gettop(L);
-	const char* label = luaL_checkstring(L, 1);
-	std::vector<float> arr;
-	luaval_to_std_vector_float(L, 2, &arr);
-	float step = lua_opt_number(args, 3, 0.f);
-	float step_fast = lua_opt_number(args, 4, 0.f);
-    lua_pushboolean(L,
-		ImGui::InputScalarN(label,
-			ImGuiDataType_Float, arr.data(), arr.size(),
-			step > 0.0f ? &step : nullptr,
-			step_fast > 0.0f ? &step_fast : nullptr,
-			lua_opt_string(args, 5, "%.3f"),
-			lua_opt_int(args, 6, 0)));
-	ccvector_float_to_luaval(L, arr);
-    return 2;
-}
-static int imgui_inputInt(lua_State *L) {
-	const int args = lua_gettop(L);
-	const char* label = luaL_checkstring(L, 1);
-    int v = luaL_checkinteger(L, 2);
-    lua_pushboolean(L,
-		ImGui::InputInt(label, &v,
-			lua_opt_int(args, 3, 1),
-			lua_opt_int(args, 4, 100),
-			lua_opt_int(args, 5, 0)));
-    lua_pushinteger(L, v);
-    return 2;
-}
-static int imgui_inputIntN(lua_State *L) {
-	const int args = lua_gettop(L);
-	std::vector<int> arr;
-	luaval_to_std_vector_int(L, 2, &arr);
-	int step = lua_opt_int(args, 3, 1);
-	int step_fast = lua_opt_int(args, 4, 100);
-    lua_pushboolean(L,
-		ImGui::InputScalarN(luaL_checkstring(L, 1),
-			ImGuiDataType_S32, arr.data(), arr.size(),
-			step > 0 ? &step : nullptr,
-			step_fast > 0 ? &step_fast : nullptr,
-			"%d",
-			lua_opt_int(args, 5, 0)));
-	ccvector_int_to_luaval(L, arr);
-    return 2;
 }
 
 // Widgets: Color Editor/Picker
@@ -1047,7 +1056,7 @@ static int imgui_beginPopupModal(lua_State *L) {
 				luaL_checkstring(L, 1)));
 		return 1;
 	}
-	bool open;
+	bool open = false;
 	bool* p = nullptr;
 	if (!lua_isnil(L, 2))
 	{
@@ -1243,10 +1252,7 @@ struct LuaImGuiSelectionBasicStorage
 	LuaImGuiSelectionBasicStorage& operator=(const LuaImGuiSelectionBasicStorage&) = delete;
 };
 
-namespace lua
-{
-	template<> struct value_type<LuaImGuiSelectionBasicStorage> : std::true_type {};
-}
+template<> struct lua::value_type<LuaImGuiSelectionBasicStorage> : std::true_type {};
 
 static LuaImGuiSelectionBasicStorage* selection_check(lua_State* L, int argc)
 {
@@ -1645,9 +1651,9 @@ static int imgui_calcListClipping(lua_State *L) {
 static int imgui_colorConvertRGBtoHSV(lua_State* L) {
 	float h = 0, s = 0, v = 0;
 	ImGui::ColorConvertRGBtoHSV(
-		luaL_checknumber(L, 1),
-		luaL_checknumber(L, 2),
-		luaL_checknumber(L, 3),
+		(float)luaL_checknumber(L, 1),
+		(float)luaL_checknumber(L, 2),
+		(float)luaL_checknumber(L, 3),
 		h, s, v);
 	lua_pushinteger(L, h);
 	lua_pushinteger(L, s);
@@ -1658,9 +1664,9 @@ static int imgui_colorConvertRGBtoHSV(lua_State* L) {
 static int imgui_colorConvertHSVtoRGB(lua_State* L) {
 	float r = 0, g = 0, b = 0;
 	ImGui::ColorConvertHSVtoRGB(
-		luaL_checknumber(L, 1),
-		luaL_checknumber(L, 2),
-		luaL_checknumber(L, 3),
+		(float)luaL_checknumber(L, 1),
+		(float)luaL_checknumber(L, 2),
+		(float)luaL_checknumber(L, 3),
 		r, g, b);
 	lua_pushinteger(L, r);
 	lua_pushinteger(L, g);
@@ -1779,7 +1785,7 @@ static const ImWchar* luaval_to_GlyphRanges(lua_State* L, int lo)
 	{
 		const auto preset = lua_tonumber(L, lo);
 		if (lua_type(L, lo) != LUA_TNUMBER || !std::isfinite(preset) ||
-			std::trunc(preset) != preset || preset < GlyphRangesDefault || preset > GlyphRangesVietnamese)
+			std::trunc(preset) != preset || (int)preset < GlyphRangesDefault || (int)preset > GlyphRangesVietnamese)
 			luaL_error(L, "invalid glyph range preset");
 		switch (static_cast<GlyphRanges>(static_cast<int>(preset))) {
 		case GlyphRangesDefault: ranges = io.Fonts->GetGlyphRangesDefault(); break;
@@ -1829,7 +1835,8 @@ static int imgui_addFontTTF(lua_State *L) {
 		return luaL_error(L, "failed to allocate font data");
 	std::memcpy(fontData, data.getBytes(), data.getSize());
 	object_to_luaval(L, "imgui.ImFont",
-		io.Fonts->AddFontFromMemoryTTF(fontData, static_cast<int>(data.getSize()), size_pixels, &cfg, ranges));
+		io.Fonts->AddFontFromMemoryTTF(
+			fontData, static_cast<int>(data.getSize()), (float)size_pixels, &cfg, ranges));
 	return 1;
 }
 
@@ -2102,15 +2109,13 @@ static const luaL_Reg imgui_methods[] = {
 	M(checkboxFlags), M(radioButton), M(combo),
 
     // Widgets: Drags
-    M(dragFloat),M(dragFloatN),M(dragFloatRange2),M(dragInt),M(dragIntN),M(dragIntRange2),
+    M(dragFloatRange2),M(dragIntRange2),
 
     // Widgets: Sliders
-    M(sliderFloat),M(sliderFloatN),M(sliderAngle),M(sliderInt),
-    M(sliderIntN),M(vSliderFloat),M(vSliderInt),
+    M(sliderAngle),
 
     // Widgets: Input with Keyboard
-    M(inputText),M(inputTextMultiline),M(inputTextWithHint),M(inputFloat),
-    M(inputFloatN),M(inputDouble),M(inputInt),M(inputIntN),
+    M(inputText),M(inputTextMultiline),M(inputTextWithHint),
 
 	// Widgets: Color Editor/Picker
 	M(colorEdit3),M(colorEdit4),M(colorPicker3),M(colorPicker4),
@@ -2195,14 +2200,11 @@ static int drawlist_addCCNode(lua_State *L)
 {
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
-	ImTextureID tid;
-	ImVec2 pmin, pmax;
-	int id;
 	cocos2d::Node* node = nullptr;
 	if (luaval_to_object(L, 2, "cc.Node", &node))
 	{
 		if (!node) return 0;
-		std::tie(tid, pmin, pmax, id) = CCIMGUI::getInstance()->useNode(node, _luaval_to_imvec2(L, 3));
+		auto [tid, pmin, pmax, id] = CCIMGUI::getInstance()->useNode(node, _luaval_to_imvec2(L, 3));
 		if (!tid) return 0;
 		cobj->AddImage(
 			tid,
@@ -2238,7 +2240,7 @@ static int drawlist_addText(lua_State *L)
 		}
 		cobj->AddText(
 			font,
-			luaL_checknumber(L, 3),
+			(float)luaL_checknumber(L, 3),
 			_luaval_to_imvec2(L, 4),
 			luaL_checknumber(L, 5),
 			s.c_str(), s.c_str() + s.size(),
@@ -2252,13 +2254,11 @@ static int drawlist_addImage(lua_State *L)
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
 	const int args = lua_gettop(L);
-	ImTextureID tid;
-	int id;
 	cocos2d::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, 2, "cc.Texture2D", &tex))
 	{
 		if (!tex) return 0;
-		std::tie(tid, id) = CCIMGUI::getInstance()->useTexture(tex);
+		auto [tid, id] = CCIMGUI::getInstance()->useTexture(tex);
 		if (!tid) return 0;
 		cobj->AddImage(
 			tid,
@@ -2273,8 +2273,7 @@ static int drawlist_addImage(lua_State *L)
 	if (luaval_to_object(L, 2, "cc.Sprite", &sp))
 	{
 		if (!sp) return 0;
-		ImVec2 uv_min, uv_max;
-		std::tie(tid, uv_min, uv_max, id) = CCIMGUI::getInstance()->useSprite(sp);
+		auto [tid, uv_min, uv_max, id] = CCIMGUI::getInstance()->useSprite(sp);
 		if (!tid) return 0;
 		cobj->AddImage(
 			tid,
@@ -2292,14 +2291,11 @@ static int drawlist_addImageQuad(lua_State *L)
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
 	const int args = lua_gettop(L);
-	ImVec2 uva, uvc;
-	ImTextureID tid;
-	int id;
 	cocos2d::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, 2, "cc.Texture2D", &tex))
 	{
 		if (!tex) return 0;
-		std::tie(tid, id) = CCIMGUI::getInstance()->useTexture(tex);
+		auto [tid, id] = CCIMGUI::getInstance()->useTexture(tex);
 		if (!tid) return 0;
 		cobj->AddImageQuad(
 			tid,
@@ -2318,7 +2314,7 @@ static int drawlist_addImageQuad(lua_State *L)
 	if (luaval_to_object(L, 2, "cc.Sprite", &sp))
 	{
 		if (!sp) return 0;
-		std::tie(tid, uva, uvc, id) = CCIMGUI::getInstance()->useSprite(sp);
+		auto [tid, uva, uvc, id] = CCIMGUI::getInstance()->useSprite(sp);
 		if (!tid) return 0;
 		cobj->AddImageQuad(
 			tid,
@@ -2340,14 +2336,11 @@ static int drawlist_addImageRounded(lua_State *L)
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
 	const int args = lua_gettop(L);
-	ImVec2 uva, uvb;
-	ImTextureID tid;
-	int id;
 	cocos2d::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, 2, "cc.Texture2D", &tex))
 	{
 		if (!tex) return 0;
-		std::tie(tid, id) = CCIMGUI::getInstance()->useTexture(tex);
+		auto [tid, id] = CCIMGUI::getInstance()->useTexture(tex);
 		if (!tid) return 0;
 		cobj->AddImageRounded(
 			tid,
@@ -2356,7 +2349,7 @@ static int drawlist_addImageRounded(lua_State *L)
 			_luaval_to_imvec2(L, 5),
 			_luaval_to_imvec2(L, 6),
 			lua_tou32(L, 7),
-			luaL_checknumber(L, 8),
+			(float)luaL_checknumber(L, 8),
 			lua_opt_int(args, 9, 0));
 		return 0;
 	}
@@ -2364,16 +2357,16 @@ static int drawlist_addImageRounded(lua_State *L)
 	if (luaval_to_object(L, 2, "cc.Sprite", &sp))
 	{
 		if (!sp) return 0;
-		std::tie(tid, uva, uvb, id) = CCIMGUI::getInstance()->useSprite(sp);
+		auto [tid, uv_min, uv_max, id] = CCIMGUI::getInstance()->useSprite(sp);
 		if (!tid) return 0;
 		cobj->AddImageRounded(
 			tid,
 			_luaval_to_imvec2(L, 3),
 			_luaval_to_imvec2(L, 4),
-			uva,
-			uvb,
+			uv_min,
+			uv_max,
 			lua_tou32(L, 5),
-			luaL_checknumber(L, 6),
+			(float)luaL_checknumber(L, 6),
 			lua_opt_int(args, 7, 0));
 		return 0;
 	}
@@ -2565,6 +2558,7 @@ int luaopen_imgui(lua_State *L)
 	lua_pop(L, 1);
 
 	luaReg_imgui(L);
+	luaReg_imguiScalarManual(L);
 	luaReg_imguiStyle(L);
 	luaReg_imguiIO(L);
 	luaReg_imguiFont(L);
