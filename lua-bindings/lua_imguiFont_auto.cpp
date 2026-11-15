@@ -840,24 +840,6 @@ int lua_ImFontAtlas_addFontDefaultVector(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(0, [](ImFontAtlas* obj){{return obj->AddFontDefaultVector();}});
 	LUA_INVOKE_FOOTER("0,1");
 }
-int lua_ImFontAtlas_addFontFromFileTTF(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("imgui.ImFontAtlas", "imgui.ImFontAtlas:addFontFromFileTTF");
-	LUA_TRY_INVOKE_R(4, &ImFontAtlas::AddFontFromFileTTF);
-	LUA_TRY_INVOKE_R(3, ([](ImFontAtlas* obj,const char* arg0,float arg1,const ImFontConfig* arg2){{return obj->AddFontFromFileTTF(arg0,std::move(arg1),arg2);}}));
-	LUA_TRY_INVOKE_R(2, ([](ImFontAtlas* obj,const char* arg0,float arg1){{return obj->AddFontFromFileTTF(arg0,std::move(arg1));}}));
-	LUA_TRY_INVOKE_R(1, ([](ImFontAtlas* obj,const char* arg0){{return obj->AddFontFromFileTTF(arg0);}}));
-	LUA_INVOKE_FOOTER("1,2,3,4");
-}
-int lua_ImFontAtlas_addFontFromMemoryCompressedBase85TTF(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("imgui.ImFontAtlas", "imgui.ImFontAtlas:addFontFromMemoryCompressedBase85TTF");
-	LUA_TRY_INVOKE_R(4, &ImFontAtlas::AddFontFromMemoryCompressedBase85TTF);
-	LUA_TRY_INVOKE_R(3, ([](ImFontAtlas* obj,const char* arg0,float arg1,const ImFontConfig* arg2){{return obj->AddFontFromMemoryCompressedBase85TTF(arg0,std::move(arg1),arg2);}}));
-	LUA_TRY_INVOKE_R(2, ([](ImFontAtlas* obj,const char* arg0,float arg1){{return obj->AddFontFromMemoryCompressedBase85TTF(arg0,std::move(arg1));}}));
-	LUA_TRY_INVOKE_R(1, ([](ImFontAtlas* obj,const char* arg0){{return obj->AddFontFromMemoryCompressedBase85TTF(arg0);}}));
-	LUA_INVOKE_FOOTER("1,2,3,4");
-}
 int lua_ImFontAtlas_clear(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ImFontAtlas", "imgui.ImFontAtlas:clear");
@@ -935,8 +917,6 @@ int luaReg_imguiFont_imguiImFontAtlas(lua_State* lua_S)
 	LUA_METHOD("addFontDefault", lua_ImFontAtlas_addFontDefault);
 	LUA_METHOD("addFontDefaultBitmap", lua_ImFontAtlas_addFontDefaultBitmap);
 	LUA_METHOD("addFontDefaultVector", lua_ImFontAtlas_addFontDefaultVector);
-	LUA_METHOD("addFontFromFileTTF", lua_ImFontAtlas_addFontFromFileTTF);
-	LUA_METHOD("addFontFromMemoryCompressedBase85TTF", lua_ImFontAtlas_addFontFromMemoryCompressedBase85TTF);
 	LUA_METHOD("clear", lua_ImFontAtlas_clear);
 	LUA_METHOD("clearFonts", lua_ImFontAtlas_clearFonts);
 	LUA_METHOD("clearInputData", lua_ImFontAtlas_clearInputData);

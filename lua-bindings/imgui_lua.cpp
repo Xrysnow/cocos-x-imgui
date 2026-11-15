@@ -171,6 +171,14 @@ static int imgui_setFontConfigName(lua_State* lua_S, int lo, ImFontConfig& confi
 	return 0;
 }
 
+static ImFont* imgui_checkFont(lua_State* lua_S, int index)
+{
+	luaL_checkudata(lua_S, index, "imgui.ImFont");
+	auto* font = LUA_TO_COBJ(ImFont*, index);
+	if (!font) luaL_error(lua_S, "invalid imgui.ImFont");
+	return font;
+}
+
 ImFontConfig lua_toImFontConfig(lua_State* L, int lo)
 {
 #define get_field(_K, _F)\
@@ -180,8 +188,14 @@ ImFontConfig lua_toImFontConfig(lua_State* L, int lo)
 	lua_pop(L, 1);
 
 	ImFontConfig ret;
-	if (lua_istable(L, lo))
+	if (!lua_isnoneornil(L, lo))
 	{
+		// Read the same allowed fields from a configuration table or typed userdata.
+		// Do not copy native source/loader pointers out of ImFontConfig.
+		if (lua_type(L, lo) == LUA_TUSERDATA)
+			luaL_checkudata(L, lo, "imgui.ImFontConfig");
+		else
+			luaL_checktype(L, lo, LUA_TTABLE);
 		lua_getfield(L, lo, "Name");
 		if (!lua_isnil(L, -1))
 			imgui_setFontConfigName(L, -1, ret);
@@ -190,6 +204,10 @@ ImFontConfig lua_toImFontConfig(lua_State* L, int lo)
 		get_field(FontDataOwnedByAtlas, lua_toboolean);
 		get_field(FontNo, luaL_checkinteger);
 		get_field(MergeMode, lua_toboolean);
+		lua_getfield(L, lo, "DstFont");
+		if (!lua_isnil(L, -1))
+			ret.DstFont = imgui_checkFont(L, -1);
+		lua_pop(L, 1);
 		get_field(PixelSnapH, lua_toboolean);
 		get_field(OversampleH, luaL_checkinteger);
 		get_field(OversampleV, luaL_checkinteger);
@@ -1803,30 +1821,58 @@ static const ImWchar* luaval_to_GlyphRanges(lua_State* L, int lo)
 }
 static int imgui_addFontTTF(lua_State *L) {
 	const auto args = lua_gettop(L);
-	std::string path;
-	if (!luaval_to_std_string(L, 1, &path))
-		return 0;
-	const auto size_pixels = luaL_checknumber(L, 2);
-	auto data = cocos2d::FileUtils::getInstance()->getDataFromFile(path);
-	if (data.getSize() == 0)
-		return 0;
+	if (args < 2 || args > 4)
+		return luaL_error(L, "addFontTTF expects path, size, optional config and ranges");
+	if (!ImGui::GetCurrentContext())
+		return luaL_error(L, "addFontTTF requires an ImGui context");
+	const float size_pixels = check_scalar<float>(L, 2);
+	if (size_pixels < 0)
+		return luaL_error(L, "font size must be non-negative");
 	ImFontConfig cfg;
 	if (args >= 3)
 		cfg = lua_toImFontConfig(L, 3);
-	cfg.FontDataOwnedByAtlas = true;
-	if (cfg.Name[0] == 0)
+	if (!std::isfinite(cfg.SizePixels) || cfg.SizePixels < 0 ||
+		!std::isfinite(cfg.RasterizerDensity) || cfg.RasterizerDensity <= 0)
+		return luaL_error(L, "invalid font reference size or rasterizer density");
+	const float reference_size = size_pixels > 0 ? size_pixels : cfg.SizePixels;
+	if (reference_size == 0 && (cfg.GlyphOffset.x != 0 || cfg.GlyphOffset.y != 0 ||
+		cfg.GlyphMinAdvanceX != 0 || cfg.GlyphMaxAdvanceX != (std::numeric_limits<float>::max)()))
+		return luaL_error(L, "glyph offsets and advance limits require an explicit font size");
+	auto* atlas = ImGui::GetIO().Fonts;
+	if (!atlas || atlas->Locked)
+		return luaL_error(L, "addFontTTF requires an unlocked font atlas");
+	if (cfg.DstFont && !cfg.MergeMode)
+		return luaL_error(L, "DstFont requires MergeMode = true");
+	if (cfg.MergeMode)
 	{
-		auto name = path + ", " + std::to_string((int)size_pixels);
-		const auto count = (std::min)(name.size(), sizeof(cfg.Name) - 1);
-		imgui_copyFontConfigName(cfg, name.data() + name.size() - count, count);
+		if (atlas->Fonts.empty())
+			return luaL_error(L, "MergeMode requires an existing font");
+		if (!cfg.DstFont)
+			cfg.DstFont = atlas->Fonts.back();
+		// Compare against live atlas entries before dereferencing a borrowed font.
+		if (!atlas->Fonts.contains(cfg.DstFont))
+			return luaL_error(L, "DstFont must belong to the current font atlas");
+		if (reference_size > 0 && (cfg.DstFont->Flags & ImFontFlags_ImplicitRefSize))
+			return luaL_error(L, "an implicit-size destination requires an implicit-size merge source");
 	}
-
-	auto& io = ImGui::GetIO();
-	auto ranges = io.Fonts->GetGlyphRangesChineseFull();
+	cfg.FontDataOwnedByAtlas = true;
+	auto ranges = atlas->GetGlyphRangesChineseFull();
 	if (args >= 4)
 	{
 		ranges = luaval_to_GlyphRanges(L, 4);
 	}
+	std::string path;
+	if (!luaval_to_std_string(L, 1, &path))
+		return 0;
+	if (cfg.Name[0] == 0)
+	{
+		auto name = path + ", " + std::to_string(reference_size);
+		const auto count = (std::min)(name.size(), sizeof(cfg.Name) - 1);
+		imgui_copyFontConfigName(cfg, name.data() + name.size() - count, count);
+	}
+	auto data = cocos2d::FileUtils::getInstance()->getDataFromFile(path);
+	if (data.getSize() == 0)
+		return 0;
 	if (data.getSize() <= 100 || data.getSize() > (std::numeric_limits<int>::max)())
 		return luaL_error(L, "invalid font data size");
 	// Modern ImGui retains font bytes for later glyph loads; cocos Data is local.
@@ -1835,8 +1881,8 @@ static int imgui_addFontTTF(lua_State *L) {
 		return luaL_error(L, "failed to allocate font data");
 	std::memcpy(fontData, data.getBytes(), data.getSize());
 	object_to_luaval(L, "imgui.ImFont",
-		io.Fonts->AddFontFromMemoryTTF(
-			fontData, static_cast<int>(data.getSize()), (float)size_pixels, &cfg, ranges));
+		atlas->AddFontFromMemoryTTF(
+			fontData, static_cast<int>(data.getSize()), size_pixels, &cfg, ranges));
 	return 1;
 }
 
@@ -2104,14 +2150,6 @@ static LuaTextRange imgui_checkTextRange(lua_State* L, int index)
 	return { text, text + length };
 }
 
-static ImFont* imgui_checkTextFont(lua_State* lua_S)
-{
-	luaL_checkudata(lua_S, 1, "imgui.ImFont");
-	auto* font = LUA_TO_COBJ(ImFont*, 1);
-	if (!font) luaL_error(lua_S, "invalid imgui.ImFont");
-	return font;
-}
-
 static float imgui_checkTextSize(lua_State* L, int index)
 {
 	const float size = check_scalar<float>(L, index);
@@ -2136,7 +2174,7 @@ static int font_calcTextSizeA(lua_State* lua_S)
 {
 	if (lua_gettop(lua_S) != 5)
 		return luaL_error(lua_S, "calcTextSizeA expects size, max_width, wrap_width and text");
-	auto* font = imgui_checkTextFont(lua_S);
+	auto* font = imgui_checkFont(lua_S, 1);
 	const float size = imgui_checkTextSize(lua_S, 2);
 	const float max_width = check_scalar<float>(lua_S, 3);
 	const float wrap = check_scalar<float>(lua_S, 4);
@@ -2152,7 +2190,7 @@ static int font_calcWordWrapPosition(lua_State* lua_S)
 {
 	if (lua_gettop(lua_S) != 4)
 		return luaL_error(lua_S, "calcWordWrapPosition expects size, text and wrap_width");
-	auto* font = imgui_checkTextFont(lua_S);
+	auto* font = imgui_checkFont(lua_S, 1);
 	const float size = imgui_checkTextSize(lua_S, 2);
 	const auto text = imgui_checkTextRange(lua_S, 3);
 	const float wrap = check_scalar<float>(lua_S, 4);
@@ -2166,7 +2204,7 @@ static int font_renderText(lua_State* lua_S)
 	if (lua_gettop(lua_S) < 7 || lua_gettop(lua_S) > 9)
 		return luaL_error(lua_S, "renderText expects draw_list, size, pos, col, clip_rect, text, optional wrap_width and flags");
 	LUA_CUR_FNAME("imgui.ImFont:renderText");
-	auto* font = imgui_checkTextFont(lua_S);
+	auto* font = imgui_checkFont(lua_S, 1);
 	luaL_checkudata(lua_S, 2, "imgui.ImDrawList");
 	auto* draw_list = LUA_TO_COBJ(ImDrawList*, 2);
 	if (!draw_list) return luaL_error(lua_S, "invalid imgui.ImDrawList");
@@ -2592,36 +2630,10 @@ static int luaReg_imguiFontAtlasManual(lua_State* lua_S)
 	return 0;
 }
 
-static int font_mergeGlyphs(lua_State* L)
-{
-	auto cobj = (ImFont*)tolua_tousertype(L, 1, nullptr);
-	if (!cobj)
-		return 0;
-	bool ok = true;
-	auto argc = lua_gettop(L) - 1;
-	if (argc == 3)
-	{
-		ImFont* arg0;
-		ok &= luaval_to_object(L, 2, "imgui.ImFont", &arg0, "imgui.ImFont:mergeGlyphs");
-		if (!ok || !arg0)
-		{
-			tolua_error(L, "invalid arguments in function 'imgui.ImFont:mergeGlyphs'", nullptr);
-			return 0;
-		}
-		CCIMGUI::mergeFontGlyphs(cobj, arg0,
-			ImWchar(luaL_checkinteger(L, 3)),
-			ImWchar(luaL_checkinteger(L, 4)));
-		lua_settop(L, 1);
-		return 1;
-	}
-	luaL_error(L, "%s has wrong number of arguments: %d, was expecting %d \n", "imgui.ImFont:mergeGlyphs", argc, 3);
-	return 0;
-}
-
 #undef M
 #define M(n) {#n, font_##n}
 static const luaL_Reg font_methods[] = {
-	M(mergeGlyphs), M(calcTextSizeA), M(calcWordWrapPosition), M(renderText)
+	M(calcTextSizeA), M(calcWordWrapPosition), M(renderText)
 };
 
 static int fontBaked_findGlyph(lua_State* lua_S)

@@ -229,58 +229,6 @@ end
 function ImFontAtlas:addFontDefaultVector()
 end
 
----@param filename string @(const char*)
----@param size_pixels number @(float)
----@param font_cfg ImFontConfig @(const ImFontConfig*)
----@param glyph_ranges unsigned short @(const ImWchar*)
----@return ImFont @(ImFont*)
-function ImFontAtlas:addFontFromFileTTF(filename, size_pixels, font_cfg, glyph_ranges)
-end
-
----@param filename string @(const char*)
----@param size_pixels number @(float)
----@param font_cfg ImFontConfig @(const ImFontConfig*)
----@return ImFont @(ImFont*)
-function ImFontAtlas:addFontFromFileTTF(filename, size_pixels, font_cfg)
-end
-
----@param filename string @(const char*)
----@param size_pixels number @(float)
----@return ImFont @(ImFont*)
-function ImFontAtlas:addFontFromFileTTF(filename, size_pixels)
-end
-
----@param filename string @(const char*)
----@return ImFont @(ImFont*)
-function ImFontAtlas:addFontFromFileTTF(filename)
-end
-
----@param compressed_font_data_base85 string @(const char*)
----@param size_pixels number @(float)
----@param font_cfg ImFontConfig @(const ImFontConfig*)
----@param glyph_ranges unsigned short @(const ImWchar*)
----@return ImFont @(ImFont*)
-function ImFontAtlas:addFontFromMemoryCompressedBase85TTF(compressed_font_data_base85, size_pixels, font_cfg, glyph_ranges)
-end
-
----@param compressed_font_data_base85 string @(const char*)
----@param size_pixels number @(float)
----@param font_cfg ImFontConfig @(const ImFontConfig*)
----@return ImFont @(ImFont*)
-function ImFontAtlas:addFontFromMemoryCompressedBase85TTF(compressed_font_data_base85, size_pixels, font_cfg)
-end
-
----@param compressed_font_data_base85 string @(const char*)
----@param size_pixels number @(float)
----@return ImFont @(ImFont*)
-function ImFontAtlas:addFontFromMemoryCompressedBase85TTF(compressed_font_data_base85, size_pixels)
-end
-
----@param compressed_font_data_base85 string @(const char*)
----@return ImFont @(ImFont*)
-function ImFontAtlas:addFontFromMemoryCompressedBase85TTF(compressed_font_data_base85)
-end
-
 ---@return nil @(void)
 function ImFontAtlas:clear()
 end

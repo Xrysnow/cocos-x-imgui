@@ -985,16 +985,31 @@ end
 function imgui.saveIniSettingsToMemory()
 end
 
----
+--- Load a font source while the current atlas is unlocked, before submitting text.
+--- config may be a plain table or an ImFontConfig userdata; only supported value fields are read.
+--- MergeMode = true adds a source to DstFont, or the last atlas font if DstFont is omitted.
+--- DstFont must be a live font in the current atlas and requires MergeMode = true.
+--- Merging returns the destination font. Earlier sources win when glyph coverage overlaps;
+--- this replaces the removed font:mergeGlyphs() baked-glyph copy, not a glyph overwrite operation.
+--- Merging invalidates existing baked caches; reacquire ImFontBaked and glyph snapshots afterwards.
+--- A positive size is the source reference size; 0 uses config.SizePixels (0 means implicit).
+--- An implicit-size destination only accepts implicit-size sources. Do not wait for atlas:isBuilt().
 ---@param path string
----@param size number
----@param config table
+---@param size number Finite, non-negative reference size.
+---@param config? table|imgui.ImFontConfig MergeMode, optional DstFont and ordinary font options.
 --- Ranges are dense start/end pairs with inclusive endpoints; an optional final 0 is accepted.
 --- Invalid endpoints/presets raise an error. Arrays are copied into persistent native storage.
----@param ranges integer|integer[] Preset 0..7 or ranges; omitted defaults to ChineseFull.
----@return imgui.ImFont
+--- These are legacy preload ranges, not an allowlist for dynamic glyph loading or merging.
+--- GlyphRanges/GlyphExcludeRanges properties and loader/data pointers remain unavailable.
+---@param ranges? integer|integer[] Preset 0..7 or ranges; omitted defaults to ChineseFull.
+---@return imgui.ImFont|nil New font, merge destination, or nil when loading fails.
 function imgui.addFontTTF(path, size, config, ranges)
 end
+
+-- Merge sources during font setup (the same fields also work in a plain config table):
+-- local base = imgui.addFontTTF('font/JetBrainsMono-Regular.ttf', 14)
+-- local config = { MergeMode = true, DstFont = base }
+-- imgui.addFontTTF('font/WenQuanYiMicroHeiMono.ttf', 14, config)
 
 ---@return cc.Layer
 function imgui.createLayer()
