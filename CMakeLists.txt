@@ -38,6 +38,8 @@ set(SOURCE
 if(BUILD_LUA_LIBS)
     list(APPEND HEADER
         lua-bindings/imgui_lua.hpp
+        lua-bindings/imgui_lua_internal.hpp
+        lua-bindings/implot_lua.hpp
         lua-bindings/lua_imgui_auto.hpp
         lua-bindings/lua_imguiDrawList_auto.hpp
         lua-bindings/lua_imguiFont_auto.hpp
@@ -49,6 +51,7 @@ if(BUILD_LUA_LIBS)
     )
     list(APPEND SOURCE
         lua-bindings/imgui_lua.cpp
+        lua-bindings/implot_lua.cpp
         lua-bindings/lua_imguiDrawList_auto.cpp
         lua-bindings/lua_imguiFont_auto.cpp
         lua-bindings/lua_imguiIO_auto.cpp
