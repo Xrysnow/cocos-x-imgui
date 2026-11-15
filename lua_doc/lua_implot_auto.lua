@@ -957,26 +957,6 @@ end
 function implot.pixelsToPlot(pix)
 end
 
----@param label_id string @(const char*)
----@return nil @(void)
-function implot.plotDummy(label_id)
-end
-
----@param text string @(const char*)
----@param x number @(double)
----@param y number @(double)
----@param pix_offset ImVec2 @(ImVec2)
----@return nil @(void)
-function implot.plotText(text, x, y, pix_offset)
-end
-
----@param text string @(const char*)
----@param x number @(double)
----@param y number @(double)
----@return nil @(void)
-function implot.plotText(text, x, y)
-end
-
 ---@param x number @(double)
 ---@param y number @(double)
 ---@param x_axis number @(ImAxis)

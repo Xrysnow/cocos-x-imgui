@@ -1394,19 +1394,6 @@ int lua_ImPlot_pixelsToPlot(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(1, [](const ImVec2& arg0){{return ImPlot::PixelsToPlot(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2,3,4");
 }
-int lua_ImPlot_plotDummy(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.plotDummy");
-	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImPlot::PlotDummy(arg0);}});
-	LUA_GINVOKE_FOOTER("1");
-}
-int lua_ImPlot_plotText(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.plotText");
-	LUA_TRY_INVOKE(4, ([](const char* arg0,double arg1,double arg2,const ImVec2& arg3){{return ImPlot::PlotText(arg0,std::move(arg1),std::move(arg2),arg3);}}));
-	LUA_TRY_INVOKE(3, ([](const char* arg0,double arg1,double arg2){{return ImPlot::PlotText(arg0,std::move(arg1),std::move(arg2));}}));
-	LUA_GINVOKE_FOOTER("3,4");
-}
 int lua_ImPlot_plotToPixels(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImPlot", "ImPlot.plotToPixels");
@@ -1677,8 +1664,6 @@ int luaReg_implot_implot_global_functions(lua_State* lua_S)
 	LUA_METHOD("nextColormapColor", lua_ImPlot_nextColormapColor);
 	LUA_METHOD("nextMarker", lua_ImPlot_nextMarker);
 	LUA_METHOD("pixelsToPlot", lua_ImPlot_pixelsToPlot);
-	LUA_METHOD("plotDummy", lua_ImPlot_plotDummy);
-	LUA_METHOD("plotText", lua_ImPlot_plotText);
 	LUA_METHOD("plotToPixels", lua_ImPlot_plotToPixels);
 	LUA_METHOD("popColormap", lua_ImPlot_popColormap);
 	LUA_METHOD("popPlotClipRect", lua_ImPlot_popPlotClipRect);

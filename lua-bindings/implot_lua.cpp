@@ -6,6 +6,7 @@
 #include "../CCIMGUI.h"
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <string>
 #include <type_traits>
@@ -39,6 +40,16 @@ ImPlotRect _luaval_to_implotRect(lua_State* L, int lo)
 	luaval_to_native(L, lo, &v);
 	return v;
 }
+
+static int lua_plot_int(lua_State* L, int index)
+{
+	const double value = luaL_checknumber(L, index);
+	if (!std::isfinite(value) || std::trunc(value) != value ||
+		value < (std::numeric_limits<int>::min)() || value > (std::numeric_limits<int>::max)())
+		luaL_error(L, "argument #%d must be a native int", index);
+	return static_cast<int>(value);
+}
+
 ImPlotSpec lua_toImPlotSpec(lua_State* L, int lo)
 {
 #define get_field(_K, _F)\
@@ -54,14 +65,14 @@ ImPlotSpec lua_toImPlotSpec(lua_State* L, int lo)
 		get_field(LineWeight, luaL_checknumber);
 		get_field(FillColor, _luaval_to_imvec4);
 		get_field(FillAlpha, luaL_checknumber);
-		get_field(Marker, luaL_checkinteger);
+		get_field(Marker, lua_plot_int);
 		get_field(MarkerSize, luaL_checknumber);
 		get_field(MarkerLineColor, _luaval_to_imvec4);
 		get_field(MarkerFillColor, _luaval_to_imvec4);
 		get_field(Size, luaL_checknumber);
-		get_field(Offset, luaL_checkinteger);
-		get_field(Stride, luaL_checkinteger);
-		get_field(Flags, luaL_checkinteger);
+		get_field(Offset, lua_plot_int);
+		get_field(Stride, lua_plot_int);
+		get_field(Flags, lua_plot_int);
 	}
 #undef get_field
 	return ret;
@@ -260,18 +271,6 @@ static int implot_axisLinks(lua_State* L) {
 	return 0;
 }
 
-static int implot_beginSubplots(lua_State* L) {
-	const int args = lua_gettop(L);
-	lua_pushboolean(L,
-		ImPlot::BeginSubplots(
-			luaL_checkstring(L, 1),
-			luaL_checkint(L, 2),
-			luaL_checkint(L, 3),
-			_luaval_to_imvec2(L, 4),
-			lua_opt_int(args, 5, 0)
-		));
-	return 1;
-}
 static int implot_setupAxisTicks(lua_State* L) {
 	const int args = lua_gettop(L);
 	if (lua_isnumber(L, 2))
@@ -312,8 +311,7 @@ static int implot_setupAxisTicks(lua_State* L) {
 }
 
 #define LUA_GET_PTR(_name, _i)\
-	T* _name = (T*)lua_to_cptr(L, (_i));\
-	if (!(_name)) return lua_param_error(_i);
+	const T* _name = lua_plot_buffer<T>(L, (_i));
 #define DEF_PLOT_T(_name)\
 	template<typename T, int Offset = 1>\
 	struct _name##T { static int F(lua_State* L); };\
@@ -327,49 +325,63 @@ static bool lua_type_indexable(int t)
 	return t == LUA_TTABLE || t == LUA_TUSERDATA;
 }
 
-static void lua_push_convert_ptr(lua_State* L)
+template<typename T>
+static const T* lua_plot_buffer(lua_State* L, int index, int count = 0, int stride = sizeof(T))
 {
-	static const char* convert_ptr_key = "ffi.convert_ptr";
-	lua_pushstring(L, convert_ptr_key);
-	lua_rawget(L, LUA_REGISTRYINDEX);
-	if (lua_type(L, -1) != LUA_TFUNCTION)
-	{
-		lua_pop(L, 1);
-		static const char* convert_ptr = R"__(
+	// FFI supplies type information and the byte size of arrays; a pointer's size
+	// is not its allocation capacity. Never infer capacity from sizeof(pointer).
+	static constexpr auto code = R"__(
 local ffi = require('ffi')
-local _ptr_size = ffi.sizeof('void*')
-local _pptr_t = ffi.typeof('void*[1]')
-return function(cdata_ptr, userdata)
-    ffi.copy(userdata, _pptr_t(cdata_ptr), _ptr_size)
+local types = {}
+local pointer = ffi.typeof('const void*[1]')
+local pointer_size = ffi.sizeof('void*')
+return function(value, name, required, out)
+    if type(value) ~= 'cdata' then return false end
+    local t = types[name]
+    if not t then
+        t = { ptr = ffi.typeof(name .. '*'), array = ffi.typeof(name .. '[?]'),
+              const_array = ffi.typeof('const ' .. name .. '[?]') }
+        types[name] = t
+    end
+    if not ffi.istype(t.ptr, value) then
+        local bytes = ffi.sizeof(value)
+        local n = bytes and bytes / ffi.sizeof(name)
+        if not n or n ~= math.floor(n) then return false end
+        if not (ffi.istype(t.array, value) or ffi.istype(t.const_array, value) or
+                ffi.istype(ffi.typeof(name .. '[' .. n .. ']'), value) or
+                ffi.istype(ffi.typeof('const ' .. name .. '[' .. n .. ']'), value)) then
+            return false
+        end
+        if bytes < required then return false end
+    end
+    ffi.copy(out, pointer(value), pointer_size)
+    return true
 end
 )__";
-		if (luaL_dostring(L, convert_ptr) == 0)
-		{
-			lua_pushvalue(L, -1);
-			lua_setfield(L, LUA_REGISTRYINDEX, convert_ptr_key);
-		}
-		else
-		{
-			luaL_error(L, "failed to load %s", convert_ptr_key);
-		}
-	}
-}
-
-static void* lua_to_cptr(lua_State* L, int lo)
-{
-	const auto top = lua_gettop(L);
-	if (lo < 0)
-		lo = top + 1 + lo;
-	if (lo < 1 || lo > top || lua_type(L, lo) != LUA_TCDATA)
-		return nullptr;
-	lua_push_convert_ptr(L);
-	void* ret = nullptr;
-	lua_pushvalue(L, lo);
-	lua_pushlightuserdata(L, &ret);
-	if (lua_pcall(L, 2, 0, 0) == 0)
-		return ret;
-	lua_settop(L, top);
-	return nullptr;
+	const char* name;
+	if constexpr (std::is_same_v<T, float>) name = "float";
+	else if constexpr (std::is_same_v<T, double>) name = "double";
+	else if constexpr (sizeof(T) == 1) name = std::is_signed_v<T> ? "int8_t" : "uint8_t";
+	else if constexpr (sizeof(T) == 2) name = std::is_signed_v<T> ? "int16_t" : "uint16_t";
+	else if constexpr (sizeof(T) == 4) name = std::is_signed_v<T> ? "int32_t" : "uint32_t";
+	else name = std::is_signed_v<T> ? "int64_t" : "uint64_t";
+	const size_t max_span = (std::numeric_limits<std::ptrdiff_t>::max)();
+	if (count > 0 && static_cast<size_t>(count - 1) > (max_span - sizeof(T)) / stride)
+		luaL_error(L, "plot buffer span overflows pointer arithmetic");
+	const size_t required = count > 0 ? static_cast<size_t>(count - 1) * stride + sizeof(T) : 0;
+	if (!lua::_try_get_internal_helper(L, "implot.numeric_buffer", code))
+		luaL_error(L, "cannot initialize numeric buffer conversion");
+	const T* data = nullptr;
+	lua_pushvalue(L, index);
+	lua_pushstring(L, name);
+	lua_pushnumber(L, static_cast<lua_Number>(required));
+	lua_pushlightuserdata(L, &data);
+	const bool ok = lua_pcall(L, 4, 1, 0) == 0 && lua_toboolean(L, -1);
+	lua_pop(L, 1);
+	const auto address = reinterpret_cast<uintptr_t>(data);
+	if (!ok || !data || address % alignof(T) != 0 || required > UINTPTR_MAX - address)
+		luaL_error(L, "argument #%d requires aligned %s array/pointer cdata with sufficient storage", index, name);
+	return data;
 }
 
 static int lua_plot_count(lua_State* L, int lo)
@@ -390,14 +402,14 @@ static ImPlotSpec lua_plot_spec_values(lua_State* L, int lo, int element_size, b
 {
 	ImPlotSpec spec;
 	if (lua_isnumber(L, lo))
-		spec.Flags = luaL_checkint(L, lo);
+		spec.Flags = lua_plot_int(L, lo);
 	else if (lua_istable(L, lo) || lua_isnoneornil(L, lo))
 		spec = lua_toImPlotSpec(L, lo);
 	else
 		luaL_error(L, "plot specification must be a table or flags integer");
 	if (legacy_layout && !lua_istable(L, lo)) {
-		spec.Offset = luaL_optint(L, lo + 1, 0);
-		spec.Stride = luaL_optint(L, lo + 2, IMPLOT_AUTO);
+		spec.Offset = lua_isnoneornil(L, lo + 1) ? 0 : lua_plot_int(L, lo + 1);
+		spec.Stride = lua_isnoneornil(L, lo + 2) ? IMPLOT_AUTO : lua_plot_int(L, lo + 2);
 	}
 	if (spec.Stride != IMPLOT_AUTO &&
 		(spec.Stride < element_size || spec.Stride % element_size != 0 || (packed && spec.Stride != element_size)))
@@ -414,10 +426,38 @@ static ImPlotSpec lua_plot_spec(lua_State* L, int lo, int element_size, bool pac
 }
 
 template<typename T>
+static void lua_plot_check_buffers(lua_State* L, int spec_index, int count, const ImPlotSpec& spec)
+{
+	// Data cdata arguments precede spec; spec arrays are Lua tables. Validate
+	// before native plotting (and before histogram binning reads any samples).
+	const int stride = spec.Stride == IMPLOT_AUTO ? sizeof(T) : spec.Stride;
+	// Both native ImPosMod (remainder + count) and offset + index use int.
+	if (count > 0) {
+		const int remainder = spec.Offset % count;
+		const int offset = remainder < 0 ? remainder + count : remainder;
+		if (offset > (std::numeric_limits<int>::max)() - count)
+			luaL_error(L, "plot offset/count overflows native indexing");
+	}
+	for (int i = 1; i < spec_index && i <= lua_gettop(L); ++i)
+		if (lua_type(L, i) == LUA_TCDATA) lua_plot_buffer<T>(L, i, count, stride);
+}
+
+template<typename T>
+static ImPlotSpec lua_plot_cspec(lua_State* L, int lo, int count,
+	bool legacy_layout = false, int array_count = 0, unsigned arrays = PlotSpecArrays_None)
+{
+	ImPlotSpec spec = lua_plot_spec_values(L, lo, sizeof(T), false, legacy_layout);
+	lua_plot_check_buffers<T>(L, lo, count, spec);
+	lua_plot_spec_arrays(L, lo, spec, array_count, arrays);
+	return spec;
+}
+
+template<typename T>
 static ImPlotSpec lua_histogram_spec(lua_State* L, int lo, const T* values, int count,
 	int bins, ImPlotRange range, bool packed)
 {
 	ImPlotSpec spec = lua_plot_spec_values(L, lo, sizeof(T), packed);
+	if (!packed) lua_plot_check_buffers<T>(L, lo, count, spec);
 	int array_count = 0;
 #if CC_DEBUG >= 1
 	bool has_colors = false;
@@ -464,6 +504,61 @@ static int lua_plot_area(lua_State* L, int rows, int cols)
 	if (rows != 0 && cols > (std::numeric_limits<int>::max)() / rows)
 		luaL_error(L, "plot dimensions overflow int");
 	return rows * cols;
+}
+
+static float* lua_subplot_ratios(lua_State* L, int index, int count)
+{
+	if (lua_isnil(L, index)) return nullptr;
+	luaL_checktype(L, index, LUA_TTABLE);
+	if (static_cast<size_t>(count) > SIZE_MAX / sizeof(float))
+		luaL_error(L, "subplot ratio array is too large");
+	auto* values = static_cast<float*>(lua_newuserdata(L, static_cast<size_t>(count) * sizeof(float)));
+	float sum = 0;
+	for (int i = 0; i < count; ++i) {
+		lua_rawgeti(L, index, i + 1);
+		const double value = luaL_checknumber(L, -1);
+		if (!std::isfinite(value) || value <= 0 || value > (std::numeric_limits<float>::max)())
+			luaL_error(L, "subplot ratios must be finite positive floats");
+		values[i] = static_cast<float>(value);
+		if (values[i] == 0) luaL_error(L, "subplot ratio underflows float");
+		sum += values[i];
+		lua_pop(L, 1);
+	}
+	if (!std::isfinite(sum)) luaL_error(L, "subplot ratio sum overflows float");
+	for (int i = 0; i < count; ++i)
+		if (values[i] / sum == 0) luaL_error(L, "normalized subplot ratio underflows float");
+	return values;
+}
+
+static void lua_push_subplot_ratios(lua_State* L, const float* values, int count)
+{
+	if (!values) { lua_pushnil(L); return; }
+	lua_createtable(L, count, 0);
+	for (int i = 0; i < count; ++i) {
+		lua_pushnumber(L, values[i]);
+		lua_rawseti(L, -2, i + 1);
+	}
+}
+
+static int implot_beginSubplots(lua_State* L)
+{
+	if (lua_gettop(L) < 4 || lua_gettop(L) > 7)
+		return luaL_error(L, "beginSubplots expects title, rows, cols, size, optional flags, row_ratios and col_ratios");
+	lua_settop(L, 7); // Keep absent optional arguments separate from temporary userdata.
+	const char* title = luaL_checkstring(L, 1);
+	const int rows = lua_plot_count(L, 2), cols = lua_plot_count(L, 3);
+	if (rows == 0 || cols == 0) return luaL_error(L, "subplot dimensions must be positive");
+	lua_plot_area(L, rows, cols);
+	ImVec2 size;
+	lua_checknative(L, 4, &size);
+	const int flags = lua_isnil(L, 5) ? 0 : lua_plot_int(L, 5);
+	float* row_ratios = lua_subplot_ratios(L, 6, rows);
+	float* col_ratios = lua_subplot_ratios(L, 7, cols);
+	// Native BeginSubplots consumes and writes the arrays synchronously, never retaining them.
+	lua_pushboolean(L, ImPlot::BeginSubplots(title, rows, cols, size, flags, row_ratios, col_ratios));
+	lua_push_subplot_ratios(L, row_ratios, rows);
+	lua_push_subplot_ratios(L, col_ratios, cols);
+	return 3;
 }
 
 template<
@@ -534,7 +629,7 @@ DEF_PLOT_T(implot_plotLine)
 			ImPlot::PlotLine<T>(label_id, v1, count,
 				lua_opt_number(args, 4 + Offset, 1),
 				lua_opt_number(args, 5 + Offset, 0),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
+				lua_plot_cspec<T>(L, 6 + Offset, count, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	if (type3 == LUA_TCDATA) {
@@ -542,7 +637,7 @@ DEF_PLOT_T(implot_plotLine)
 		const int count = lua_plot_count(L, 4 + Offset);
 		if (count > 0)
 			ImPlot::PlotLine<T>(label_id, v1, v2, count,
-				lua_plot_spec(L, 5 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
+				lua_plot_cspec<T>(L, 5 + Offset, count, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	return lua_param_error(3 + Offset);
@@ -587,7 +682,7 @@ DEF_PLOT_T(implot_plotScatter) {
 			ImPlot::PlotScatter<T>(label_id, v1, count,
 				lua_opt_number(args, 4 + Offset, 1),
 				lua_opt_number(args, 5 + Offset, 0),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Marker));
+				lua_plot_cspec<T>(L, 6 + Offset, count, true, count, PlotSpecArrays_Marker));
 		return 0;
 	}
 	if (type3 == LUA_TCDATA) {
@@ -595,7 +690,7 @@ DEF_PLOT_T(implot_plotScatter) {
 		const int count = lua_plot_count(L, 4 + Offset);
 		if (count > 0)
 			ImPlot::PlotScatter<T>(label_id, v1, v2, count,
-				lua_plot_spec(L, 5 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Marker));
+				lua_plot_cspec<T>(L, 5 + Offset, count, true, count, PlotSpecArrays_Marker));
 		return 0;
 	}
 	return lua_param_error(3 + Offset);
@@ -640,7 +735,7 @@ DEF_PLOT_T(implot_plotBubbles) {
 		if (count > 0)
 			ImPlot::PlotBubbles<T>(label_id, v1, v2, count,
 				lua_opt_number(args, 5 + Offset, 1), lua_opt_number(args, 6 + Offset, 0),
-				lua_plot_spec(L, 7 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
+				lua_plot_cspec<T>(L, 7 + Offset, count, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	if (type == LUA_TCDATA) {
@@ -648,7 +743,7 @@ DEF_PLOT_T(implot_plotBubbles) {
 		const int count = lua_plot_count(L, 5 + Offset);
 		if (count > 0)
 			ImPlot::PlotBubbles<T>(label_id, v1, v2, radii, count,
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
+				lua_plot_cspec<T>(L, 6 + Offset, count, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	return lua_param_error(4 + Offset);
@@ -672,7 +767,7 @@ DEF_PLOT_T(implot_plotPolygon) {
 	const int count = lua_plot_count(L, 4 + Offset);
 	if (count > 0)
 		ImPlot::PlotPolygon<T>(label_id, xs, ys, count,
-			lua_plot_spec(L, 5 + Offset, sizeof(T), false, true));
+			lua_plot_cspec<T>(L, 5 + Offset, count, true));
 	return 0;
 }
 DEF_PLOT_C(implot_plotPolygon);
@@ -715,7 +810,7 @@ DEF_PLOT_T(implot_plotStairs) {
 			ImPlot::PlotStairs<T>(label_id, v1, count,
 				lua_opt_number(args, 4 + Offset, 1),
 				lua_opt_number(args, 5 + Offset, 0),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
+				lua_plot_cspec<T>(L, 6 + Offset, count, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	if (type3 == LUA_TCDATA) {
@@ -723,7 +818,7 @@ DEF_PLOT_T(implot_plotStairs) {
 		const int count = lua_plot_count(L, 4 + Offset);
 		if (count > 0)
 			ImPlot::PlotStairs<T>(label_id, v1, v2, count,
-				lua_plot_spec(L, 5 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
+				lua_plot_cspec<T>(L, 5 + Offset, count, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	return lua_param_error(3 + Offset);
@@ -788,7 +883,7 @@ DEF_PLOT_T(implot_plotShaded) {
 				lua_opt_number(args, 4 + Offset, 0),
 				lua_opt_number(args, 5 + Offset, 1),
 				lua_opt_number(args, 6 + Offset, 0),
-				lua_plot_spec(L, 7 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Fill));
+				lua_plot_cspec<T>(L, 7 + Offset, count, true, count, PlotSpecArrays_Fill));
 		return 0;
 	}
 	LUA_GET_PTR(v2, 3 + Offset);
@@ -799,7 +894,7 @@ DEF_PLOT_T(implot_plotShaded) {
 		if (count > 0)
 			ImPlot::PlotShaded<T>(label_id, v1, v2, count,
 				lua_opt_number(args, 5 + Offset, 0),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Fill));
+				lua_plot_cspec<T>(L, 6 + Offset, count, true, count, PlotSpecArrays_Fill));
 		return 0;
 	}
 	if (type4 == LUA_TCDATA) {
@@ -808,7 +903,7 @@ DEF_PLOT_T(implot_plotShaded) {
 		const int count = lua_plot_count(L, 5 + Offset);
 		if (count > 0)
 			ImPlot::PlotShaded<T>(label_id, v1, v2, v3, count,
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Fill));
+				lua_plot_cspec<T>(L, 6 + Offset, count, true, count, PlotSpecArrays_Fill));
 		return 0;
 	}
 	return lua_param_error(4 + Offset);
@@ -857,7 +952,7 @@ DEF_PLOT_T(implot_plotBars) {
 			ImPlot::PlotBars<T>(label_id, v1, count,
 				lua_opt_number(args, 4 + Offset, 0.67),
 				lua_opt_number(args, 5 + Offset, 0),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
+				lua_plot_cspec<T>(L, 6 + Offset, count, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	if (type3 == LUA_TCDATA) {
@@ -867,7 +962,7 @@ DEF_PLOT_T(implot_plotBars) {
 		if (count > 0)
 			ImPlot::PlotBars<T>(label_id, v1, v2, count,
 				luaL_checknumber(L, 5 + Offset),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
+				lua_plot_cspec<T>(L, 6 + Offset, count, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	return lua_param_error(3 + Offset);
@@ -919,7 +1014,7 @@ DEF_PLOT_T(implot_plotBarGroups) {
 			groups,
 			lua_opt_number(args, 5 + Offset, 0.67),
 			lua_opt_number(args, 6 + Offset, 0),
-			lua_plot_spec(L, 7 + Offset, sizeof(T), false, false, groups, PlotSpecArrays_Line | PlotSpecArrays_Fill));
+			lua_plot_cspec<T>(L, 7 + Offset, lua_plot_area(L, count, groups), false, groups, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 	return 0;
 }
 DEF_PLOT_C(implot_plotBarGroups);
@@ -970,7 +1065,7 @@ DEF_PLOT_T(implot_plotErrorBars) {
 		const int count = lua_plot_count(L, 5 + Offset);
 		if (count > 0)
 			ImPlot::PlotErrorBars<T>(label_id, v1, v2, v3, count,
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true));
+				lua_plot_cspec<T>(L, 6 + Offset, count, true));
 		return 0;
 	}
 	if (type5 == LUA_TCDATA) {
@@ -978,7 +1073,7 @@ DEF_PLOT_T(implot_plotErrorBars) {
 		const int count = lua_plot_count(L, 6 + Offset);
 		if (count > 0)
 			ImPlot::PlotErrorBars<T>(label_id, v1, v2, v3, v4, count,
-				lua_plot_spec(L, 7 + Offset, sizeof(T), false, true));
+				lua_plot_cspec<T>(L, 7 + Offset, count, true));
 		return 0;
 	}
 	return lua_param_error(5 + Offset);
@@ -1026,7 +1121,7 @@ DEF_PLOT_T(implot_plotStems) {
 				lua_opt_number(args, 4 + Offset, 0),
 				lua_opt_number(args, 5 + Offset, 1),
 				lua_opt_number(args, 6 + Offset, 0),
-				lua_plot_spec(L, 7 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Marker));
+				lua_plot_cspec<T>(L, 7 + Offset, count, true, count, PlotSpecArrays_Line | PlotSpecArrays_Marker));
 		return 0;
 	}
 	LUA_GET_PTR(v2, 3 + Offset);
@@ -1035,7 +1130,7 @@ DEF_PLOT_T(implot_plotStems) {
 	if (count > 0)
 		ImPlot::PlotStems<T>(label_id, v1, v2, count,
 			lua_opt_number(args, 5 + Offset, 0),
-			lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Marker));
+			lua_plot_cspec<T>(L, 6 + Offset, count, true, count, PlotSpecArrays_Line | PlotSpecArrays_Marker));
 	return 0;
 }
 DEF_PLOT_C(implot_plotStems);
@@ -1060,7 +1155,7 @@ DEF_PLOT_T(implot_plotInfLines) {
 	const int count = lua_plot_count(L, 3 + Offset);
 	if (count > 0)
 		ImPlot::PlotInfLines<T>(label_id, xs, count,
-			lua_plot_spec(L, 4 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line));
+			lua_plot_cspec<T>(L, 4 + Offset, count, true, count, PlotSpecArrays_Line));
 	return 0;
 }
 DEF_PLOT_C(implot_plotInfLines);
@@ -1101,7 +1196,7 @@ DEF_PLOT_T(implot_plotPieChart) {
 		luaL_checknumber(L, 6 + Offset),
 		lua_opt_string(args, 7 + Offset, "%.1f"),
 		lua_opt_number(args, 8 + Offset, 90),
-		lua_plot_spec(L, 9 + Offset, sizeof(T), false));
+		lua_plot_cspec<T>(L, 9 + Offset, count));
 	return 0;
 }
 DEF_PLOT_C(implot_plotPieChart);
@@ -1139,7 +1234,7 @@ DEF_PLOT_T(implot_plotHeatmap) {
 		lua_opt_string(args, 7 + Offset, "%.1f"),
 		lua_opt_impoint(args, 8 + Offset, ImPlotPoint(0, 0)),
 		lua_opt_impoint(args, 9 + Offset, ImPlotPoint(1, 1)),
-		lua_plot_spec(L, 10 + Offset, sizeof(T), false));
+		lua_plot_cspec<T>(L, 10 + Offset, lua_plot_area(L, rows, cols)));
 	return 0;
 }
 DEF_PLOT_C(implot_plotHeatmap);
@@ -1203,7 +1298,7 @@ DEF_PLOT_T(implot_plotHistogram2D) {
 		lua_opt_int(args, 5 + Offset, ImPlotBin_Sturges),
 		lua_opt_int(args, 6 + Offset, ImPlotBin_Sturges),
 		lua_opt_imrect(args, 7 + Offset, ImPlotRect()),
-		lua_plot_spec(L, 8 + Offset, sizeof(T), false)));
+		lua_plot_cspec<T>(L, 8 + Offset, count)));
 	return 1;
 }
 DEF_PLOT_C(implot_plotHistogram2D);
@@ -1232,10 +1327,27 @@ DEF_PLOT_T(implot_plotDigital) {
 	const int count = lua_plot_count(L, 4 + Offset);
 	if (count > 0)
 		ImPlot::PlotDigital(label_id, v1, v2, count,
-			lua_plot_spec(L, 5 + Offset, sizeof(T), false, true));
+			lua_plot_cspec<T>(L, 5 + Offset, count, true));
 	return 0;
 }
 DEF_PLOT_C(implot_plotDigital);
+static int implot_plotText(lua_State* L) {
+	if (lua_gettop(L) < 3 || lua_gettop(L) > 5)
+		return luaL_error(L, "plotText expects text, x, y, optional pixel offset and spec");
+	const char* text = luaL_checkstring(L, 1);
+	const double x = luaL_checknumber(L, 2), y = luaL_checknumber(L, 3);
+	ImVec2 offset(0, 0);
+	if (!lua_isnoneornil(L, 4)) { lua_checknative(L, 4, &offset); }
+	ImPlot::PlotText(text, x, y, offset, lua_plot_spec(L, 5, sizeof(double), true));
+	return 0;
+}
+static int implot_plotDummy(lua_State* L) {
+	if (lua_gettop(L) < 1 || lua_gettop(L) > 2)
+		return luaL_error(L, "plotDummy expects label and optional spec");
+	const char* label = luaL_checkstring(L, 1);
+	ImPlot::PlotDummy(label, lua_plot_spec(L, 2, sizeof(double), true));
+	return 0;
+}
 static int implot_plotImage(lua_State* L) {
 	const int args = lua_gettop(L);
 	cocos2d::Texture2D* tex = nullptr;
@@ -1243,14 +1355,16 @@ static int implot_plotImage(lua_State* L) {
 	{
 		if (!tex)
 			return 0;
+		if (args < 4 || args > 8) return luaL_error(L, "invalid texture plotImage argument count");
+		const auto spec = lua_plot_spec(L, 8, sizeof(double), true);
 		CCIMGUI::getInstance()->plotImage(
 			luaL_checkstring(L, 1),
 			tex,
-			_luaval_to_imvec2(L, 3),
-			_luaval_to_imvec2(L, 4),
-			lua_opt_imv2(args, 5, ImVec2(0, 0)),
-			lua_opt_imv2(args, 6, ImVec2(1, 1)),
-			lua_opt_imv4(args, 7, ImVec4(1, 1, 1, 1)));
+			_luaval_to_implotPoint(L, 3),
+			_luaval_to_implotPoint(L, 4),
+			lua_isnoneornil(L, 5) ? ImVec2(0, 0) : _luaval_to_imvec2(L, 5),
+			lua_isnoneornil(L, 6) ? ImVec2(1, 1) : _luaval_to_imvec2(L, 6),
+			lua_isnoneornil(L, 7) ? ImVec4(1, 1, 1, 1) : _luaval_to_imvec4(L, 7), spec);
 		return 0;
 	}
 	cocos2d::Sprite* sp = nullptr;
@@ -1258,18 +1372,29 @@ static int implot_plotImage(lua_State* L) {
 	{
 		if (!sp)
 			return 0;
+		if (args < 4 || args > 6) return luaL_error(L, "invalid sprite plotImage argument count");
+		const auto spec = lua_plot_spec(L, 6, sizeof(double), true);
 		CCIMGUI::getInstance()->plotImage(
 			luaL_checkstring(L, 1),
 			sp,
-			_luaval_to_imvec2(L, 3),
-			_luaval_to_imvec2(L, 4),
-			lua_opt_imv4(args, 5, ImVec4(0, 0, 0, 0)));
+			_luaval_to_implotPoint(L, 3),
+			_luaval_to_implotPoint(L, 4),
+			lua_isnoneornil(L, 5) ? ImVec4(1, 1, 1, 1) : _luaval_to_imvec4(L, 5), spec);
 		return 0;
 	}
-	return 0;
+	return luaL_error(L, "plotImage expects cc.Texture2D or cc.Sprite");
+}
+
+static int lua_push_drag_state(lua_State* L, bool clicked, bool hovered, bool held)
+{
+	lua_pushboolean(L, clicked);
+	lua_pushboolean(L, hovered);
+	lua_pushboolean(L, held);
+	return 3;
 }
 static int implot_dragPoint(lua_State* L) {
 	const int args = lua_gettop(L);
+	bool clicked = false, hovered = false, held = false;
 	double x = luaL_checknumber(L, 2);
 	double y = luaL_checknumber(L, 3);
 	lua_pushboolean(L,
@@ -1279,13 +1404,14 @@ static int implot_dragPoint(lua_State* L) {
 			&y,
 			_luaval_to_imvec4(L, 4),
 			lua_opt_number(args, 5, 4),
-			lua_opt_int(args, 6, 0)));
+			lua_opt_int(args, 6, 0), &clicked, &hovered, &held));
 	lua_pushnumber(L, x);
 	lua_pushnumber(L, y);
-	return 3;
+	return 3 + lua_push_drag_state(L, clicked, hovered, held);
 }
 static int implot_dragLineX(lua_State* L) {
 	const int args = lua_gettop(L);
+	bool clicked = false, hovered = false, held = false;
 	double value = luaL_checknumber(L, 2);
 	lua_pushboolean(L,
 		ImPlot::DragLineX(
@@ -1293,12 +1419,13 @@ static int implot_dragLineX(lua_State* L) {
 			&value,
 			_luaval_to_imvec4(L, 3),
 			lua_opt_number(args, 4, 1),
-			lua_opt_int(args, 5, 0)));
+			lua_opt_int(args, 5, 0), &clicked, &hovered, &held));
 	lua_pushnumber(L, value);
-	return 2;
+	return 2 + lua_push_drag_state(L, clicked, hovered, held);
 }
 static int implot_dragLineY(lua_State* L) {
 	const int args = lua_gettop(L);
+	bool clicked = false, hovered = false, held = false;
 	double value = luaL_checknumber(L, 2);
 	lua_pushboolean(L,
 		ImPlot::DragLineY(
@@ -1306,12 +1433,13 @@ static int implot_dragLineY(lua_State* L) {
 			&value,
 			_luaval_to_imvec4(L, 3),
 			lua_opt_number(args, 4, 1),
-			lua_opt_int(args, 5, 0)));
+			lua_opt_int(args, 5, 0), &clicked, &hovered, &held));
 	lua_pushnumber(L, value);
-	return 2;
+	return 2 + lua_push_drag_state(L, clicked, hovered, held);
 }
 static int implot_dragRect(lua_State* L) {
 	const int args = lua_gettop(L);
+	bool clicked = false, hovered = false, held = false;
 	double x1 = luaL_checknumber(L, 2);
 	double y1 = luaL_checknumber(L, 3);
 	double x2 = luaL_checknumber(L, 4);
@@ -1321,12 +1449,12 @@ static int implot_dragRect(lua_State* L) {
 			luaL_checkint(L, 1),
 			&x1, &y1, &x2, &y2,
 			_luaval_to_imvec4(L, 6),
-			lua_opt_int(args, 7, 0)));
+			lua_opt_int(args, 7, 0), &clicked, &hovered, &held));
 	lua_pushnumber(L, x1);
 	lua_pushnumber(L, y1);
 	lua_pushnumber(L, x2);
 	lua_pushnumber(L, y2);
-	return 3;
+	return 5 + lua_push_drag_state(L, clicked, hovered, held);
 }
 static int implot_annotation(lua_State* L) {
 	const int args = lua_gettop(L);
@@ -1558,6 +1686,7 @@ static const luaL_Reg implot_methods[] = {
 	M_PLOT(plotHistogram2D),
 	M_PLOT(plotDigital),
 	M(plotImage),
+	M(plotText), M(plotDummy),
 	M(dragPoint),
 	M(dragLineX),
 	M(dragLineY),

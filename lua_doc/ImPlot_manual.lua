@@ -15,6 +15,25 @@ implot = implot or {}
 function implot.beginPlot(title_id, size, flags)
 end
 
+--- Starts a subplot grid; call endSubplots() only when the first result is true.
+--- rows/cols must be positive integers. Optional ratio arrays must contain at least
+--- rows/cols finite positive float values; extra elements/keys are ignored.
+--- Returns shown, row_ratios, col_ratios as fresh snapshots (nil for omitted arrays).
+--- Input tables are not modified. Keep the returned arrays for the next frame.
+--- Native resizing writes ratios during beginSubplots(); no pointer survives this call.
+---@param title_id string
+---@param rows integer
+---@param cols integer
+---@param size ImVec2
+---@param flags? implot.ImPlotSubplotFlags Defaults to 0.
+---@param row_ratios? number[]
+---@param col_ratios? number[]
+---@return boolean shown
+---@return number[]|nil row_ratios
+---@return number[]|nil col_ratios
+function implot.beginSubplots(title_id, rows, cols, size, flags, row_ratios, col_ratios)
+end
+
 --- Link an enabled axis during setup, after successful beginPlot() and before plotting/setupFinish().
 --- Each non-nil link must be a writable ffi.new('double[1]', value) with a finite value.
 --- Ordinary numbers, tables, raw double* pointers and other cdata types are rejected.
@@ -57,10 +76,19 @@ end
 -- Lua-array variants copy numeric data to packed double arrays. Counts are non-negative
 -- integers and are clamped to the shortest input (except dimensional plots, which require
 -- complete data). Empty histograms return 0. No data pointer is retained after a call.
--- C variants accept LuaJIT cdata buffers and an ImGuiDataType selector. The caller must
--- keep backing allocations alive and provide correctly typed/aligned storage covering
--- count elements (or item_count * group_count / rows * cols), including byte stride.
--- Pointer capacity and pointee type cannot be inferred from the dtype argument.
+-- C variants require a 1D LuaJIT numeric array or typed pointer matching ImGuiDataType:
+-- S8/U8/S16/U16/S32/U32/S64/U64 use int8_t/uint8_t/.../int64_t/uint64_t; Float/Double
+-- use float/double. const input is allowed. Scalars, void*, pointer-to-pointer,
+-- multidimensional/struct arrays, numeric addresses and lightuserdata are rejected.
+-- All builds validate type, non-null address, alignment, stride and address/span overflow.
+-- Fixed and variable-length FFI arrays also validate byte capacity against
+-- (count - 1) * stride + sizeof(T); BarGroups uses item_count * group_count, Heatmap
+-- rows * cols. Circular Offset does not reduce the required storage span.
+-- Typed pointers carry no allocation size: callers must guarantee readable capacity and
+-- retain the backing allocation until PlotX returns. Casting to T* does not prove that
+-- the allocation holds T values; there is no ownership/lifetime check or pointer retention.
+-- Data buffers are read-only to this binding; no writeback. Use an owning ffi.new('double[?]', n)
+-- array when possible so capacity can be checked, rather than casting it to double*.
 -- Plotting converts values to double; very large 64-bit integers may lose plot precision.
 -- All variants accept a final spec table, or an integer shorthand for spec.Flags.
 -- Line/Scatter/Bubbles/Polygon/Stairs/Shaded/Bars/ErrorBars/Stems/InfLines/Digital C variants also accept
@@ -700,63 +728,109 @@ end
 function implot.plotDigitalC(label_id, dtype, xs, ys, count, spec, offset, stride)
 end
 
---- Plots an axis-aligned image. #bounds_min/bounds_max are in plot coordinates (y-up)
---- and #uv0/uv1 are in texture coordinates (y-down).
----@param label_id string
----@param texture cc.Texture2D
----@param bounds_min implot.ImPlotPoint
----@param bounds_max table
----@param uv0 ImVec2 @optional, (0, 0)
----@param uv1 ImVec2 @optional, (1, 1)
----@param tint_col ImVec4 @optional, (1, 1, 1, 1)
-function implot.plotImage(label_id, texture, bounds_min, bounds_max, uv0, uv1, tint_col)
+--- Plots text with the shared spec conversion (including flags shorthand).
+---@param text string
+---@param x number
+---@param y number
+---@param pix_offset? ImVec2 Defaults to (0, 0).
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotText(text, x, y, pix_offset, spec)
 end
 
---- Plots an axis-aligned image. #bounds_min/bounds_max are in plot coordinates (y-up)
---- and #uv0/uv1 are in texture coordinates (y-down).
+--- Adds a legend entry with the shared spec conversion.
+---@param label_id string
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotDummy(label_id, spec)
+end
+
+--- Plots an axis-aligned image; bounds are double-precision plot coordinates (y-up),
+--- UVs are texture coordinates (y-down). Missing/nil options use native defaults.
+---@param label_id string
+---@param texture cc.Texture2D
+---@param bounds_min ImPlotPoint
+---@param bounds_max ImPlotPoint
+---@param uv0? ImVec2 Defaults to (0, 0).
+---@param uv1? ImVec2 Defaults to (1, 1).
+---@param tint_col? ImVec4 Defaults to (1, 1, 1, 1).
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotImage(label_id, texture, bounds_min, bounds_max, uv0, uv1, tint_col, spec)
+end
+
+--- Uses sprite UVs and the shared spec conversion. The default tint is opaque white.
 ---@param label_id string
 ---@param sprite cc.Sprite
----@param bounds_min implot.ImPlotPoint
----@param bounds_max table
----@param tint_col ImVec4 @optional, (1, 1, 1, 1)
-function implot.plotImage(label_id, sprite, bounds_min, bounds_max, tint_col)
+---@param bounds_min ImPlotPoint
+---@param bounds_max ImPlotPoint
+---@param tint_col? ImVec4 Defaults to (1, 1, 1, 1).
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotImage(label_id, sprite, bounds_min, bounds_max, tint_col, spec)
 end
 
 -------------------------------------------------------------------------------
 -- Plot Tools
 -------------------------------------------------------------------------------
 
--- The following functions MUST be called between Begin/EndPlot!
+-- These functions require an active plot. Outputs append clicked, hovered, held
+-- after changed and the updated coordinates. The booleans are returned even with NoInputs.
 
---- Shows a draggable vertical guide line at an x-value. #col defaults to ImGuiCol_Text.
----@param id string
----@param x_value number
----@param show_label boolean @optional, true
----@param col ImVec4 @optional, IMPLOT_AUTO_COL
----@param thickness number @optional, 1
----@return boolean,number
-function implot.dragLineX(id, x_value, show_label, col, thickness)
-end
-
---- Shows a draggable horizontal guide line at a y-value. #col defaults to ImGuiCol_Text.
----@param id string
----@param y_value number
----@param show_label boolean @optional, true
----@param col ImVec4 @optional, IMPLOT_AUTO_COL
----@param thickness number @optional, 1
----@return boolean,number
-function implot.dragLineY(id, y_value, show_label, col, thickness)
-end
-
---- Shows a draggable point at x,y. #col defaults to ImGuiCol_Text.
----@param id string
+---@param id integer
 ---@param x number
 ---@param y number
----@param show_label boolean @optional, true
----@param col ImVec4 @optional, IMPLOT_AUTO_COL
----@param radius number @optional, 4
----@return boolean,number,number
-function implot.dragLinePoint(id, x, y, show_label, col, radius)
+---@param col ImVec4
+---@param size? number Defaults to 4.
+---@param flags? implot.ImPlotDragToolFlags Defaults to 0.
+---@return boolean changed
+---@return number x
+---@return number y
+---@return boolean clicked
+---@return boolean hovered
+---@return boolean held
+function implot.dragPoint(id, x, y, col, size, flags)
+end
+
+---@param id integer
+---@param x number
+---@param col ImVec4
+---@param thickness? number Defaults to 1.
+---@param flags? implot.ImPlotDragToolFlags Defaults to 0.
+---@return boolean changed
+---@return number x
+---@return boolean clicked
+---@return boolean hovered
+---@return boolean held
+function implot.dragLineX(id, x, col, thickness, flags)
+end
+
+---@param id integer
+---@param y number
+---@param col ImVec4
+---@param thickness? number Defaults to 1.
+---@param flags? implot.ImPlotDragToolFlags Defaults to 0.
+---@return boolean changed
+---@return number y
+---@return boolean clicked
+---@return boolean hovered
+---@return boolean held
+function implot.dragLineY(id, y, col, thickness, flags)
+end
+
+--- Returns all four updated coordinates, followed by interaction state.
+---@param id integer
+---@param x1 number
+---@param y1 number
+---@param x2 number
+---@param y2 number
+---@param col ImVec4
+---@param flags? implot.ImPlotDragToolFlags Defaults to 0.
+---@return boolean changed
+---@return number x1
+---@return number y1
+---@return number x2
+---@return number y2
+---@return boolean clicked
+---@return boolean hovered
+---@return boolean held
+function implot.dragRect(id, x1, y1, x2, y2, col, flags)
 end
 
 -------------------------------------------------------------------------------

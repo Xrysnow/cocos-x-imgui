@@ -319,24 +319,24 @@ int CCIMGUI::getCCRefId(Ref* p)
 }
 
 void CCIMGUI::plotImage(const char* label_id, Texture2D* tex, const ImPlotPoint& bounds_min,
-	const ImPlotPoint& bounds_max, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col)
+	const ImPlotPoint& bounds_max, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImPlotSpec& spec)
 {
 	if (!label_id || !tex)
 		return;
 	ImGui::PushID(getCCRefId(tex));
-	ImPlot::PlotImage(label_id, (ImTextureID)tex, bounds_min, bounds_max, uv0, uv1, tint_col);
+	ImPlot::PlotImage(label_id, (ImTextureID)tex, bounds_min, bounds_max, uv0, uv1, tint_col, spec);
 	ImGui::PopID();
 }
 
 void CCIMGUI::plotImage(const char* label_id, Sprite* sprite, const ImPlotPoint& bounds_min,
-	const ImPlotPoint& bounds_max, const ImVec4& tint_col)
+	const ImPlotPoint& bounds_max, const ImVec4& tint_col, const ImPlotSpec& spec)
 {
 	if (!label_id || !sprite)
 		return;
 	ImVec2 uv0, uv1;
 	std::tie(uv0, uv1) = getTextureUV(sprite);
 	ImGui::PushID(getCCRefId(sprite));
-	ImPlot::PlotImage(label_id, (ImTextureID)sprite, bounds_min, bounds_max, uv0, uv1, tint_col);
+	ImPlot::PlotImage(label_id, (ImTextureID)sprite, bounds_min, bounds_max, uv0, uv1, tint_col, spec);
 	ImGui::PopID();
 }
 

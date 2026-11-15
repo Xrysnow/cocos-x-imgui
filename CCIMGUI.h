@@ -90,13 +90,15 @@ public:
 		const ImPlotPoint& bounds_max,
 		const ImVec2& uv0 = ImVec2(0, 0),
 		const ImVec2& uv1 = ImVec2(1, 1),
-		const ImVec4& tint_col = ImVec4(1, 1, 1, 1));
+		const ImVec4& tint_col = ImVec4(1, 1, 1, 1),
+		const ImPlotSpec& spec = ImPlotSpec());
 	void plotImage(
 		const char* label_id,
 		cocos2d::Sprite* sprite,
 		const ImPlotPoint& bounds_min,
 		const ImPlotPoint& bounds_max,
-		const ImVec4& tint_col = ImVec4(1, 1, 1, 1));
+		const ImVec4& tint_col = ImVec4(1, 1, 1, 1),
+		const ImPlotSpec& spec = ImPlotSpec());
 
 	// markdown
 
