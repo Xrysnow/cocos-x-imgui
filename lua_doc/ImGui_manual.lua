@@ -178,8 +178,8 @@ end
 
 -- Scalar widgets (generic interfaces and float/int convenience wrappers)
 -- All return changed, value; N variants return a fresh 1-based array and never mutate
--- the input table. Components are inferred from a dense array, with no extra keys;
--- an empty array returns false, {} without submitting a widget. No void* or cdata
+-- the input table. Read consecutive raw indices from 1, silently stopping at the first nil;
+-- extra keys are ignored. An empty prefix returns false, {} without submitting a widget. No void* or cdata
 -- buffer is exposed. Optional arguments accept nil and use their documented defaults.
 -- Values must be finite and fit the selected type; integer inputs must be integral.
 -- Invalid conversion is an error even when general binding checks are disabled.
@@ -292,7 +292,7 @@ end
 --
 -- Widgets: Drag Sliders
 -- - CTRL+Click on any drag box to turn them into an input box. Manually input values aren't clamped and can go off-bounds.
--- - N variants take dense Lua arrays; they do not accept native pointers or a separate component count.
+-- - N variants read the 1-based prefix until the first nil, ignoring extra keys; no native pointers or separate component count.
 -- - Adjust format string to decorate the value with a prefix, a suffix, or adapt the editing and display precision e.g. "%.3f" -> 1.234; "%5.2f secs" -> 01.23 secs; "Biscuit: %.0f" -> Biscuit: 1; etc.
 -- - Format string may also be set to NULL or use the default format ("%f" or "%d").
 -- - Speed are per-pixel of mouse movement (v_speed=0.2f: mouse needs to move by 5 pixels to increase value by 1). For gamepad/keyboard navigation, minimum speed is Max(v_speed, minimum_step_at_given_precision).

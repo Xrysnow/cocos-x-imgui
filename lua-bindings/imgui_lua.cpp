@@ -664,7 +664,8 @@ end
 	lua::native_to_luaval(L, value);
 }
 
-// Raw dense arrays only. The temporary buffer is Lua-owned, so a Lua error during
+// Read the raw 1-based prefix, ignoring extra keys and stopping at the first nil.
+// The temporary buffer is Lua-owned, so a Lua error during
 // conversion/output cannot bypass a vector destructor and leak its allocation.
 template<typename T>
 T* read_array(lua_State* L, int index, int* count)
@@ -673,20 +674,15 @@ T* read_array(lua_State* L, int index, int* count)
 	const size_t size = lua_objlen(L, index);
 	if (size > static_cast<size_t>((std::numeric_limits<int>::max)()) || size > SIZE_MAX / sizeof(T))
 		luaL_error(L, "scalar array is too large");
-	size_t keys = 0;
-	lua_pushnil(L);
-	while (lua_next(L, index)) {
-		const double key = lua_type(L, -2) == LUA_TNUMBER ? lua_tonumber(L, -2) : 0;
-		if (!(key >= 1 && key <= size && std::trunc(key) == key))
-			luaL_error(L, "expected a dense 1-based scalar array without extra keys");
-		++keys;
-		lua_pop(L, 1);
-	}
-	if (keys != size) luaL_error(L, "scalar array contains holes");
 	*count = static_cast<int>(size);
 	auto* data = static_cast<T*>(lua_newuserdata(L, size * sizeof(T)));
 	for (int i = 0; i < *count; ++i) {
 		lua_rawgeti(L, index, i + 1);
+		if (lua_isnil(L, -1)) {
+			lua_pop(L, 1);
+			*count = i;
+			break;
+		}
 		if (!read_scalar(L, -1, data + i))
 			luaL_error(L, "invalid scalar array element #%d", i + 1);
 		lua_pop(L, 1);
