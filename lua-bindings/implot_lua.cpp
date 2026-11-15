@@ -8,6 +8,7 @@
 #include <cmath>
 #include <limits>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #pragma warning (disable: 4244)
@@ -16,8 +17,6 @@ using lua::luaval_to_native;
 using lua::native_to_luaval;
 using lua::LUA_TCDATA;
 
-namespace
-{
 #define lua_opt_impoint(_N, _IDX, _DEF) lua_opt_value(_N, _IDX, _luaval_to_implotPoint, _DEF)
 #define lua_opt_imrange(_N, _IDX, _DEF) lua_opt_value(_N, _IDX, _luaval_to_implotRange, _DEF)
 #define lua_opt_imrect(_N, _IDX, _DEF) lua_opt_value(_N, _IDX, _luaval_to_implotRect, _DEF)
@@ -66,6 +65,65 @@ ImPlotSpec lua_toImPlotSpec(lua_State* L, int lo)
 	}
 #undef get_field
 	return ret;
+}
+
+enum PlotSpecArrays {
+	PlotSpecArrays_None = 0,
+	PlotSpecArrays_Line = 1,
+	PlotSpecArrays_Fill = 2,
+	PlotSpecArrays_Marker = 4,
+};
+
+// Leave each copied buffer on the Lua stack until the PlotX call returns. Lua owns
+// the allocation even if a later conversion raises an error (no vector unwinding).
+// Read the raw 1-based prefix, ignoring extra keys and stopping at the first nil.
+template<typename T>
+static T* lua_plot_spec_array(lua_State* L, int spec_index, const char* field, int required_count)
+{
+	lua_getfield(L, spec_index, field);
+	if (lua_isnil(L, -1)) { lua_pop(L, 1); return nullptr; }
+	luaL_checktype(L, -1, LUA_TTABLE);
+	const int array_index = lua_gettop(L);
+	size_t count = lua_objlen(L, array_index);
+	if (count > static_cast<size_t>((std::numeric_limits<int>::max)()) || count > SIZE_MAX / sizeof(T))
+		luaL_error(L, "ImPlotSpec.%s array is too large", field);
+	auto* data = static_cast<T*>(lua_newuserdata(L, count * sizeof(T)));
+	for (size_t i = 0; i < count; ++i) {
+		lua_rawgeti(L, array_index, static_cast<int>(i + 1));
+		if (lua_isnil(L, -1)) {
+			lua_pop(L, 1);
+			count = i;
+			break;
+		}
+		const double value = luaL_checknumber(L, -1);
+#if CC_DEBUG >= 1
+		if (lua_type(L, -1) != LUA_TNUMBER || !std::isfinite(value) || value < 0 ||
+			value > static_cast<double>((std::numeric_limits<T>::max)()) ||
+			(std::is_integral_v<T> && std::trunc(value) != value))
+			luaL_error(L, "ImPlotSpec.%s has an out-of-range element #%d", field, static_cast<int>(i + 1));
+#endif
+		data[i] = static_cast<T>(value);
+		lua_pop(L, 1);
+	}
+#if CC_DEBUG >= 1
+	if (count < static_cast<size_t>(required_count))
+		luaL_error(L, "ImPlotSpec.%s requires at least %d elements", field, required_count);
+#else
+	(void)required_count;
+#endif
+	lua_remove(L, array_index);
+	return data;
+}
+
+static void lua_plot_spec_arrays(lua_State* L, int lo, ImPlotSpec& spec, int count, unsigned arrays)
+{
+	if (!lua_istable(L, lo)) return;
+	if (lo < 0) lo = lua_gettop(L) + lo + 1;
+	spec.LineColors = lua_plot_spec_array<ImU32>(L, lo, "LineColors", arrays & PlotSpecArrays_Line ? count : 0);
+	spec.FillColors = lua_plot_spec_array<ImU32>(L, lo, "FillColors", arrays & PlotSpecArrays_Fill ? count : 0);
+	spec.MarkerSizes = lua_plot_spec_array<float>(L, lo, "MarkerSizes", arrays & PlotSpecArrays_Marker ? count : 0);
+	spec.MarkerLineColors = lua_plot_spec_array<ImU32>(L, lo, "MarkerLineColors", arrays & PlotSpecArrays_Marker ? count : 0);
+	spec.MarkerFillColors = lua_plot_spec_array<ImU32>(L, lo, "MarkerFillColors", arrays & PlotSpecArrays_Marker ? count : 0);
 }
 
 // implot
@@ -328,7 +386,7 @@ static int lua_check_count(lua_State* L, int lo, size_t size)
 }
 
 // Packed Lua arrays cannot honor arbitrary byte strides. C callers own their buffers.
-static ImPlotSpec lua_plot_spec(lua_State* L, int lo, int element_size, bool packed, bool legacy_layout = false)
+static ImPlotSpec lua_plot_spec_values(lua_State* L, int lo, int element_size, bool packed, bool legacy_layout = false)
 {
 	ImPlotSpec spec;
 	if (lua_isnumber(L, lo))
@@ -344,6 +402,60 @@ static ImPlotSpec lua_plot_spec(lua_State* L, int lo, int element_size, bool pac
 	if (spec.Stride != IMPLOT_AUTO &&
 		(spec.Stride < element_size || spec.Stride % element_size != 0 || (packed && spec.Stride != element_size)))
 		luaL_error(L, "invalid plot offset/stride for the data layout");
+	return spec;
+}
+
+static ImPlotSpec lua_plot_spec(lua_State* L, int lo, int element_size, bool packed,
+	bool legacy_layout = false, int array_count = 0, unsigned arrays = PlotSpecArrays_None)
+{
+	ImPlotSpec spec = lua_plot_spec_values(L, lo, element_size, packed, legacy_layout);
+	lua_plot_spec_arrays(L, lo, spec, array_count, arrays);
+	return spec;
+}
+
+template<typename T>
+static ImPlotSpec lua_histogram_spec(lua_State* L, int lo, const T* values, int count,
+	int bins, ImPlotRange range, bool packed)
+{
+	ImPlotSpec spec = lua_plot_spec_values(L, lo, sizeof(T), packed);
+	int array_count = 0;
+#if CC_DEBUG >= 1
+	bool has_colors = false;
+	if (lua_istable(L, lo)) {
+		lua_getfield(L, lo, "LineColors");
+		lua_getfield(L, lo, "FillColors");
+		has_colors = !lua_isnil(L, -1) || !lua_isnil(L, -2);
+		lua_pop(L, 2);
+	}
+	if (has_colors && count > 0 && bins != 0) {
+		array_count = bins;
+		if (bins < 0) {
+			// Match the native histogram's offset/stride and automatic range/binning.
+			if (static_cast<size_t>(count) > SIZE_MAX / sizeof(double))
+				luaL_error(L, "histogram sample array is too large");
+			auto* samples = static_cast<double*>(lua_newuserdata(L, static_cast<size_t>(count) * sizeof(double)));
+			const int offset = ImPosMod(spec.Offset, count);
+			const int stride = spec.Stride == IMPLOT_AUTO ? sizeof(T) : spec.Stride;
+			for (int i = 0; i < count; ++i) {
+				const size_t index = (static_cast<size_t>(i) + offset) % count;
+				samples[i] = static_cast<double>(*reinterpret_cast<const T*>(reinterpret_cast<const char*>(values) + index * stride));
+			}
+			if (range.Min == 0 && range.Max == 0)
+				ImMinMaxArray(samples, count, &range.Min, &range.Max);
+			if (bins < ImPlotBin_Scott || bins > ImPlotBin_Sqrt)
+				luaL_error(L, "invalid automatic histogram binning method");
+			if (bins == ImPlotBin_Scott) {
+				const double width = 3.49 * ImStdDev(samples, count) / cbrt(count);
+				const double estimate = std::round(range.Size() / width);
+				if (!std::isfinite(estimate) || estimate < 1 || estimate > (std::numeric_limits<int>::max)())
+					luaL_error(L, "invalid automatic histogram bin count");
+			}
+			double width;
+			ImPlot::CalculateBins(samples, count, bins, range, array_count, width);
+		}
+	}
+#endif
+	lua_plot_spec_arrays(L, lo, spec, array_count, PlotSpecArrays_Line | PlotSpecArrays_Fill);
 	return spec;
 }
 
@@ -394,7 +506,7 @@ static int implot_plotLine(lua_State* L) {
 			ImPlot::PlotLine<double>(label_id, v1.data(), count,
 				lua_opt_number(args, 4, 1), // double xscale=1
 				lua_opt_number(args, 5, 0), // double xstart=0,
-				lua_plot_spec(L, 6, sizeof(double), true));
+				lua_plot_spec(L, 6, sizeof(double), true, false, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	if (type == LUA_TTABLE) {
@@ -405,7 +517,7 @@ static int implot_plotLine(lua_State* L) {
 		const auto count = lua_check_count(L, 4, std::min(v1.size(), v2.size()));
 		if (count > 0)
 			ImPlot::PlotLine<double>(label_id, v1.data(), v2.data(), count,
-				lua_plot_spec(L, 5, sizeof(double), true));
+				lua_plot_spec(L, 5, sizeof(double), true, false, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	return lua_param_error(3);
@@ -422,7 +534,7 @@ DEF_PLOT_T(implot_plotLine)
 			ImPlot::PlotLine<T>(label_id, v1, count,
 				lua_opt_number(args, 4 + Offset, 1),
 				lua_opt_number(args, 5 + Offset, 0),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	if (type3 == LUA_TCDATA) {
@@ -430,7 +542,7 @@ DEF_PLOT_T(implot_plotLine)
 		const int count = lua_plot_count(L, 4 + Offset);
 		if (count > 0)
 			ImPlot::PlotLine<T>(label_id, v1, v2, count,
-				lua_plot_spec(L, 5 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 5 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	return lua_param_error(3 + Offset);
@@ -449,7 +561,7 @@ static int implot_plotScatter(lua_State* L) {
 			ImPlot::PlotScatter<double>(label_id, v1.data(), count,
 				lua_opt_number(args, 4, 1),
 				lua_opt_number(args, 5, 0),
-				lua_plot_spec(L, 6, sizeof(double), true));
+				lua_plot_spec(L, 6, sizeof(double), true, false, count, PlotSpecArrays_Marker));
 		return 0;
 	}
 	if (type == LUA_TTABLE) {
@@ -459,7 +571,7 @@ static int implot_plotScatter(lua_State* L) {
 		const auto count = lua_check_count(L, 4, std::min(v1.size(), v2.size()));
 		if (count > 0)
 			ImPlot::PlotScatter<double>(label_id, v1.data(), v2.data(), count,
-				lua_plot_spec(L, 5, sizeof(double), true));
+				lua_plot_spec(L, 5, sizeof(double), true, false, count, PlotSpecArrays_Marker));
 		return 0;
 	}
 	return lua_param_error(3);
@@ -475,7 +587,7 @@ DEF_PLOT_T(implot_plotScatter) {
 			ImPlot::PlotScatter<T>(label_id, v1, count,
 				lua_opt_number(args, 4 + Offset, 1),
 				lua_opt_number(args, 5 + Offset, 0),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Marker));
 		return 0;
 	}
 	if (type3 == LUA_TCDATA) {
@@ -483,7 +595,7 @@ DEF_PLOT_T(implot_plotScatter) {
 		const int count = lua_plot_count(L, 4 + Offset);
 		if (count > 0)
 			ImPlot::PlotScatter<T>(label_id, v1, v2, count,
-				lua_plot_spec(L, 5 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 5 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Marker));
 		return 0;
 	}
 	return lua_param_error(3 + Offset);
@@ -502,7 +614,7 @@ static int implot_plotBubbles(lua_State* L) {
 		if (count > 0)
 			ImPlot::PlotBubbles<double>(label_id, v1.data(), v2.data(), count,
 				lua_opt_number(args, 5, 1), lua_opt_number(args, 6, 0),
-				lua_plot_spec(L, 7, sizeof(double), true));
+				lua_plot_spec(L, 7, sizeof(double), true, false, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	if (type == LUA_TTABLE) {
@@ -512,7 +624,7 @@ static int implot_plotBubbles(lua_State* L) {
 		const int count = lua_check_count(L, 5, std::min({ v1.size(), v2.size(), radii.size() }));
 		if (count > 0)
 			ImPlot::PlotBubbles<double>(label_id, v1.data(), v2.data(), radii.data(), count,
-				lua_plot_spec(L, 6, sizeof(double), true));
+				lua_plot_spec(L, 6, sizeof(double), true, false, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	return lua_param_error(4);
@@ -528,7 +640,7 @@ DEF_PLOT_T(implot_plotBubbles) {
 		if (count > 0)
 			ImPlot::PlotBubbles<T>(label_id, v1, v2, count,
 				lua_opt_number(args, 5 + Offset, 1), lua_opt_number(args, 6 + Offset, 0),
-				lua_plot_spec(L, 7 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 7 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	if (type == LUA_TCDATA) {
@@ -536,7 +648,7 @@ DEF_PLOT_T(implot_plotBubbles) {
 		const int count = lua_plot_count(L, 5 + Offset);
 		if (count > 0)
 			ImPlot::PlotBubbles<T>(label_id, v1, v2, radii, count,
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	return lua_param_error(4 + Offset);
@@ -577,7 +689,7 @@ static int implot_plotStairs(lua_State* L) {
 			ImPlot::PlotStairs<double>(label_id, v1.data(), count,
 				lua_opt_number(args, 4, 1),
 				lua_opt_number(args, 5, 0),
-				lua_plot_spec(L, 6, sizeof(double), true));
+				lua_plot_spec(L, 6, sizeof(double), true, false, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	if (type2 == LUA_TTABLE) {
@@ -587,7 +699,7 @@ static int implot_plotStairs(lua_State* L) {
 		const auto count = lua_check_count(L, 4, std::min(v1.size(), v2.size()));
 		if (count > 0)
 			ImPlot::PlotStairs<double>(label_id, v1.data(), v2.data(), count,
-				lua_plot_spec(L, 5, sizeof(double), true));
+				lua_plot_spec(L, 5, sizeof(double), true, false, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	return lua_param_error(3);
@@ -603,7 +715,7 @@ DEF_PLOT_T(implot_plotStairs) {
 			ImPlot::PlotStairs<T>(label_id, v1, count,
 				lua_opt_number(args, 4 + Offset, 1),
 				lua_opt_number(args, 5 + Offset, 0),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	if (type3 == LUA_TCDATA) {
@@ -611,7 +723,7 @@ DEF_PLOT_T(implot_plotStairs) {
 		const int count = lua_plot_count(L, 4 + Offset);
 		if (count > 0)
 			ImPlot::PlotStairs<T>(label_id, v1, v2, count,
-				lua_plot_spec(L, 5 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 5 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill | PlotSpecArrays_Marker));
 		return 0;
 	}
 	return lua_param_error(3 + Offset);
@@ -632,7 +744,7 @@ static int implot_plotShaded(lua_State* L) {
 				lua_opt_number(args, 4, 0),
 				lua_opt_number(args, 5, 1),
 				lua_opt_number(args, 6, 0),
-				lua_plot_spec(L, 7, sizeof(double), true));
+				lua_plot_spec(L, 7, sizeof(double), true, false, count, PlotSpecArrays_Fill));
 		return 0;
 	}
 	std::vector<double> v2;
@@ -645,7 +757,7 @@ static int implot_plotShaded(lua_State* L) {
 		if (count > 0)
 			ImPlot::PlotShaded<double>(label_id, v1.data(), v2.data(), count,
 				lua_opt_number(args, 5, 0),
-				lua_plot_spec(L, 6, sizeof(double), true));
+				lua_plot_spec(L, 6, sizeof(double), true, false, count, PlotSpecArrays_Fill));
 		return 0;
 	}
 	if (type4 == LUA_TTABLE) {
@@ -658,7 +770,7 @@ static int implot_plotShaded(lua_State* L) {
 		if (count > 0)
 			ImPlot::PlotShaded<double>(label_id,
 				v1.data(), v2.data(), v3.data(), count,
-				lua_plot_spec(L, 6, sizeof(double), true));
+				lua_plot_spec(L, 6, sizeof(double), true, false, count, PlotSpecArrays_Fill));
 		return 0;
 	}
 	return lua_param_error(4);
@@ -676,7 +788,7 @@ DEF_PLOT_T(implot_plotShaded) {
 				lua_opt_number(args, 4 + Offset, 0),
 				lua_opt_number(args, 5 + Offset, 1),
 				lua_opt_number(args, 6 + Offset, 0),
-				lua_plot_spec(L, 7 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 7 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Fill));
 		return 0;
 	}
 	LUA_GET_PTR(v2, 3 + Offset);
@@ -687,7 +799,7 @@ DEF_PLOT_T(implot_plotShaded) {
 		if (count > 0)
 			ImPlot::PlotShaded<T>(label_id, v1, v2, count,
 				lua_opt_number(args, 5 + Offset, 0),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Fill));
 		return 0;
 	}
 	if (type4 == LUA_TCDATA) {
@@ -696,7 +808,7 @@ DEF_PLOT_T(implot_plotShaded) {
 		const int count = lua_plot_count(L, 5 + Offset);
 		if (count > 0)
 			ImPlot::PlotShaded<T>(label_id, v1, v2, v3, count,
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Fill));
 		return 0;
 	}
 	return lua_param_error(4 + Offset);
@@ -716,7 +828,7 @@ static int implot_plotBars(lua_State* L) {
 			ImPlot::PlotBars<double>(label_id, v1.data(), count,
 				lua_opt_number(args, 4, 0.67),
 				lua_opt_number(args, 5, 0),
-				lua_plot_spec(L, 6, sizeof(double), true));
+				lua_plot_spec(L, 6, sizeof(double), true, false, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	if (type3 == LUA_TTABLE) {
@@ -728,7 +840,7 @@ static int implot_plotBars(lua_State* L) {
 		if (count > 0)
 			ImPlot::PlotBars<double>(label_id, v1.data(), v2.data(), count,
 				luaL_checknumber(L, 5),
-				lua_plot_spec(L, 6, sizeof(double), true));
+				lua_plot_spec(L, 6, sizeof(double), true, false, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	return lua_param_error(3);
@@ -745,7 +857,7 @@ DEF_PLOT_T(implot_plotBars) {
 			ImPlot::PlotBars<T>(label_id, v1, count,
 				lua_opt_number(args, 4 + Offset, 0.67),
 				lua_opt_number(args, 5 + Offset, 0),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	if (type3 == LUA_TCDATA) {
@@ -755,7 +867,7 @@ DEF_PLOT_T(implot_plotBars) {
 		if (count > 0)
 			ImPlot::PlotBars<T>(label_id, v1, v2, count,
 				luaL_checknumber(L, 5 + Offset),
-				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 		return 0;
 	}
 	return lua_param_error(3 + Offset);
@@ -783,7 +895,7 @@ static int implot_plotBarGroups(lua_State* L) {
 			count, groups,
 			lua_opt_number(args, 5, 0.67),
 			lua_opt_number(args, 6, 0),
-			lua_plot_spec(L, 7, sizeof(double), true));
+			lua_plot_spec(L, 7, sizeof(double), true, false, groups, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 	return 0;
 }
 DEF_PLOT_T(implot_plotBarGroups) {
@@ -807,7 +919,7 @@ DEF_PLOT_T(implot_plotBarGroups) {
 			groups,
 			lua_opt_number(args, 5 + Offset, 0.67),
 			lua_opt_number(args, 6 + Offset, 0),
-			lua_plot_spec(L, 7 + Offset, sizeof(T), false));
+			lua_plot_spec(L, 7 + Offset, sizeof(T), false, false, groups, PlotSpecArrays_Line | PlotSpecArrays_Fill));
 	return 0;
 }
 DEF_PLOT_C(implot_plotBarGroups);
@@ -887,7 +999,7 @@ static int implot_plotStems(lua_State* L) {
 				lua_opt_number(args, 4, 0),
 				lua_opt_number(args, 5, 1),
 				lua_opt_number(args, 6, 0),
-				lua_plot_spec(L, 7, sizeof(double), true));
+				lua_plot_spec(L, 7, sizeof(double), true, false, count, PlotSpecArrays_Line | PlotSpecArrays_Marker));
 		return 0;
 	}
 	std::vector<double> v2;
@@ -898,7 +1010,7 @@ static int implot_plotStems(lua_State* L) {
 	if (count > 0)
 		ImPlot::PlotStems<double>(label_id, v1.data(), v2.data(), count,
 			lua_opt_number(args, 5, 0),
-			lua_plot_spec(L, 6, sizeof(double), true));
+			lua_plot_spec(L, 6, sizeof(double), true, false, count, PlotSpecArrays_Line | PlotSpecArrays_Marker));
 	return 0;
 }
 DEF_PLOT_T(implot_plotStems) {
@@ -914,7 +1026,7 @@ DEF_PLOT_T(implot_plotStems) {
 				lua_opt_number(args, 4 + Offset, 0),
 				lua_opt_number(args, 5 + Offset, 1),
 				lua_opt_number(args, 6 + Offset, 0),
-				lua_plot_spec(L, 7 + Offset, sizeof(T), false, true));
+				lua_plot_spec(L, 7 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Marker));
 		return 0;
 	}
 	LUA_GET_PTR(v2, 3 + Offset);
@@ -923,7 +1035,7 @@ DEF_PLOT_T(implot_plotStems) {
 	if (count > 0)
 		ImPlot::PlotStems<T>(label_id, v1, v2, count,
 			lua_opt_number(args, 5 + Offset, 0),
-			lua_plot_spec(L, 6 + Offset, sizeof(T), false, true));
+			lua_plot_spec(L, 6 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line | PlotSpecArrays_Marker));
 	return 0;
 }
 DEF_PLOT_C(implot_plotStems);
@@ -938,7 +1050,7 @@ static int implot_plotInfLines(lua_State* L) {
 		ImPlot::PlotInfLines<double>(
 			label_id, xs.data(),
 			count,
-			lua_plot_spec(L, 4, sizeof(double), true));
+			lua_plot_spec(L, 4, sizeof(double), true, false, count, PlotSpecArrays_Line));
 	return 0;
 }
 DEF_PLOT_T(implot_plotInfLines) {
@@ -948,7 +1060,7 @@ DEF_PLOT_T(implot_plotInfLines) {
 	const int count = lua_plot_count(L, 3 + Offset);
 	if (count > 0)
 		ImPlot::PlotInfLines<T>(label_id, xs, count,
-			lua_plot_spec(L, 4 + Offset, sizeof(T), false, true));
+			lua_plot_spec(L, 4 + Offset, sizeof(T), false, true, count, PlotSpecArrays_Line));
 	return 0;
 }
 DEF_PLOT_C(implot_plotInfLines);
@@ -1039,12 +1151,11 @@ static int implot_plotHistogram(lua_State* L) {
 		return lua_param_error(2);
 	const int count = lua_check_count(L, 3, values.size());
 	if (count == 0) { lua_pushnumber(L, 0); return 1; }
-	lua_pushnumber(L, ImPlot::PlotHistogram<double>(
-		label_id, values.data(), count,
-		lua_opt_int(args, 4, ImPlotBin_Sturges),
-		lua_opt_number(args, 5, 1.0),
-		lua_opt_imrange(args, 6, ImPlotRange()),
-		lua_plot_spec(L, 7, sizeof(double), true)));
+	const int bins = lua_opt_int(args, 4, ImPlotBin_Sturges);
+	const double bar_scale = lua_opt_number(args, 5, 1.0);
+	const ImPlotRange range = lua_opt_imrange(args, 6, ImPlotRange());
+	const ImPlotSpec spec = lua_histogram_spec(L, 7, values.data(), count, bins, range, true);
+	lua_pushnumber(L, ImPlot::PlotHistogram<double>(label_id, values.data(), count, bins, bar_scale, range, spec));
 	return 1;
 }
 DEF_PLOT_T(implot_plotHistogram) {
@@ -1053,12 +1164,11 @@ DEF_PLOT_T(implot_plotHistogram) {
 	LUA_GET_PTR(values, 2 + Offset);
 	const int count = lua_plot_count(L, 3 + Offset);
 	if (count == 0) { lua_pushnumber(L, 0); return 1; }
-	lua_pushnumber(L, ImPlot::PlotHistogram<T>(
-		label_id, values, count,
-		lua_opt_int(args, 4 + Offset, ImPlotBin_Sturges),
-		lua_opt_number(args, 5 + Offset, 1.0),
-		lua_opt_imrange(args, 6 + Offset, ImPlotRange()),
-		lua_plot_spec(L, 7 + Offset, sizeof(T), false)));
+	const int bins = lua_opt_int(args, 4 + Offset, ImPlotBin_Sturges);
+	const double bar_scale = lua_opt_number(args, 5 + Offset, 1.0);
+	const ImPlotRange range = lua_opt_imrange(args, 6 + Offset, ImPlotRange());
+	const ImPlotSpec spec = lua_histogram_spec(L, 7 + Offset, values, count, bins, range, false);
+	lua_pushnumber(L, ImPlot::PlotHistogram<T>(label_id, values, count, bins, bar_scale, range, spec));
 	return 1;
 }
 DEF_PLOT_C(implot_plotHistogram);
@@ -1472,7 +1582,6 @@ static const luaL_Reg implot_methods[] = {
 #undef DEF_PLOT_C
 #undef DEF_PLOT_T
 #undef LUA_GET_PTR
-} // namespace
 
 void luaReg_implotManual(lua_State* L)
 {

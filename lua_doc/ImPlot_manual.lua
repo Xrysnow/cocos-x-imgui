@@ -69,16 +69,38 @@ end
 -- Array specs only allow Stride = -1 (auto) or sizeof(double) = 8. C specs allow auto or
 -- a positive stride >= sizeof(T), divisible by sizeof(T). Offset is a circular index.
 -- Use spec.Flags for horizontal, stacked, normalized, cumulative and density modes.
+-- Spec arrays copy consecutive raw indices from 1, silently stopping at the first nil
+-- and ignoring extra keys. Temporary buffers remain alive until PlotX returns;
+-- cdata is not accepted for these fields.
+-- Colors are packed ImGui uint32 values (use imgui.colorConvertFloat4ToU32), not ImVec4 arrays.
+-- MarkerSizes are finite non-negative float radii in pixels, independent of the coordinate dtype.
+-- nil/missing arrays use the corresponding scalar field. Arrays do not enable markers.
+-- Arrays use drawing order and contiguous storage; spec.Offset/Stride only affect plot data.
+-- Supply at least the effective point count, group_count for BarGroups (shared by every
+-- series), or the final bin count for Histogram (including automatic binning).
+-- Line/Fill colors apply to Line/Stairs (Fill requires Shaded), Bubbles and Bars;
+-- Shaded uses Fill, Stems/InfLines use Line, and Line/Stairs/Scatter/Stems use marker arrays.
+-- Other PlotX implementations currently ignore these arrays. Line segments use one flat
+-- color per segment; Segments mode reads Lua color indices 1,3,5,..., not consecutive pairs.
+-- CC_DEBUG >= 1 checks element ranges and the truncated prefix's capacity for supported fields.
+-- An insufficient prefix still raises a capacity error. Other builds require callers
+-- to supply a long enough prefix with valid values, without those strict checks.
+-- Arrays are never repeated/padded and do not reduce the plot count; no values are written back.
 
 ---@class implot.ImPlotSpec
 ---@field LineColor ImVec4|nil
+---@field LineColors integer[]|nil Packed uint32 colors in drawing order.
 ---@field LineWeight number|nil
 ---@field FillColor ImVec4|nil
+---@field FillColors integer[]|nil Packed uint32 colors, multiplied by FillAlpha.
 ---@field FillAlpha number|nil
 ---@field Marker integer|nil
 ---@field MarkerSize number|nil
+---@field MarkerSizes number[]|nil Non-negative float radii in pixels.
 ---@field MarkerLineColor ImVec4|nil
+---@field MarkerLineColors integer[]|nil Packed uint32 marker edge colors.
 ---@field MarkerFillColor ImVec4|nil
+---@field MarkerFillColors integer[]|nil Packed uint32 marker face colors, multiplied by FillAlpha.
 ---@field Size number|nil
 ---@field Offset integer|nil
 ---@field Stride integer|nil
