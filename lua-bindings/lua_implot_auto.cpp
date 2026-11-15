@@ -913,34 +913,6 @@ int luaReg_implot_implotImPlotStyle(lua_State* lua_S)
 	LUA_ENTRY_END(1);
 	return 0;
 }
-int lua_ImPlotInputMap_Fit_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.Fit/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_PUSH_NATIVE(cobj->Fit);
-	return 1;
-}
-int lua_ImPlotInputMap_Fit_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.Fit/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_NATIVE_SETTER(cobj->Fit, 2);
-	return 0;
-}
-int lua_ImPlotInputMap_Menu_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.Menu/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_PUSH_NATIVE(cobj->Menu);
-	return 1;
-}
-int lua_ImPlotInputMap_Menu_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.Menu/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_NATIVE_SETTER(cobj->Menu, 2);
-	return 0;
-}
 int lua_ImPlotInputMap_OverrideMod_getter(lua_State* lua_S)
 {
 	LUA_CUR_FNAME("implot.ImPlotInputMap.OverrideMod/getter");
@@ -955,20 +927,6 @@ int lua_ImPlotInputMap_OverrideMod_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->OverrideMod, 2);
 	return 0;
 }
-int lua_ImPlotInputMap_Pan_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.Pan/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_PUSH_NATIVE(cobj->Pan);
-	return 1;
-}
-int lua_ImPlotInputMap_Pan_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.Pan/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_NATIVE_SETTER(cobj->Pan, 2);
-	return 0;
-}
 int lua_ImPlotInputMap_PanMod_getter(lua_State* lua_S)
 {
 	LUA_CUR_FNAME("implot.ImPlotInputMap.PanMod/getter");
@@ -981,34 +939,6 @@ int lua_ImPlotInputMap_PanMod_setter(lua_State* lua_S)
 	LUA_CUR_FNAME("implot.ImPlotInputMap.PanMod/setter");
 	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
 	LUA_NATIVE_SETTER(cobj->PanMod, 2);
-	return 0;
-}
-int lua_ImPlotInputMap_Select_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.Select/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_PUSH_NATIVE(cobj->Select);
-	return 1;
-}
-int lua_ImPlotInputMap_Select_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.Select/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_NATIVE_SETTER(cobj->Select, 2);
-	return 0;
-}
-int lua_ImPlotInputMap_SelectCancel_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.SelectCancel/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_PUSH_NATIVE(cobj->SelectCancel);
-	return 1;
-}
-int lua_ImPlotInputMap_SelectCancel_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.SelectCancel/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_NATIVE_SETTER(cobj->SelectCancel, 2);
 	return 0;
 }
 int lua_ImPlotInputMap_SelectHorzMod_getter(lua_State* lua_S)
@@ -1067,37 +997,17 @@ int lua_ImPlotInputMap_ZoomMod_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->ZoomMod, 2);
 	return 0;
 }
-int lua_ImPlotInputMap_ZoomRate_getter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.ZoomRate/getter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_PUSH_NATIVE(cobj->ZoomRate);
-	return 1;
-}
-int lua_ImPlotInputMap_ZoomRate_setter(lua_State* lua_S)
-{
-	LUA_CUR_FNAME("implot.ImPlotInputMap.ZoomRate/setter");
-	auto cobj = LUA_TO_COBJ(ImPlotInputMap*, 1);
-	LUA_NATIVE_SETTER(cobj->ZoomRate, 2);
-	return 0;
-}
 int luaReg_implot_implotImPlotInputMap(lua_State* lua_S)
 {
 	LUA_ENTRY("implot");
 	LUA_CLS_DEF(ImPlotInputMap, "ImPlotInputMap", "implot.ImPlotInputMap",
 		nullptr, nullptr);
-	LUA_FIELD("Fit", lua_ImPlotInputMap_Fit_getter, lua_ImPlotInputMap_Fit_setter);
-	LUA_FIELD("Menu", lua_ImPlotInputMap_Menu_getter, lua_ImPlotInputMap_Menu_setter);
 	LUA_FIELD("OverrideMod", lua_ImPlotInputMap_OverrideMod_getter, lua_ImPlotInputMap_OverrideMod_setter);
-	LUA_FIELD("Pan", lua_ImPlotInputMap_Pan_getter, lua_ImPlotInputMap_Pan_setter);
 	LUA_FIELD("PanMod", lua_ImPlotInputMap_PanMod_getter, lua_ImPlotInputMap_PanMod_setter);
-	LUA_FIELD("Select", lua_ImPlotInputMap_Select_getter, lua_ImPlotInputMap_Select_setter);
-	LUA_FIELD("SelectCancel", lua_ImPlotInputMap_SelectCancel_getter, lua_ImPlotInputMap_SelectCancel_setter);
 	LUA_FIELD("SelectHorzMod", lua_ImPlotInputMap_SelectHorzMod_getter, lua_ImPlotInputMap_SelectHorzMod_setter);
 	LUA_FIELD("SelectMod", lua_ImPlotInputMap_SelectMod_getter, lua_ImPlotInputMap_SelectMod_setter);
 	LUA_FIELD("SelectVertMod", lua_ImPlotInputMap_SelectVertMod_getter, lua_ImPlotInputMap_SelectVertMod_setter);
 	LUA_FIELD("ZoomMod", lua_ImPlotInputMap_ZoomMod_getter, lua_ImPlotInputMap_ZoomMod_setter);
-	LUA_FIELD("ZoomRate", lua_ImPlotInputMap_ZoomRate_getter, lua_ImPlotInputMap_ZoomRate_setter);
 	LUA_CLS_END();
 	LUA_ENTRY_END(1);
 	return 0;

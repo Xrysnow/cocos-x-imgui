@@ -1519,6 +1519,87 @@ static int implot_tagY(lua_State* L) {
 	}
 	return 0;
 }
+// Input mapping
+
+static ImPlotInputMap* implot_currentInputMap(lua_State* L)
+{
+	if (!ImPlot::GetCurrentContext())
+		luaL_error(L, "input mapping requires an ImPlot context");
+	return &ImPlot::GetInputMap();
+}
+
+static ImPlotInputMap* implot_checkInputMap(lua_State* lua_S, int index)
+{
+	luaL_checkudata(lua_S, index, "implot.ImPlotInputMap");
+	auto* map = LUA_TO_COBJ(ImPlotInputMap*, index);
+	if (!map) luaL_error(lua_S, "invalid implot.ImPlotInputMap object");
+	return map;
+}
+
+static int implot_getInputMap(lua_State* lua_S)
+{
+	if (lua_gettop(lua_S) != 0)
+		return luaL_error(lua_S, "getInputMap expects no arguments");
+	// Borrow the context's map; do not copy it or register Lua ownership.
+	LUA_PUSH_NATIVE(implot_currentInputMap(lua_S));
+	return 1;
+}
+
+template<void (*Preset)(ImPlotInputMap*)>
+static int implot_mapInput(lua_State* lua_S)
+{
+	if (lua_gettop(lua_S) > 1)
+		return luaL_error(lua_S, "input mapping preset expects an optional ImPlotInputMap");
+	auto* map = implot_currentInputMap(lua_S);
+	if (!lua_isnoneornil(lua_S, 1))
+		map = implot_checkInputMap(lua_S, 1);
+	Preset(map);
+	return 0;
+}
+
+template<auto Field>
+static int implot_inputMap_get(lua_State* lua_S)
+{
+	auto* map = implot_checkInputMap(lua_S, 1);
+	LUA_PUSH_NATIVE(map->*Field);
+	return 1;
+}
+
+template<ImGuiMouseButton ImPlotInputMap::*Field>
+static int implot_inputMap_button_set(lua_State* lua_S)
+{
+	auto* map = implot_checkInputMap(lua_S, 1);
+	const int button = lua_plot_int(lua_S, 2);
+	// ImPlot uses these values directly as indices into ImGui's mouse arrays.
+	if (button < 0 || button >= ImGuiMouseButton_COUNT)
+		return luaL_error(lua_S, "input map mouse button must be in 0..%d", ImGuiMouseButton_COUNT - 1);
+	map->*Field = button;
+	return 0;
+}
+
+static int implot_inputMap_zoomRate_set(lua_State* lua_S)
+{
+	auto* map = implot_checkInputMap(lua_S, 1);
+	const float rate = static_cast<float>(luaL_checknumber(lua_S, 2));
+	// Native wheel-up zoom divides by 1 + 2 * rate. Check after float conversion.
+	if (!std::isfinite(rate) || rate == -0.5f)
+		return luaL_error(lua_S, "ZoomRate must be finite and must not round to -0.5");
+	map->ZoomRate = rate;
+	return 0;
+}
+
+static void luaReg_implotInputMap(lua_State* lua_S)
+{
+	LUA_ENTRY("implot");
+	LUA_ENTRY("ImPlotInputMap");
+#define INPUT_MAP_BUTTON(Name) \
+	LUA_FIELD(#Name, implot_inputMap_get<&ImPlotInputMap::Name>, implot_inputMap_button_set<&ImPlotInputMap::Name>);
+	LUA_FOR_EACH(INPUT_MAP_BUTTON, Pan, Fit, Select, SelectCancel, Menu)
+#undef INPUT_MAP_BUTTON
+	LUA_FIELD("ZoomRate", implot_inputMap_get<&ImPlotInputMap::ZoomRate>, implot_inputMap_zoomRate_set);
+	LUA_ENTRY_END(2);
+}
+
 static int implot_getStyle(lua_State* L) {
 	object_to_luaval(L, "implot.ImPlotStyle", &ImPlot::GetStyle());
 	return 1;
@@ -1694,6 +1775,9 @@ static const luaL_Reg implot_methods[] = {
 	M(annotation),
 	M(tagX),
 	M(tagY),
+	M(getInputMap),
+	{ "mapInputDefault", implot_mapInput<&ImPlot::MapInputDefault> },
+	{ "mapInputReverse", implot_mapInput<&ImPlot::MapInputReverse> },
 	M(getStyle),
 	M(pushStyleColor),
 	M(pushStyleVar),
@@ -1715,6 +1799,7 @@ static const luaL_Reg implot_methods[] = {
 void luaReg_implotManual(lua_State* L)
 {
 	luaReg_implot(L);
+	luaReg_implotInputMap(L);
 
 	lua_getglobal(L, "implot");
 	if (lua_istable(L, -1))

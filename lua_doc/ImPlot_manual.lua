@@ -956,6 +956,77 @@ function implot.itemIcon(col)
 end
 
 -------------------------------------------------------------------------------
+-- Input Mapping and Context Lifetime
+-------------------------------------------------------------------------------
+
+-- CCIMGUI creates and activates its ImPlot context after initializing ImGui and
+-- before initialization callbacks run. Shutdown destroys that owned context first.
+-- Context creation/destruction and raw context addresses are not Lua APIs.
+
+--- Borrow the current context's writable input map; changes affect all its plots.
+--- This is not a snapshot or a Lua-owned allocation. It remains valid across frames,
+--- but becomes invalid when its context is destroyed (including imgui.shutdown()).
+--- Reacquire it after reinitialization; no runtime lifetime tracking is provided.
+--- Configure before submitting plots, and avoid changing controls during a drag.
+--- Raises a Lua error without a current ImPlot context; does not initialize one.
+---@return implot.ImPlotInputMap
+function implot.getInputMap()
+end
+
+--- Reset all 12 fields to the native default preset. No return values.
+--- Omitted/nil dst selects the current context's map; otherwise modifies dst in place.
+--- Requires a current ImPlot context and a live ImPlotInputMap userdata, not a table.
+--- Pan/Fit/SelectCancel = Left; Select/Menu = Right; ZoomRate = 0.1.
+--- SelectHorzMod = Alt, SelectVertMod = Shift, OverrideMod = Ctrl; other mods = None.
+---@param dst? implot.ImPlotInputMap
+function implot.mapInputDefault(dst)
+end
+
+--- Reset all 12 fields to the native reversed preset. No return values.
+--- Same optional destination and lifetime rules as mapInputDefault().
+--- Pan/SelectCancel = Right; Select = Left. Fit remains Left, Menu remains Right;
+--- modifiers and ZoomRate reset to the default preset values as well.
+---@param dst? implot.ImPlotInputMap
+function implot.mapInputReverse(dst)
+end
+
+---@type implot.ImPlotInputMap
+local ImPlotInputMap
+
+--- Mouse button indices must be integers in [0, imgui.ImGuiMouseButton.COUNT).
+--- These index native mouse arrays; -1 is not a disable sentinel.
+---@type integer
+ImPlotInputMap.Pan = nil
+---@type integer
+ImPlotInputMap.Fit = nil
+---@type integer
+ImPlotInputMap.Select = nil
+--- Keep SelectCancel different from Select when using box selection.
+--- Setters allow temporary equality so the two fields can be swapped before drawing.
+---@type integer
+ImPlotInputMap.SelectCancel = nil
+---@type integer
+ImPlotInputMap.Menu = nil
+
+--- Finite float; negative values reverse zoom and zero keeps native no-zoom behavior.
+--- Values that convert to -0.5f are rejected: native zoom divides by 1 + 2 * ZoomRate.
+---@type number
+ImPlotInputMap.ZoomRate = nil
+
+-- PanMod, SelectMod, SelectHorzMod, SelectVertMod, OverrideMod and ZoomMod remain
+-- automatic writable integer properties. Use ImGuiMod_* bit combinations, e.g.
+-- imgui.ImGuiKey.ImGuiMod_Ctrl, not ordinary ImGuiKey codes. None is zero.
+-- No standalone constructor, copy operation or table-based setter is exposed.
+-- showInputMapSelector(label) remains automatic: choosing a preset resets the
+-- current map and returns true. Its UI selection is not a snapshot of custom fields.
+-- Example (after CCIMGUI initialization):
+-- implot.mapInputDefault()
+-- local input = implot.getInputMap()
+-- input.PanMod = imgui.ImGuiKey.ImGuiMod_Ctrl
+-- input.ZoomRate = 0.15
+-- implot.mapInputReverse(input) -- overwrites the custom values too
+
+-------------------------------------------------------------------------------
 -- Miscellaneous
 -------------------------------------------------------------------------------
 

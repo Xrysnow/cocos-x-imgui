@@ -543,26 +543,11 @@ ImPlotStyle.UseLocalTime = nil
 local ImPlotInputMap = {}
 implot.ImPlotInputMap = ImPlotInputMap
 
----@type ImGuiMouseButton (ImGuiMouseButton)
-ImPlotInputMap.Fit = nil
-
----@type ImGuiMouseButton (ImGuiMouseButton)
-ImPlotInputMap.Menu = nil
-
 ---@type number (int)
 ImPlotInputMap.OverrideMod = nil
 
----@type ImGuiMouseButton (ImGuiMouseButton)
-ImPlotInputMap.Pan = nil
-
 ---@type number (int)
 ImPlotInputMap.PanMod = nil
-
----@type ImGuiMouseButton (ImGuiMouseButton)
-ImPlotInputMap.Select = nil
-
----@type ImGuiMouseButton (ImGuiMouseButton)
-ImPlotInputMap.SelectCancel = nil
 
 ---@type number (int)
 ImPlotInputMap.SelectHorzMod = nil
@@ -575,9 +560,6 @@ ImPlotInputMap.SelectVertMod = nil
 
 ---@type number (int)
 ImPlotInputMap.ZoomMod = nil
-
----@type number (float)
-ImPlotInputMap.ZoomRate = nil
 
 ---@param group_id string @(const char*)
 ---@param vertical boolean @(bool)

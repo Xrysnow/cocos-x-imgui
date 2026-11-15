@@ -116,6 +116,7 @@ public:
 
 private:
 	static std::function<void(CCIMGUI*)> _onInit;
+	ImPlotContext* _implotContext = nullptr;
 	
     std::unordered_map<std::string, std::function<void()>> _callPiplines;
     std::unordered_map<cocos2d::Ref*, int> usedCCRefIdMap;

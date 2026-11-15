@@ -8,6 +8,8 @@ std::function<void(CCIMGUI*)> CCIMGUI::_onInit;
 void CCIMGUI::init()
 {
 	ImGui_ImplCC_Init(true);
+	_implotContext = ImPlot::CreateContext();
+	ImPlot::SetCurrentContext(_implotContext);
 }
 
 CCIMGUI* CCIMGUI::getInstance()
@@ -26,6 +28,12 @@ void CCIMGUI::destroyInstance()
 {
 	if (_instance)
 	{
+		// Destroy only our context, while ImGui and its allocators are still available.
+		if (_instance->_implotContext)
+		{
+			ImPlot::DestroyContext(_instance->_implotContext);
+			_instance->_implotContext = nullptr;
+		}
 		ImGui_ImplCC_Shutdown();
 		delete _instance;
 		_instance = nullptr;
