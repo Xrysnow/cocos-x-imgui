@@ -3,6 +3,7 @@
 #include "renderer/backend/Backend.h"
 #include "renderer/backend/gfx/DeviceGFX.h"
 #include <cstring>
+#include <algorithm>
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 #include "imgui_internal.h"
@@ -60,18 +61,18 @@ using namespace cocos2d;
 using namespace backend;
 
 // GLFW data
-static double               g_Time = 0.0;
-static bool                 g_MouseJustPressed[5] = { false, false, false, false, false };
-static ImVec2               g_CursorPos = ImVec2(-FLT_MAX, -FLT_MAX);
+static double g_Time = 0.0;
+static bool g_MouseJustPressed[5] = { false, false, false, false, false };
+static ImVec2 g_CursorPos = ImVec2(-FLT_MAX, -FLT_MAX);
 
 #ifndef CC_PLATFORM_PC
 static EventListenerTouchOneByOne* g_TouchListener = nullptr;
 static EventListenerKeyboard* g_KeyboardListener = nullptr;
 static int g_TouchId = -1;
+static bool g_MobileKeys[512] = {};
 #endif
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-static bool g_AndroidKeys[512] = {};
 // Android owns preedit/candidates. Only committed UTF-8 reaches ImGui. Use the
 // queued key API for deletion so multiple deletes and replacement text retain
 // their order even when the IME delivers them within a single rendered frame.
@@ -88,7 +89,7 @@ public:
 			{
 				_closing = false;
 				ImGui::GetIO().ClearInputKeys();
-				std::fill(std::begin(g_AndroidKeys), std::end(g_AndroidKeys), false);
+				std::fill(std::begin(g_MobileKeys), std::end(g_MobileKeys), false);
 				stop();
 			}
 		}
@@ -161,7 +162,9 @@ private:
 };
 
 static std::unique_ptr<ImGuiCocosIME> g_AndroidIME;
+#endif
 
+#ifndef CC_PLATFORM_PC
 static ImGuiKey ImGui_ImplCC_TranslateKey(EventKeyboard::KeyCode key)
 {
 	using K = EventKeyboard::KeyCode;
@@ -220,22 +223,25 @@ static ImGuiKey ImGui_ImplCC_TranslateKey(EventKeyboard::KeyCode key)
 	}
 }
 
-static void ImGui_ImplCC_AndroidKey(EventKeyboard::KeyCode key, bool down)
+static void ImGui_ImplCC_MobileKey(EventKeyboard::KeyCode key, bool down)
 {
 	const int native = (int)key;
-	if (native < 0 || native >= IM_ARRAYSIZE(g_AndroidKeys)) return;
-	g_AndroidKeys[native] = down;
+	if (native < 0 || native >= IM_ARRAYSIZE(g_MobileKeys)) return;
+	g_MobileKeys[native] = down;
 	auto& io = ImGui::GetIO();
 	using K = EventKeyboard::KeyCode;
-	io.AddKeyEvent(ImGuiMod_Ctrl, g_AndroidKeys[(int)K::KEY_LEFT_CTRL] || g_AndroidKeys[(int)K::KEY_RIGHT_CTRL]);
-	io.AddKeyEvent(ImGuiMod_Shift, g_AndroidKeys[(int)K::KEY_LEFT_SHIFT] || g_AndroidKeys[(int)K::KEY_RIGHT_SHIFT]);
-	io.AddKeyEvent(ImGuiMod_Alt, g_AndroidKeys[(int)K::KEY_LEFT_ALT] || g_AndroidKeys[(int)K::KEY_RIGHT_ALT]);
-	io.AddKeyEvent(ImGuiMod_Super, g_AndroidKeys[(int)K::KEY_HYPER]);
+	io.AddKeyEvent(ImGuiMod_Ctrl, g_MobileKeys[(int)K::KEY_LEFT_CTRL] || g_MobileKeys[(int)K::KEY_RIGHT_CTRL]);
+	io.AddKeyEvent(ImGuiMod_Shift, g_MobileKeys[(int)K::KEY_LEFT_SHIFT] || g_MobileKeys[(int)K::KEY_RIGHT_SHIFT]);
+	io.AddKeyEvent(ImGuiMod_Alt, g_MobileKeys[(int)K::KEY_LEFT_ALT] || g_MobileKeys[(int)K::KEY_RIGHT_ALT]);
+	io.AddKeyEvent(ImGuiMod_Super, g_MobileKeys[(int)K::KEY_HYPER]);
 	const auto translated = ImGui_ImplCC_TranslateKey(key);
 	if (translated != ImGuiKey_None) io.AddKeyEvent(translated, down);
 }
 
-static void ImGui_ImplCC_SetAndroidIME(ImGuiViewport*, ImGuiPlatformImeData* data)
+#endif
+
+#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
+static void ImGui_ImplCC_SetAndroidIME(ImGuiContext*, ImGuiViewport*, ImGuiPlatformImeData* data)
 {
 	if (g_AndroidIME) g_AndroidIME->update(data->WantVisible);
 }
@@ -249,6 +255,8 @@ static GLFWmousebuttonfun   g_PrevUserCallbackMousebutton = nullptr;
 static GLFWscrollfun        g_PrevUserCallbackScroll = nullptr;
 static GLFWkeyfun           g_PrevUserCallbackKey = nullptr;
 static GLFWcharfun          g_PrevUserCallbackChar = nullptr;
+static GLFWwindowfocusfun   g_PrevUserCallbackWindowFocus = nullptr;
+static GLFWcursorposfun     g_PrevUserCallbackCursorPos = nullptr;
 static GLFWmonitorfun       g_PrevUserCallbackMonitor = nullptr;
 static bool                 g_WantUpdateMonitors = true;
 static bool                 g_InstalledCallbacks = false;
@@ -333,7 +341,6 @@ struct SavedRenderState
 	bool depthTest;
 	bool stencilTest;
 };
-static SavedRenderState g_SavedRenderState;
 
 void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 {
@@ -351,15 +358,16 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 		return;
 
 	const auto renderer = Director::getInstance()->getRenderer();
-	// store
-	AddRendererCommand([renderer]()
+	// Each submission owns its saved state until its deferred restore runs.
+	auto saved_state = std::make_shared<SavedRenderState>();
+	AddRendererCommand([renderer, saved_state]()
 	{
-		g_SavedRenderState.cull = renderer->getCullMode();
-		g_SavedRenderState.vp = renderer->getViewport();
-		g_SavedRenderState.scissorTest = renderer->getScissorTest();
-		g_SavedRenderState.scissorRect = renderer->getScissorRect();
-		g_SavedRenderState.depthTest = renderer->getDepthTest();
-		g_SavedRenderState.stencilTest = renderer->getStencilTest();
+		saved_state->cull = renderer->getCullMode();
+		saved_state->vp = renderer->getViewport();
+		saved_state->scissorTest = renderer->getScissorTest();
+		saved_state->scissorRect = renderer->getScissorRect();
+		saved_state->depthTest = renderer->getDepthTest();
+		saved_state->stencilTest = renderer->getStencilTest();
 	});
 
 	ImGui_ImplCC_SetupRenderState(draw_data, fb_width, fb_height);
@@ -372,22 +380,22 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 	for (int n = 0; n < draw_data->CmdLists.Size; n++)
 	{
 		const ImDrawList* cmd_list = draw_data->CmdLists[n];
-		size_t ibuffer_offset = 0;
 
 		// Upload vertex/index buffers
 		const auto device = static_cast<backend::DeviceGFX*>(backend::Device::getInstance());
 		const auto vsize = cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
-		IM_ASSERT(vsize > 0);
-		auto vbuffer = device->newBuffer(
-			vsize, sizeof(ImDrawVert), BufferType::VERTEX, BufferUsage::STATIC);
 		const auto isize = cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
-		IM_ASSERT(isize > 0);
-		auto ibuffer = device->newBuffer(
-			isize, sizeof(ImDrawIdx), BufferType::INDEX, BufferUsage::STATIC);
-		vbuffer->autorelease();
-		vbuffer->updateData(cmd_list->VtxBuffer.Data, vsize);
-		ibuffer->autorelease();
-		ibuffer->updateData(cmd_list->IdxBuffer.Data, isize);
+		Buffer* vbuffer = nullptr;
+		Buffer* ibuffer = nullptr;
+		if (vsize > 0 && isize > 0)
+		{
+			vbuffer = device->newBuffer(vsize, sizeof(ImDrawVert), BufferType::VERTEX, BufferUsage::STATIC);
+			ibuffer = device->newBuffer(isize, sizeof(ImDrawIdx), BufferType::INDEX, BufferUsage::STATIC);
+			vbuffer->autorelease();
+			vbuffer->updateData(cmd_list->VtxBuffer.Data, vsize);
+			ibuffer->autorelease();
+			ibuffer->updateData(cmd_list->IdxBuffer.Data, isize);
+		}
 
 		for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
 		{
@@ -409,6 +417,7 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 			}
 			else
 			{
+				if (pcmd->ElemCount == 0 || !vbuffer || !ibuffer) continue;
 				// Project scissor/clipping rectangles into framebuffer space
 				ImVec4 clip_rect;
 				clip_rect.x = (pcmd->ClipRect.x - clip_off.x) * clip_scale.x;
@@ -416,8 +425,11 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 				clip_rect.z = (pcmd->ClipRect.z - clip_off.x) * clip_scale.x;
 				clip_rect.w = (pcmd->ClipRect.w - clip_off.y) * clip_scale.y;
 
-				if (clip_rect.x < fb_width && clip_rect.y < fb_height &&
-					clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
+				clip_rect.x = std::max(clip_rect.x, 0.0f);
+				clip_rect.y = std::max(clip_rect.y, 0.0f);
+				clip_rect.z = std::min(clip_rect.z, (float)fb_width);
+				clip_rect.w = std::min(clip_rect.w, (float)fb_height);
+				if (clip_rect.z > clip_rect.x && clip_rect.w > clip_rect.y)
 				{
 					// Apply scissor/clipping rectangle
 					AddRendererCommand([=]()
@@ -432,9 +444,8 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 					const ImTextureID texture_id = pcmd->GetTexID();
 					if (texture_id == ImTextureID_Invalid || texture_id == 0)
 						continue;
-					if (typeid(*((Ref*)texture_id)) == typeid(Texture2D))
+					if (auto tex = dynamic_cast<Texture2D*>((Ref*)texture_id))
 					{
-						auto tex = (Texture2D*)texture_id;
 						g_DrawTextures.pushBack(tex);
 						auto cmd = std::make_shared<CustomCommand>();
 						g_CustomCommands.push_back(cmd);
@@ -455,34 +466,34 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 						cmd->setVertexBuffer(vbuffer);
 						cmd->setDrawType(CustomCommand::DrawType::ELEMENT);
 						cmd->setPrimitiveType(PrimitiveType::TRIANGLE);
-						cmd->setIndexDrawInfo(ibuffer_offset + pcmd->IdxOffset, pcmd->ElemCount);
+						cmd->setIndexDrawInfo(pcmd->IdxOffset, pcmd->ElemCount);
 						renderer->addCommand(cmd.get());						
 					}
-					else
+					else if (auto node = dynamic_cast<Node*>((Ref*)texture_id))
 					{
-						auto node = (Node*)texture_id;
+						const bool visible = node->isVisible();
 						const auto tr = node->getNodeToParentTransform();
 						node->setVisible(true);
 						node->setNodeToParentTransform(tr);
 						const auto& proj = Director::getInstance()->getMatrix(MATRIX_STACK_TYPE::MATRIX_STACK_PROJECTION);
 						node->visit(Director::getInstance()->getRenderer(), proj.getInversed() * g_Projection, 0);
-						node->setVisible(false);
+						node->setVisible(visible);
 					}
 				}
 			}
 		}
 	}
 	// restore
-	AddRendererCommand([renderer]()
+	AddRendererCommand([renderer, saved_state]()
 	{
-		renderer->setCullMode(g_SavedRenderState.cull);
-		auto& vp = g_SavedRenderState.vp;
+		renderer->setCullMode(saved_state->cull);
+		auto& vp = saved_state->vp;
 		renderer->setViewPort(vp.x, vp.y, vp.w, vp.h);
-		renderer->setScissorTest(g_SavedRenderState.scissorTest);
-		auto& sc = g_SavedRenderState.scissorRect;
+		renderer->setScissorTest(saved_state->scissorTest);
+		auto& sc = saved_state->scissorRect;
 		renderer->setScissorRect(sc.x, sc.y, sc.width, sc.height);
-		renderer->setDepthTest(g_SavedRenderState.depthTest);
-		renderer->setStencilTest(g_SavedRenderState.stencilTest);
+		renderer->setDepthTest(saved_state->depthTest);
+		renderer->setStencilTest(saved_state->stencilTest);
 	});
 }
 
@@ -491,6 +502,8 @@ void ImGui_ImplCC_RenderPlatform()
 #ifdef CC_PLATFORM_PC
 	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 	{
+		if (!(ImGui::GetIO().BackendFlags & ImGuiBackendFlags_RendererHasViewports))
+			return;
 		// no GL context to restore under gfx; platform windows only
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
@@ -498,10 +511,10 @@ void ImGui_ImplCC_RenderPlatform()
 #endif
 }
 
-static const char* ImGui_ImplCC_GetClipboardText(void* user_data)
+static const char* ImGui_ImplCC_GetClipboardText(ImGuiContext*)
 {
 #ifdef CC_PLATFORM_PC
-	return glfwGetClipboardString((GLFWwindow*)user_data);
+	return glfwGetClipboardString(ImGui_ImplCC_GetWindow());
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 	static std::string clipboard;
 	clipboard = JniHelper::callStaticStringMethod("org/cocos/lib/CocosEngine", "getClipboardString");
@@ -511,10 +524,10 @@ static const char* ImGui_ImplCC_GetClipboardText(void* user_data)
 #endif
 }
 
-static void ImGui_ImplCC_SetClipboardText(void* user_data, const char* text)
+static void ImGui_ImplCC_SetClipboardText(ImGuiContext*, const char* text)
 {
 #ifdef CC_PLATFORM_PC
-	glfwSetClipboardString((GLFWwindow*)user_data, text);
+	glfwSetClipboardString(ImGui_ImplCC_GetWindow(), text);
 #elif CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 	JniHelper::callStaticVoidMethod("org/cocos/lib/CocosEngine", "setClipboardString", std::string(text ? text : ""));
 #else
@@ -523,13 +536,28 @@ static void ImGui_ImplCC_SetClipboardText(void* user_data, const char* text)
 
 #ifdef CC_PLATFORM_PC
 
+void ImGui_ImplCC_CursorPosCallback(GLFWwindow* window, double x, double y)
+{
+	if (g_PrevUserCallbackCursorPos && window == ImGui_ImplCC_GetWindow())
+		g_PrevUserCallbackCursorPos(window, x, y);
+	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		int window_x, window_y;
+		glfwGetWindowPos(window, &window_x, &window_y);
+		x += window_x;
+		y += window_y;
+	}
+	ImGui::GetIO().AddMousePosEvent((float)x, (float)y);
+}
+
 void ImGui_ImplCC_MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
 	if (g_PrevUserCallbackMousebutton != nullptr && window == ImGui_ImplCC_GetWindow())
 		g_PrevUserCallbackMousebutton(window, button, action, mods);
 
-	if (action == GLFW_PRESS && button >= 0 && button < IM_ARRAYSIZE(g_MouseJustPressed))
-		g_MouseJustPressed[button] = true;
+	if (button >= 0 && button < IM_ARRAYSIZE(ImGui::GetIO().MouseDown) &&
+		(action == GLFW_PRESS || action == GLFW_RELEASE))
+		ImGui::GetIO().AddMouseButtonEvent(button, action == GLFW_PRESS);
 }
 
 void ImGui_ImplCC_ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
@@ -538,36 +566,166 @@ void ImGui_ImplCC_ScrollCallback(GLFWwindow* window, double xoffset, double yoff
 		g_PrevUserCallbackScroll(window, xoffset, yoffset);
 
 	ImGuiIO& io = ImGui::GetIO();
-	io.MouseWheelH += (float)xoffset;
-	io.MouseWheel += (float)yoffset;
+	io.AddMouseWheelEvent((float)xoffset, (float)yoffset);
+}
+
+static ImGuiKey ImGui_ImplCC_KeyToImGuiKey(int keycode, int scancode)
+{
+	IM_UNUSED(scancode);
+	switch (keycode)
+	{
+		case GLFW_KEY_TAB: return ImGuiKey_Tab;
+		case GLFW_KEY_LEFT: return ImGuiKey_LeftArrow;
+		case GLFW_KEY_RIGHT: return ImGuiKey_RightArrow;
+		case GLFW_KEY_UP: return ImGuiKey_UpArrow;
+		case GLFW_KEY_DOWN: return ImGuiKey_DownArrow;
+		case GLFW_KEY_PAGE_UP: return ImGuiKey_PageUp;
+		case GLFW_KEY_PAGE_DOWN: return ImGuiKey_PageDown;
+		case GLFW_KEY_HOME: return ImGuiKey_Home;
+		case GLFW_KEY_END: return ImGuiKey_End;
+		case GLFW_KEY_INSERT: return ImGuiKey_Insert;
+		case GLFW_KEY_DELETE: return ImGuiKey_Delete;
+		case GLFW_KEY_BACKSPACE: return ImGuiKey_Backspace;
+		case GLFW_KEY_SPACE: return ImGuiKey_Space;
+		case GLFW_KEY_ENTER: return ImGuiKey_Enter;
+		case GLFW_KEY_ESCAPE: return ImGuiKey_Escape;
+		case GLFW_KEY_APOSTROPHE: return ImGuiKey_Apostrophe;
+		case GLFW_KEY_COMMA: return ImGuiKey_Comma;
+		case GLFW_KEY_MINUS: return ImGuiKey_Minus;
+		case GLFW_KEY_PERIOD: return ImGuiKey_Period;
+		case GLFW_KEY_SLASH: return ImGuiKey_Slash;
+		case GLFW_KEY_SEMICOLON: return ImGuiKey_Semicolon;
+		case GLFW_KEY_EQUAL: return ImGuiKey_Equal;
+		case GLFW_KEY_LEFT_BRACKET: return ImGuiKey_LeftBracket;
+		case GLFW_KEY_BACKSLASH: return ImGuiKey_Backslash;
+		case GLFW_KEY_WORLD_1: return ImGuiKey_Oem102;
+		case GLFW_KEY_WORLD_2: return ImGuiKey_Oem102;
+		case GLFW_KEY_RIGHT_BRACKET: return ImGuiKey_RightBracket;
+		case GLFW_KEY_GRAVE_ACCENT: return ImGuiKey_GraveAccent;
+		case GLFW_KEY_CAPS_LOCK: return ImGuiKey_CapsLock;
+		case GLFW_KEY_SCROLL_LOCK: return ImGuiKey_ScrollLock;
+		case GLFW_KEY_NUM_LOCK: return ImGuiKey_NumLock;
+		case GLFW_KEY_PRINT_SCREEN: return ImGuiKey_PrintScreen;
+		case GLFW_KEY_PAUSE: return ImGuiKey_Pause;
+		case GLFW_KEY_KP_0: return ImGuiKey_Keypad0;
+		case GLFW_KEY_KP_1: return ImGuiKey_Keypad1;
+		case GLFW_KEY_KP_2: return ImGuiKey_Keypad2;
+		case GLFW_KEY_KP_3: return ImGuiKey_Keypad3;
+		case GLFW_KEY_KP_4: return ImGuiKey_Keypad4;
+		case GLFW_KEY_KP_5: return ImGuiKey_Keypad5;
+		case GLFW_KEY_KP_6: return ImGuiKey_Keypad6;
+		case GLFW_KEY_KP_7: return ImGuiKey_Keypad7;
+		case GLFW_KEY_KP_8: return ImGuiKey_Keypad8;
+		case GLFW_KEY_KP_9: return ImGuiKey_Keypad9;
+		case GLFW_KEY_KP_DECIMAL: return ImGuiKey_KeypadDecimal;
+		case GLFW_KEY_KP_DIVIDE: return ImGuiKey_KeypadDivide;
+		case GLFW_KEY_KP_MULTIPLY: return ImGuiKey_KeypadMultiply;
+		case GLFW_KEY_KP_SUBTRACT: return ImGuiKey_KeypadSubtract;
+		case GLFW_KEY_KP_ADD: return ImGuiKey_KeypadAdd;
+		case GLFW_KEY_KP_ENTER: return ImGuiKey_KeypadEnter;
+		case GLFW_KEY_KP_EQUAL: return ImGuiKey_KeypadEqual;
+		case GLFW_KEY_LEFT_SHIFT: return ImGuiKey_LeftShift;
+		case GLFW_KEY_LEFT_CONTROL: return ImGuiKey_LeftCtrl;
+		case GLFW_KEY_LEFT_ALT: return ImGuiKey_LeftAlt;
+		case GLFW_KEY_LEFT_SUPER: return ImGuiKey_LeftSuper;
+		case GLFW_KEY_RIGHT_SHIFT: return ImGuiKey_RightShift;
+		case GLFW_KEY_RIGHT_CONTROL: return ImGuiKey_RightCtrl;
+		case GLFW_KEY_RIGHT_ALT: return ImGuiKey_RightAlt;
+		case GLFW_KEY_RIGHT_SUPER: return ImGuiKey_RightSuper;
+		case GLFW_KEY_MENU: return ImGuiKey_Menu;
+		case GLFW_KEY_0: return ImGuiKey_0;
+		case GLFW_KEY_1: return ImGuiKey_1;
+		case GLFW_KEY_2: return ImGuiKey_2;
+		case GLFW_KEY_3: return ImGuiKey_3;
+		case GLFW_KEY_4: return ImGuiKey_4;
+		case GLFW_KEY_5: return ImGuiKey_5;
+		case GLFW_KEY_6: return ImGuiKey_6;
+		case GLFW_KEY_7: return ImGuiKey_7;
+		case GLFW_KEY_8: return ImGuiKey_8;
+		case GLFW_KEY_9: return ImGuiKey_9;
+		case GLFW_KEY_A: return ImGuiKey_A;
+		case GLFW_KEY_B: return ImGuiKey_B;
+		case GLFW_KEY_C: return ImGuiKey_C;
+		case GLFW_KEY_D: return ImGuiKey_D;
+		case GLFW_KEY_E: return ImGuiKey_E;
+		case GLFW_KEY_F: return ImGuiKey_F;
+		case GLFW_KEY_G: return ImGuiKey_G;
+		case GLFW_KEY_H: return ImGuiKey_H;
+		case GLFW_KEY_I: return ImGuiKey_I;
+		case GLFW_KEY_J: return ImGuiKey_J;
+		case GLFW_KEY_K: return ImGuiKey_K;
+		case GLFW_KEY_L: return ImGuiKey_L;
+		case GLFW_KEY_M: return ImGuiKey_M;
+		case GLFW_KEY_N: return ImGuiKey_N;
+		case GLFW_KEY_O: return ImGuiKey_O;
+		case GLFW_KEY_P: return ImGuiKey_P;
+		case GLFW_KEY_Q: return ImGuiKey_Q;
+		case GLFW_KEY_R: return ImGuiKey_R;
+		case GLFW_KEY_S: return ImGuiKey_S;
+		case GLFW_KEY_T: return ImGuiKey_T;
+		case GLFW_KEY_U: return ImGuiKey_U;
+		case GLFW_KEY_V: return ImGuiKey_V;
+		case GLFW_KEY_W: return ImGuiKey_W;
+		case GLFW_KEY_X: return ImGuiKey_X;
+		case GLFW_KEY_Y: return ImGuiKey_Y;
+		case GLFW_KEY_Z: return ImGuiKey_Z;
+		case GLFW_KEY_F1: return ImGuiKey_F1;
+		case GLFW_KEY_F2: return ImGuiKey_F2;
+		case GLFW_KEY_F3: return ImGuiKey_F3;
+		case GLFW_KEY_F4: return ImGuiKey_F4;
+		case GLFW_KEY_F5: return ImGuiKey_F5;
+		case GLFW_KEY_F6: return ImGuiKey_F6;
+		case GLFW_KEY_F7: return ImGuiKey_F7;
+		case GLFW_KEY_F8: return ImGuiKey_F8;
+		case GLFW_KEY_F9: return ImGuiKey_F9;
+		case GLFW_KEY_F10: return ImGuiKey_F10;
+		case GLFW_KEY_F11: return ImGuiKey_F11;
+		case GLFW_KEY_F12: return ImGuiKey_F12;
+		case GLFW_KEY_F13: return ImGuiKey_F13;
+		case GLFW_KEY_F14: return ImGuiKey_F14;
+		case GLFW_KEY_F15: return ImGuiKey_F15;
+		case GLFW_KEY_F16: return ImGuiKey_F16;
+		case GLFW_KEY_F17: return ImGuiKey_F17;
+		case GLFW_KEY_F18: return ImGuiKey_F18;
+		case GLFW_KEY_F19: return ImGuiKey_F19;
+		case GLFW_KEY_F20: return ImGuiKey_F20;
+		case GLFW_KEY_F21: return ImGuiKey_F21;
+		case GLFW_KEY_F22: return ImGuiKey_F22;
+		case GLFW_KEY_F23: return ImGuiKey_F23;
+		case GLFW_KEY_F24: return ImGuiKey_F24;
+		default: return ImGuiKey_None;
+	}
 }
 
 void ImGui_ImplCC_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (g_PrevUserCallbackKey != nullptr && window == ImGui_ImplCC_GetWindow())
 		g_PrevUserCallbackKey(window, key, scancode, action, mods);
-
-	if (key < 0)
+	if (key < 0 || key >= IM_ARRAYSIZE(g_KeyOwnerWindows) ||
+		(action != GLFW_PRESS && action != GLFW_RELEASE))
 		return;
-	ImGuiIO& io = ImGui::GetIO();
-	if (action == GLFW_PRESS) {
-		io.KeysDown[key] = true;
-		g_KeyOwnerWindows[key] = window;
+	g_KeyOwnerWindows[key] = action == GLFW_PRESS ? window : nullptr;
+	auto& io = ImGui::GetIO();
+	io.AddKeyEvent(ImGuiMod_Ctrl, g_KeyOwnerWindows[GLFW_KEY_LEFT_CONTROL] || g_KeyOwnerWindows[GLFW_KEY_RIGHT_CONTROL]);
+	io.AddKeyEvent(ImGuiMod_Shift, g_KeyOwnerWindows[GLFW_KEY_LEFT_SHIFT] || g_KeyOwnerWindows[GLFW_KEY_RIGHT_SHIFT]);
+	io.AddKeyEvent(ImGuiMod_Alt, g_KeyOwnerWindows[GLFW_KEY_LEFT_ALT] || g_KeyOwnerWindows[GLFW_KEY_RIGHT_ALT]);
+	io.AddKeyEvent(ImGuiMod_Super, g_KeyOwnerWindows[GLFW_KEY_LEFT_SUPER] || g_KeyOwnerWindows[GLFW_KEY_RIGHT_SUPER]);
+	const auto translated = ImGui_ImplCC_KeyToImGuiKey(key, scancode);
+	if (translated != ImGuiKey_None)
+	{
+		io.AddKeyEvent(translated, action == GLFW_PRESS);
+		io.SetKeyEventNativeData(translated, key, scancode);
 	}
-	if (action == GLFW_RELEASE) {
-		io.KeysDown[key] = false;
-		g_KeyOwnerWindows[key] = nullptr;
-	}
+}
 
-	// Modifiers are not reliable across systems
-	io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
-	io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
-	io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
-#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-	io.KeySuper = false;
-#else
-	io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
-#endif
+void ImGui_ImplCC_WindowFocusCallback(GLFWwindow* window, int focused)
+{
+	if (g_PrevUserCallbackWindowFocus && window == ImGui_ImplCC_GetWindow())
+		g_PrevUserCallbackWindowFocus(window, focused);
+	if (!focused)
+		for (auto& owner : g_KeyOwnerWindows)
+			if (owner == window) owner = nullptr;
+	ImGui::GetIO().AddFocusEvent(focused != 0);
 }
 
 void ImGui_ImplCC_CharCallback(GLFWwindow* window, unsigned int c)
@@ -579,8 +737,9 @@ void ImGui_ImplCC_CharCallback(GLFWwindow* window, unsigned int c)
 	io.AddInputCharacter(c);
 }
 
-void ImGui_ImplGlfw_MonitorCallback(GLFWmonitor*, int)
+void ImGui_ImplGlfw_MonitorCallback(GLFWmonitor* monitor, int event)
 {
+	if (g_PrevUserCallbackMonitor) g_PrevUserCallbackMonitor(monitor, event);
 	g_WantUpdateMonitors = true;
 }
 
@@ -776,16 +935,6 @@ void ImGui_ImplCC_DestroyDeviceObjects()
 // If you are new to dear imgui or creating a new binding for dear imgui, it is recommended that you completely ignore this section first..
 //--------------------------------------------------------------------------------------------------------
 
-static void ImGui_ImplOpenGL2_RenderWindow(ImGuiViewport* viewport, void*)
-{
-	if (!(viewport->Flags & ImGuiViewportFlags_NoRendererClear))
-	{
-		const auto renderer = Director::getInstance()->getRenderer();
-		renderer->clear(ClearFlag::COLOR, { 0,0,0,1 }, 1, 0, 0);
-	}
-	ImGui_ImplCC_RenderDrawData(viewport->DrawData);
-}
-
 bool ImGui_ImplCC_Init(bool install_callbacks)
 {
 	g_Time = 0.0;
@@ -802,8 +951,7 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 
 #ifdef CC_PLATFORM_PC
-	// Enable Multi-Viewport / Platform Windows
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	// gfx currently renders only the main viewport. Keep OS viewports disabled.
 	//io.ConfigViewportsNoAutoMerge = true;
 	//io.ConfigViewportsNoTaskBarIcon = true;
 	const auto window = ImGui_ImplCC_GetWindow();
@@ -818,7 +966,6 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 	io.BackendFlags |= ImGuiBackendFlags_HasMouseHoveredViewport;
 #endif
 	// gfx renderer does not support multi-viewports rendering
-	platform_io.Renderer_RenderWindow = ImGui_ImplOpenGL2_RenderWindow;
 #endif // CC_PLATFORM_PC
 
 	io.BackendPlatformName = "imgui_impl_cocos";
@@ -828,41 +975,16 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 	g_AndroidIME.reset(new ImGuiCocosIME());
-	std::fill(std::begin(g_AndroidKeys), std::end(g_AndroidKeys), false);
+	std::fill(std::begin(g_MobileKeys), std::end(g_MobileKeys), false);
 	io.ConfigInputTrickleEventQueue = true;
-	io.SetPlatformImeDataFn = ImGui_ImplCC_SetAndroidIME;
-	io.SetClipboardTextFn = ImGui_ImplCC_SetClipboardText;
-	io.GetClipboardTextFn = ImGui_ImplCC_GetClipboardText;
+	platform_io.Platform_SetImeDataFn = ImGui_ImplCC_SetAndroidIME;
+	platform_io.Platform_SetClipboardTextFn = ImGui_ImplCC_SetClipboardText;
+	platform_io.Platform_GetClipboardTextFn = ImGui_ImplCC_GetClipboardText;
 #endif
 
 #ifdef CC_PLATFORM_PC
-	// Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array.
-	io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
-	io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
-	io.KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;
-	io.KeyMap[ImGuiKey_UpArrow] = GLFW_KEY_UP;
-	io.KeyMap[ImGuiKey_DownArrow] = GLFW_KEY_DOWN;
-	io.KeyMap[ImGuiKey_PageUp] = GLFW_KEY_PAGE_UP;
-	io.KeyMap[ImGuiKey_PageDown] = GLFW_KEY_PAGE_DOWN;
-	io.KeyMap[ImGuiKey_Home] = GLFW_KEY_HOME;
-	io.KeyMap[ImGuiKey_End] = GLFW_KEY_END;
-	io.KeyMap[ImGuiKey_Insert] = GLFW_KEY_INSERT;
-	io.KeyMap[ImGuiKey_Delete] = GLFW_KEY_DELETE;
-	io.KeyMap[ImGuiKey_Backspace] = GLFW_KEY_BACKSPACE;
-	io.KeyMap[ImGuiKey_Space] = GLFW_KEY_SPACE;
-	io.KeyMap[ImGuiKey_Enter] = GLFW_KEY_ENTER;
-	io.KeyMap[ImGuiKey_Escape] = GLFW_KEY_ESCAPE;
-	io.KeyMap[ImGuiKey_KeyPadEnter] = GLFW_KEY_KP_ENTER;
-	io.KeyMap[ImGuiKey_A] = GLFW_KEY_A;
-	io.KeyMap[ImGuiKey_C] = GLFW_KEY_C;
-	io.KeyMap[ImGuiKey_V] = GLFW_KEY_V;
-	io.KeyMap[ImGuiKey_X] = GLFW_KEY_X;
-	io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
-	io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
-
-	io.SetClipboardTextFn = ImGui_ImplCC_SetClipboardText;
-	io.GetClipboardTextFn = ImGui_ImplCC_GetClipboardText;
-	io.ClipboardUserData = window;
+	platform_io.Platform_SetClipboardTextFn = ImGui_ImplCC_SetClipboardText;
+	platform_io.Platform_GetClipboardTextFn = ImGui_ImplCC_GetClipboardText;
 
 	// Create mouse cursors
 	// (By design, on X11 cursors are user configurable and some cursors may be missing. When a cursor doesn't exist,
@@ -892,7 +1014,9 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 	g_PrevUserCallbackScroll = nullptr;
 	g_PrevUserCallbackKey = nullptr;
 	g_PrevUserCallbackChar = nullptr;
-	g_PrevUserCallbackMonitor = nullptr; // not used
+	g_PrevUserCallbackWindowFocus = nullptr;
+	g_PrevUserCallbackCursorPos = nullptr;
+	g_PrevUserCallbackMonitor = nullptr;
 	if (install_callbacks)
 	{
 		g_InstalledCallbacks = true;
@@ -900,12 +1024,13 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 		g_PrevUserCallbackScroll = glfwSetScrollCallback(window, ImGui_ImplCC_ScrollCallback);
 		g_PrevUserCallbackKey = glfwSetKeyCallback(window, ImGui_ImplCC_KeyCallback);
 		g_PrevUserCallbackChar = glfwSetCharCallback(window, ImGui_ImplCC_CharCallback);
+		g_PrevUserCallbackWindowFocus = glfwSetWindowFocusCallback(window, ImGui_ImplCC_WindowFocusCallback);
+		g_PrevUserCallbackCursorPos = glfwSetCursorPosCallback(window, ImGui_ImplCC_CursorPosCallback);
 		g_PrevUserCallbackMonitor = glfwSetMonitorCallback(ImGui_ImplGlfw_MonitorCallback);
 	}
 
 	// Update monitors the first time (note: monitor callback are broken in GLFW 3.2 and earlier, see github.com/glfw/glfw/issues/784)
 	ImGui_ImplGlfw_UpdateMonitors();
-	glfwSetMonitorCallback(ImGui_ImplGlfw_MonitorCallback);
 
 	// Our mouse update function expect PlatformHandle to be filled for the main viewport
 	ImGuiViewport* main_viewport = ImGui::GetMainViewport();
@@ -913,8 +1038,7 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 	main_viewport->PlatformHandleRaw = glfwGetWin32Window(window);
 #endif
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-		ImGui_ImplGlfw_InitPlatformInterface();
+	ImGui_ImplGlfw_InitPlatformInterface();
 #else
 	/*
 	auto e = cocos2d::EventListenerMouse::create();
@@ -983,61 +1107,16 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 	g_TouchListener = e1;
 
 	using KeyCode = cocos2d::EventKeyboard::KeyCode;
-#if CC_TARGET_PLATFORM != CC_PLATFORM_ANDROID
-	// Android submits named keys with AddKeyEvent, including IME deletion.
-	// ImGui rejects a backend that also installs the legacy key map.
-	io.KeyMap[ImGuiKey_Tab] = (int)KeyCode::KEY_TAB;
-	io.KeyMap[ImGuiKey_LeftArrow] = (int)KeyCode::KEY_LEFT_ARROW;
-	io.KeyMap[ImGuiKey_RightArrow] = (int)KeyCode::KEY_RIGHT_ARROW;
-	io.KeyMap[ImGuiKey_UpArrow] = (int)KeyCode::KEY_UP_ARROW;
-	io.KeyMap[ImGuiKey_DownArrow] = (int)KeyCode::KEY_DOWN_ARROW;
-	io.KeyMap[ImGuiKey_PageUp] = (int)KeyCode::KEY_PG_UP;
-	io.KeyMap[ImGuiKey_PageDown] = (int)KeyCode::KEY_PG_DOWN;
-	io.KeyMap[ImGuiKey_Home] = (int)KeyCode::KEY_HOME;
-	io.KeyMap[ImGuiKey_End] = (int)KeyCode::KEY_END;
-	io.KeyMap[ImGuiKey_Insert] = (int)KeyCode::KEY_INSERT;
-	io.KeyMap[ImGuiKey_Delete] = (int)KeyCode::KEY_DELETE;
-	io.KeyMap[ImGuiKey_Backspace] = (int)KeyCode::KEY_BACKSPACE;
-	io.KeyMap[ImGuiKey_Space] = (int)KeyCode::KEY_SPACE;
-	io.KeyMap[ImGuiKey_Enter] = (int)KeyCode::KEY_ENTER;
-	io.KeyMap[ImGuiKey_Escape] = (int)KeyCode::KEY_ESCAPE;
-	io.KeyMap[ImGuiKey_KeyPadEnter] = (int)KeyCode::KEY_KP_ENTER;
-	io.KeyMap[ImGuiKey_A] = (int)KeyCode::KEY_A;
-	io.KeyMap[ImGuiKey_C] = (int)KeyCode::KEY_C;
-	io.KeyMap[ImGuiKey_V] = (int)KeyCode::KEY_V;
-	io.KeyMap[ImGuiKey_X] = (int)KeyCode::KEY_X;
-	io.KeyMap[ImGuiKey_Y] = (int)KeyCode::KEY_Y;
-	io.KeyMap[ImGuiKey_Z] = (int)KeyCode::KEY_Z;
-#endif
+	std::fill(std::begin(g_MobileKeys), std::end(g_MobileKeys), false);
 
 	auto e2 = cocos2d::EventListenerKeyboard::create();
-	e2->onKeyPressed = [](KeyCode k, cocos2d::Event* ev)
+	e2->onKeyPressed = [](KeyCode k, cocos2d::Event*)
 	{
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-		ImGui_ImplCC_AndroidKey(k, true);
-#else
-		auto& _io = ImGui::GetIO();
-		_io.KeysDown[(int)k] = true;
-		// Modifiers are not reliable across systems
-		_io.KeyCtrl = _io.KeysDown[(int)KeyCode::KEY_LEFT_CTRL] || _io.KeysDown[(int)KeyCode::KEY_RIGHT_CTRL];
-		_io.KeyShift = _io.KeysDown[(int)KeyCode::KEY_LEFT_SHIFT] || _io.KeysDown[(int)KeyCode::KEY_RIGHT_SHIFT];
-		_io.KeyAlt = _io.KeysDown[(int)KeyCode::KEY_LEFT_ALT] || _io.KeysDown[(int)KeyCode::KEY_RIGHT_ALT];
-		_io.KeySuper = _io.KeysDown[(int)KeyCode::KEY_HYPER];
-#endif
+		ImGui_ImplCC_MobileKey(k, true);
 	};
-	e2->onKeyReleased = [](KeyCode k, cocos2d::Event* ev)
+	e2->onKeyReleased = [](KeyCode k, cocos2d::Event*)
 	{
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-		ImGui_ImplCC_AndroidKey(k, false);
-#else
-		auto& _io = ImGui::GetIO();
-		_io.KeysDown[(int)k] = false;
-		// Modifiers are not reliable across systems
-		_io.KeyCtrl = _io.KeysDown[(int)KeyCode::KEY_LEFT_CTRL] || _io.KeysDown[(int)KeyCode::KEY_RIGHT_CTRL];
-		_io.KeyShift = _io.KeysDown[(int)KeyCode::KEY_LEFT_SHIFT] || _io.KeysDown[(int)KeyCode::KEY_RIGHT_SHIFT];
-		_io.KeyAlt = _io.KeysDown[(int)KeyCode::KEY_LEFT_ALT] || _io.KeysDown[(int)KeyCode::KEY_RIGHT_ALT];
-		_io.KeySuper = _io.KeysDown[(int)KeyCode::KEY_HYPER];
-#endif
+		ImGui_ImplCC_MobileKey(k, false);
 	};
 	cocos2d::Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(e2, 1);
 	g_KeyboardListener = e2;
@@ -1070,8 +1149,12 @@ void ImGui_ImplCC_Shutdown()
 		glfwSetScrollCallback(g_Window, g_PrevUserCallbackScroll);
 		glfwSetKeyCallback(g_Window, g_PrevUserCallbackKey);
 		glfwSetCharCallback(g_Window, g_PrevUserCallbackChar);
+		glfwSetWindowFocusCallback(g_Window, g_PrevUserCallbackWindowFocus);
+		glfwSetCursorPosCallback(g_Window, g_PrevUserCallbackCursorPos);
+		glfwSetMonitorCallback(g_PrevUserCallbackMonitor);
 		g_InstalledCallbacks = false;
 	}
+	std::fill(std::begin(g_KeyOwnerWindows), std::end(g_KeyOwnerWindows), nullptr);
 
 	for (ImGuiMouseCursor cursor_n = 0; cursor_n < ImGuiMouseCursor_COUNT; cursor_n++)
 	{
@@ -1089,19 +1172,14 @@ static void ImGui_ImplCC_UpdateMousePosAndButtons()
 {
 #ifdef CC_PLATFORM_PC
 	const auto g_Window = ImGui_ImplCC_GetWindow();
-	// Update buttons
 	ImGuiIO& io = ImGui::GetIO();
-	for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
-	{
-		// If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-		io.MouseDown[i] = g_MouseJustPressed[i] || glfwGetMouseButton(g_Window, i) != 0;
-		g_MouseJustPressed[i] = false;
-	}
-
-	// Update mouse position
+	// Poll only when the application elected not to install our callbacks.
+	if (!g_InstalledCallbacks)
+		for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); ++i)
+			io.AddMouseButtonEvent(i, glfwGetMouseButton(g_Window, i) == GLFW_PRESS);
 	const ImVec2 mouse_pos_backup = io.MousePos;
-	io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
-	io.MouseHoveredViewport = 0;
+	ImVec2 mouse_pos(-FLT_MAX, -FLT_MAX);
+	ImGuiID hovered_viewport = 0;
 	ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
 	for (int n = 0; n < platform_io.Viewports.Size; n++)
 	{
@@ -1129,16 +1207,14 @@ static void ImGui_ImplCC_UpdateMousePosAndButtons()
 					// Multi-viewport mode: mouse position in OS absolute coordinates (io.MousePos is (0,0) when the mouse is on the upper-left of the primary monitor)
 					int window_x, window_y;
 					glfwGetWindowPos(window, &window_x, &window_y);
-					io.MousePos = ImVec2((float)mouse_x + window_x, (float)mouse_y + window_y);
+					mouse_pos = ImVec2((float)mouse_x + window_x, (float)mouse_y + window_y);
 				}
 				else
 				{
 					// Single viewport mode: mouse position in client window coordinates (io.MousePos is (0,0) when the mouse is on the upper-left corner of the app window)
-					io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);
+					mouse_pos = ImVec2((float)mouse_x, (float)mouse_y);
 				}
 			}
-			for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
-				io.MouseDown[i] |= glfwGetMouseButton(window, i) != 0;
 		}
 
 		// (Optional) When using multiple viewports: set io.MouseHoveredViewport to the viewport the OS mouse cursor is hovering.
@@ -1155,23 +1231,26 @@ static void ImGui_ImplCC_UpdateMousePosAndButtons()
 		glfwSetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH, window_no_input);
 #endif
 		if (glfwGetWindowAttrib(window, GLFW_HOVERED) && !window_no_input)
-			io.MouseHoveredViewport = viewport->ID;
+			hovered_viewport = viewport->ID;
 #endif
 	}
+	if (io.WantSetMousePos) mouse_pos = mouse_pos_backup;
+	io.AddMousePosEvent(mouse_pos.x, mouse_pos.y);
+	io.AddMouseViewportEvent(hovered_viewport);
 #else
 	// Update buttons
 	ImGuiIO& io = ImGui::GetIO();
 	for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
 	{
 		// g_MouseJustPressed represents touch state on mobile platforms
-		io.MouseDown[i] = g_MouseJustPressed[i];
+		io.AddMouseButtonEvent(i, g_MouseJustPressed[i]);
 	}
 	// Update mouse position
 	const ImVec2 mouse_pos_backup = io.MousePos;
-	io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+	ImVec2 mouse_pos(-FLT_MAX, -FLT_MAX);
 	if (io.WantSetMousePos)
 	{
-		io.MousePos = mouse_pos_backup;
+		mouse_pos = mouse_pos_backup;
 	}
 	else
 	{
@@ -1180,10 +1259,11 @@ static void ImGui_ImplCC_UpdateMousePosAndButtons()
 			// convert g_CursorPos
 			const auto glv = cocos2d::Director::getInstance()->getOpenGLView();
 			const auto rect = glv->getViewPortRect();
-			io.MousePos.x = g_CursorPos.x * glv->getScaleX() + rect.origin.x;
-			io.MousePos.y = g_CursorPos.y * glv->getScaleY() + rect.origin.y;
+			mouse_pos.x = g_CursorPos.x * glv->getScaleX() + rect.origin.x;
+			mouse_pos.y = g_CursorPos.y * glv->getScaleY() + rect.origin.y;
 		}
 	}
+	io.AddMousePosEvent(mouse_pos.x, mouse_pos.y);
 #endif // CC_PLATFORM_PC
 }
 
@@ -1218,48 +1298,47 @@ static void ImGui_ImplCC_UpdateMouseCursor()
 
 static void ImGui_ImplCC_UpdateGamepads()
 {
-	ImGuiIO& io = ImGui::GetIO();
-	memset(io.NavInputs, 0, sizeof(io.NavInputs));
-	if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
-		return;
-
-	// Update gamepad inputs
-	int axes_count = 0, buttons_count = 0;
+	auto& io = ImGui::GetIO();
+	const bool had_gamepad = (io.BackendFlags & ImGuiBackendFlags_HasGamepad) != 0;
+	io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
 #ifdef CC_PLATFORM_PC
-	#define MAP_BUTTON(NAV_NO, BUTTON_NO)       {\
-		if (buttons_count > BUTTON_NO && buttons[BUTTON_NO] == GLFW_PRESS) io.NavInputs[NAV_NO] = 1.0f; }
-	#define MAP_ANALOG(NAV_NO, AXIS_NO, V0, V1) {\
-		float v = (axes_count > AXIS_NO) ? axes[AXIS_NO] : V0;\
-		v = (v - V0) / (V1 - V0);\
-		if (v > 1.0f) v = 1.0f;\
-		if (io.NavInputs[NAV_NO] < v) io.NavInputs[NAV_NO] = v; }
-	const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axes_count);
-	const unsigned char* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttons_count);
-	MAP_BUTTON(ImGuiNavInput_Activate,   0);     // Cross / A
-	MAP_BUTTON(ImGuiNavInput_Cancel,     1);     // Circle / B
-	MAP_BUTTON(ImGuiNavInput_Menu,       2);     // Square / X
-	MAP_BUTTON(ImGuiNavInput_Input,      3);     // Triangle / Y
-	MAP_BUTTON(ImGuiNavInput_DpadLeft,   13);    // D-Pad Left
-	MAP_BUTTON(ImGuiNavInput_DpadRight,  11);    // D-Pad Right
-	MAP_BUTTON(ImGuiNavInput_DpadUp,     10);    // D-Pad Up
-	MAP_BUTTON(ImGuiNavInput_DpadDown,   12);    // D-Pad Down
-	MAP_BUTTON(ImGuiNavInput_FocusPrev,  4);     // L1 / LB
-	MAP_BUTTON(ImGuiNavInput_FocusNext,  5);     // R1 / RB
-	MAP_BUTTON(ImGuiNavInput_TweakSlow,  4);     // L1 / LB
-	MAP_BUTTON(ImGuiNavInput_TweakFast,  5);     // R1 / RB
-	MAP_ANALOG(ImGuiNavInput_LStickLeft, 0,  -0.3f,  -0.9f);
-	MAP_ANALOG(ImGuiNavInput_LStickRight,0,  +0.3f,  +0.9f);
-	MAP_ANALOG(ImGuiNavInput_LStickUp,   1,  +0.3f,  +0.9f);
-	MAP_ANALOG(ImGuiNavInput_LStickDown, 1,  -0.3f,  -0.9f);
-	#undef MAP_BUTTON
-	#undef MAP_ANALOG
-#else
-	//TODO:
-#endif // CC_PLATFORM_PC
-	if (axes_count > 0 && buttons_count > 0)
+	GLFWgamepadstate gamepad;
+	if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) && glfwGetGamepadState(GLFW_JOYSTICK_1, &gamepad))
+	{
+#define MAP_BUTTON(key, button) io.AddKeyEvent(key, gamepad.buttons[button] == GLFW_PRESS)
+#define MAP_ANALOG(key, axis, v0, v1) { const float v = std::clamp((gamepad.axes[axis] - (v0)) / ((v1) - (v0)), 0.0f, 1.0f); io.AddKeyAnalogEvent(key, v > 0.1f, v); }
 		io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
-	else
-		io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
+		MAP_BUTTON(ImGuiKey_GamepadStart,       GLFW_GAMEPAD_BUTTON_START);
+		MAP_BUTTON(ImGuiKey_GamepadBack,        GLFW_GAMEPAD_BUTTON_BACK);
+		MAP_BUTTON(ImGuiKey_GamepadFaceLeft,    GLFW_GAMEPAD_BUTTON_X);     // Xbox X, PS Square
+		MAP_BUTTON(ImGuiKey_GamepadFaceRight,   GLFW_GAMEPAD_BUTTON_B);     // Xbox B, PS Circle
+		MAP_BUTTON(ImGuiKey_GamepadFaceUp,      GLFW_GAMEPAD_BUTTON_Y);     // Xbox Y, PS Triangle
+		MAP_BUTTON(ImGuiKey_GamepadFaceDown,    GLFW_GAMEPAD_BUTTON_A);     // Xbox A, PS Cross
+		MAP_BUTTON(ImGuiKey_GamepadDpadLeft,    GLFW_GAMEPAD_BUTTON_DPAD_LEFT);
+		MAP_BUTTON(ImGuiKey_GamepadDpadRight,   GLFW_GAMEPAD_BUTTON_DPAD_RIGHT);
+		MAP_BUTTON(ImGuiKey_GamepadDpadUp,      GLFW_GAMEPAD_BUTTON_DPAD_UP);
+		MAP_BUTTON(ImGuiKey_GamepadDpadDown,    GLFW_GAMEPAD_BUTTON_DPAD_DOWN);
+		MAP_BUTTON(ImGuiKey_GamepadL1,          GLFW_GAMEPAD_BUTTON_LEFT_BUMPER);
+		MAP_BUTTON(ImGuiKey_GamepadR1,          GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER);
+		MAP_ANALOG(ImGuiKey_GamepadL2,          GLFW_GAMEPAD_AXIS_LEFT_TRIGGER,      -0.75f,  +1.0f);
+		MAP_ANALOG(ImGuiKey_GamepadR2,          GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER,      -0.75f,  +1.0f);
+		MAP_BUTTON(ImGuiKey_GamepadL3,          GLFW_GAMEPAD_BUTTON_LEFT_THUMB);
+		MAP_BUTTON(ImGuiKey_GamepadR3,          GLFW_GAMEPAD_BUTTON_RIGHT_THUMB);
+		MAP_ANALOG(ImGuiKey_GamepadLStickLeft,  GLFW_GAMEPAD_AXIS_LEFT_X,      -0.25f,  -1.0f);
+		MAP_ANALOG(ImGuiKey_GamepadLStickRight, GLFW_GAMEPAD_AXIS_LEFT_X,      +0.25f,  +1.0f);
+		MAP_ANALOG(ImGuiKey_GamepadLStickUp,    GLFW_GAMEPAD_AXIS_LEFT_Y,      -0.25f,  -1.0f);
+		MAP_ANALOG(ImGuiKey_GamepadLStickDown,  GLFW_GAMEPAD_AXIS_LEFT_Y,      +0.25f,  +1.0f);
+		MAP_ANALOG(ImGuiKey_GamepadRStickLeft,  GLFW_GAMEPAD_AXIS_RIGHT_X,      -0.25f,  -1.0f);
+		MAP_ANALOG(ImGuiKey_GamepadRStickRight, GLFW_GAMEPAD_AXIS_RIGHT_X,      +0.25f,  +1.0f);
+		MAP_ANALOG(ImGuiKey_GamepadRStickUp,    GLFW_GAMEPAD_AXIS_RIGHT_Y,      -0.25f,  -1.0f);
+		MAP_ANALOG(ImGuiKey_GamepadRStickDown,  GLFW_GAMEPAD_AXIS_RIGHT_Y,      +0.25f,  +1.0f);
+#undef MAP_BUTTON
+#undef MAP_ANALOG
+	}
+#endif
+	if (had_gamepad && !(io.BackendFlags & ImGuiBackendFlags_HasGamepad))
+		for (int key = ImGuiKey_GamepadStart; key <= ImGuiKey_GamepadRStickDown; ++key)
+			io.AddKeyAnalogEvent((ImGuiKey)key, false, 0.0f);
 }
 
 static void ImGui_ImplGlfw_UpdateMonitors()
@@ -1275,6 +1354,7 @@ static void ImGui_ImplGlfw_UpdateMonitors()
 		int x, y;
 		glfwGetMonitorPos(glfw_monitors[n], &x, &y);
 		const GLFWvidmode* vid_mode = glfwGetVideoMode(glfw_monitors[n]);
+		if (!vid_mode || vid_mode->width <= 0 || vid_mode->height <= 0) continue;
 		monitor.MainPos = monitor.WorkPos = ImVec2((float)x, (float)y);
 		monitor.MainSize = monitor.WorkSize = ImVec2((float)vid_mode->width, (float)vid_mode->height);
 #if GLFW_HAS_MONITOR_WORK_AREA
@@ -1302,7 +1382,7 @@ void ImGui_ImplCC_NewFrame()
 {
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 	// WantTextInput is computed at NewFrame and lags widget activation. Only
-	// SetPlatformImeDataFn's current WantVisible may change attachment; polling
+	// Platform_SetImeDataFn's current WantVisible may change attachment; polling
 	// last frame's flag here detaches a newly focused widget before it can type.
 	if (g_AndroidIME) g_AndroidIME->newFrame();
 #endif
@@ -1446,6 +1526,8 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
 	glfwSetScrollCallback(data->Window, ImGui_ImplCC_ScrollCallback);
 	glfwSetKeyCallback(data->Window, ImGui_ImplCC_KeyCallback);
 	glfwSetCharCallback(data->Window, ImGui_ImplCC_CharCallback);
+	glfwSetWindowFocusCallback(data->Window, ImGui_ImplCC_WindowFocusCallback);
+	glfwSetCursorPosCallback(data->Window, ImGui_ImplCC_CursorPosCallback);
 	glfwSetWindowCloseCallback(data->Window, ImGui_ImplGlfw_WindowCloseCallback);
 	glfwSetWindowPosCallback(data->Window, ImGui_ImplGlfw_WindowPosCallback);
 	glfwSetWindowSizeCallback(data->Window, ImGui_ImplGlfw_WindowSizeCallback);
@@ -1458,27 +1540,23 @@ static void ImGui_ImplGlfw_DestroyWindow(ImGuiViewport* viewport)
 		if (data->WindowOwned)
 		{
 			const auto window = data->Window;
-			const auto PlatformHandleRaw = viewport->PlatformHandleRaw;
-			AddRendererCommand([=]()
-			{
 #if !GLFW_HAS_MOUSE_PASSTHROUGH && GLFW_HAS_WINDOW_HOVERED && CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-				HWND hwnd = (HWND)viewport->PlatformHandleRaw;
-				::RemovePropA(hwnd, "IMGUI_VIEWPORT");
+			HWND hwnd = (HWND)viewport->PlatformHandleRaw;
+			::RemovePropA(hwnd, "IMGUI_VIEWPORT");
 #endif
 
-				// Release any keys that were pressed in the window being destroyed and are still held down,
-				// because we will not receive any release events after window is destroyed.
-				for (int i = 0; i < IM_ARRAYSIZE(g_KeyOwnerWindows); i++)
-					if (g_KeyOwnerWindows[i] == window)
-						ImGui_ImplCC_KeyCallback(window, i, 0, GLFW_RELEASE, 0); // Later params are only used for main viewport, on which this function is never called.
+			// Release any keys that were pressed in the window being destroyed and are still held down,
+			// because we will not receive any release events after window is destroyed.
+			for (int i = 0; i < IM_ARRAYSIZE(g_KeyOwnerWindows); i++)
+				if (g_KeyOwnerWindows[i] == window)
+					ImGui_ImplCC_KeyCallback(window, i, 0, GLFW_RELEASE, 0); // Later params are only used for main viewport, on which this function is never called.
 
-				glfwDestroyWindow(window);
-			});
+			glfwDestroyWindow(window);
 		}
 		data->Window = nullptr;
 		IM_DELETE(data);
 	}
-	viewport->PlatformUserData = viewport->PlatformHandle = nullptr;
+	viewport->PlatformUserData = viewport->PlatformHandle = viewport->PlatformHandleRaw = nullptr;
 }
 
 // We have submitted https://github.com/glfw/glfw/pull/1568 to allow GLFW to support "transparent inputs".
@@ -1494,7 +1572,7 @@ static LRESULT CALLBACK WndProcNoInputs(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 		// If you cannot easily access those viewport flags from your windowing/event code: you may manually synchronize its state e.g. in
 		// your main loop after calling UpdatePlatformWindows(). Iterate all viewports/platform windows and pass the flag to your windowing system.
 		ImGuiViewport* viewport = (ImGuiViewport*)::GetPropA(hWnd, "IMGUI_VIEWPORT");
-		if (viewport->Flags & ImGuiViewportFlags_NoInputs)
+		if (viewport && (viewport->Flags & ImGuiViewportFlags_NoInputs))
 			return HTTRANSPARENT;
 	}
 	return ::CallWindowProc(g_GlfwWndProc, hWnd, msg, wParam, lParam);
@@ -1505,7 +1583,7 @@ static void ImGui_ImplGlfw_ShowWindow(ImGuiViewport* viewport)
 {
 	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
 
-#if defined(_WIN32)
+#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 	// GLFW hack: Hide icon from task bar
 	HWND hwnd = (HWND)viewport->PlatformHandleRaw;
 	if (viewport->Flags & ImGuiViewportFlags_NoTaskBarIcon)
@@ -1517,7 +1595,7 @@ static void ImGui_ImplGlfw_ShowWindow(ImGuiViewport* viewport)
 	}
 
 	// GLFW hack: install hook for WM_NCHITTEST message handler
-#if !GLFW_HAS_MOUSE_PASSTHROUGH && GLFW_HAS_WINDOW_HOVERED && CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
+#if !GLFW_HAS_MOUSE_PASSTHROUGH && GLFW_HAS_WINDOW_HOVERED
 	::SetPropA(hwnd, "IMGUI_VIEWPORT", viewport);
 	if (g_GlfwWndProc == NULL)
 		g_GlfwWndProc = (WNDPROC)::GetWindowLongPtr(hwnd, GWLP_WNDPROC);
@@ -1639,9 +1717,9 @@ static void ImGui_ImplGlfw_SwapBuffers(ImGuiViewport* viewport, void*)
 #pragma comment(lib, "imm32")
 #endif
 
-static void ImGui_ImplGlfw_SetImeInputData(ImGuiViewport* viewport, ImGuiPlatformImeData* data)
+static void ImGui_ImplGlfw_SetImeInputData(ImGuiContext*, ImGuiViewport* viewport, ImGuiPlatformImeData* data)
 {
-	const auto hwnd = (HWND)glfwGetWin32Window(ImGui_ImplCC_GetWindow());
+	const auto hwnd = (HWND)viewport->PlatformHandleRaw;
 	if (hwnd)
 	{
 		if (HIMC himc = ::ImmGetContext(hwnd))
@@ -1710,7 +1788,7 @@ static void ImGui_ImplGlfw_InitPlatformInterface()
 	platform_io.Platform_CreateVkSurface = ImGui_ImplCC_CreateVkSurface;
 #endif
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-	ImGui::GetIO().SetPlatformImeDataFn = ImGui_ImplGlfw_SetImeInputData;
+	platform_io.Platform_SetImeDataFn = ImGui_ImplGlfw_SetImeInputData;
 #endif
 
 	// Register main window handle (which is owned by the main application, not by us)
