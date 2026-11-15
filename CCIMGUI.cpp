@@ -68,7 +68,7 @@ static std::tuple<ImVec2, ImVec2> getTextureUV(Sprite* sp)
 	ImVec2 uv0, uv1;
 	if (!sp || !sp->getTexture())
 		return { uv0,uv1 };
-	const auto rect = sp->getTextureRect();
+	const auto& rect = sp->getTextureRect();
 	const auto tex = sp->getTexture();
 	const float atlasWidth = (float)tex->getPixelsWide();
 	const float atlasHeight = (float)tex->getPixelsHigh();
@@ -100,8 +100,7 @@ void CCIMGUI::image(Sprite* sprite, const ImVec2& size, const ImVec4& tint_col, 
 	const auto& rect = sprite->getTextureRect();
 	if (size_.x <= 0.f) size_.x = rect.size.width;
 	if (size_.y <= 0.f) size_.y = rect.size.height;
-	ImVec2 uv0, uv1;
-	std::tie(uv0, uv1) = getTextureUV(sprite);
+	auto [uv0, uv1] = getTextureUV(sprite);
 	ImGui::PushID(getCCRefId(sprite));
 	ImGui::Image(
 		ImTextureRef{(ImTextureID)sprite->getTexture()},
@@ -130,8 +129,7 @@ void CCIMGUI::imageWithBg(Sprite* sprite, const ImVec2& size, const ImVec4& bg_c
 	const auto& rect = sprite->getTextureRect();
 	if (size_.x <= 0.f) size_.x = rect.size.width;
 	if (size_.y <= 0.f) size_.y = rect.size.height;
-	ImVec2 uv0, uv1;
-	std::tie(uv0, uv1) = getTextureUV(sprite);
+	auto [uv0, uv1] = getTextureUV(sprite);
 	ImGui::PushID(getCCRefId(sprite));
 	ImGui::ImageWithBg(
 		ImTextureRef{(ImTextureID)sprite->getTexture()},
@@ -166,8 +164,7 @@ bool CCIMGUI::imageButton(const char* str_id, Sprite* sprite, const ImVec2& size
 	const auto rect = sprite->getTextureRect();
 	if (size_.x <= 0.f) size_.x = rect.size.width;
 	if (size_.y <= 0.f) size_.y = rect.size.height;
-	ImVec2 uv0, uv1;
-	std::tie(uv0, uv1) = getTextureUV(sprite);
+	auto [uv0, uv1] = getTextureUV(sprite);
 	ImGui::PushID(getCCRefId(sprite));
 	const auto ret = ImGui::ImageButton(
 		str_id,
@@ -230,8 +227,7 @@ std::tuple<ImTextureID, ImVec2, ImVec2, int> CCIMGUI::useSprite(Sprite* sprite)
 {
 	if (!sprite || !sprite->getTexture())
 		return { 0,{},{},0 };
-	ImVec2 uv0, uv1;
-	std::tie(uv0, uv1) = getTextureUV(sprite);
+	auto [uv0, uv1] = getTextureUV(sprite);
 	return { (ImTextureID)sprite->getTexture(),uv0,uv1,getCCRefId(sprite) };
 }
 
@@ -320,8 +316,7 @@ void CCIMGUI::plotImage(const char* label_id, Sprite* sprite, const ImPlotPoint&
 {
 	if (!label_id || !sprite)
 		return;
-	ImVec2 uv0, uv1;
-	std::tie(uv0, uv1) = getTextureUV(sprite);
+	auto [uv0, uv1] = getTextureUV(sprite);
 	ImGui::PushID(getCCRefId(sprite));
 	ImPlot::PlotImage(label_id, (ImTextureID)sprite, bounds_min, bounds_max, uv0, uv1, tint_col, spec);
 	ImGui::PopID();
@@ -364,8 +359,7 @@ ImGui::MarkdownImageData MarkdownImageCallback(ImGui::MarkdownLinkCallbackData d
 {
 	if (!data.isImage || !ImGuiMarkdownImageCallback)
 		return ImGuiMarkdownInvalidImageData;
-	Sprite* sp; ImVec2 size; ImVec4 tint_col; ImVec4 border_col;
-	std::tie(sp, size, tint_col, border_col) = ImGuiMarkdownImageCallback(
+	auto [sp, size, tint_col, border_col] = ImGuiMarkdownImageCallback(
 		{ data.text, (size_t)data.textLength },
 		{ data.link, (size_t)data.linkLength });
 	if(!sp || !sp->getTexture())
@@ -374,8 +368,7 @@ ImGui::MarkdownImageData MarkdownImageCallback(ImGui::MarkdownLinkCallbackData d
 	const auto& rect = sp->getTextureRect();
 	if (size_.x <= 0.f) size_.x = rect.size.width;
 	if (size_.y <= 0.f) size_.y = rect.size.height;
-	ImVec2 uv0, uv1;
-	std::tie(uv0, uv1) = getTextureUV(sp);
+	auto [uv0, uv1] = getTextureUV(sp);
 	CCIMGUI::getInstance()->getCCRefId(sp);
 	ImGui::MarkdownImageData ret;
 	ret.isValid = true;
