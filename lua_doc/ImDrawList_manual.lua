@@ -70,6 +70,13 @@ end
 function ImDrawList:addConvexPolyFilled(points, col)
 end
 
+--- Fills a simple concave polygon; native winding and non-intersection requirements apply.
+--- The point count is derived from the Lua array, with no raw pointer/count overload.
+---@param points ImVec2[]
+---@param col integer Packed uint32 color.
+function ImDrawList:addConcavePolyFilled(points, col)
+end
+
 ---
 ---@param node cc.Node
 ---@param pos ImVec2

@@ -184,19 +184,6 @@ ImFontAtlas.TexUvScale = nil
 ---@type ImVec2 (ImVec2)
 ImFontAtlas.TexUvWhitePixel = nil
 
----@param width number @(int)
----@param height number @(int)
----@param out_r ImFontAtlasRect @(ImFontAtlasRect*)
----@return number @(ImFontAtlasRectId)
-function ImFontAtlas:addCustomRect(width, height, out_r)
-end
-
----@param width number @(int)
----@param height number @(int)
----@return number @(ImFontAtlasRectId)
-function ImFontAtlas:addCustomRect(width, height)
-end
-
 ---@param font_cfg ImFontConfig @(const ImFontConfig*)
 ---@return ImFont @(ImFont*)
 function ImFontAtlas:addFont(font_cfg)
@@ -247,12 +234,6 @@ end
 
 ---@return nil @(void)
 function ImFontAtlas:compactCache()
-end
-
----@param id number @(ImFontAtlasRectId)
----@param out_r ImFontAtlasRect @(ImFontAtlasRect*)
----@return boolean @(bool)
-function ImFontAtlas:getCustomRect(id, out_r)
 end
 
 ---@param id number @(ImFontAtlasRectId)

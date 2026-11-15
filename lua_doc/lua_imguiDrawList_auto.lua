@@ -159,13 +159,6 @@ end
 function ImDrawList:addCircleFilled(center, radius, col)
 end
 
----@param points ImVec2 @(const ImVec2*)
----@param num_points number @(int)
----@param col number @(ImU32)
----@return nil @(void)
-function ImDrawList:addConcavePolyFilled(points, num_points, col)
-end
-
 ---@return nil @(void)
 function ImDrawList:addDrawCmd()
 end

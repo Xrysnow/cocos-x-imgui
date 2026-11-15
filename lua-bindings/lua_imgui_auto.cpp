@@ -2435,23 +2435,11 @@ int lua_ImGui_shortcut(lua_State* lua_S)
 	LUA_TRY_INVOKE_R(1, [](ImGuiKeyChord arg0){{return ImGui::Shortcut(std::move(arg0));}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
-int lua_ImGui_showDebugLogWindow(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.showDebugLogWindow");
-	LUA_TRY_INVOKE(0, [](){{return ImGui::ShowDebugLogWindow();}});
-	LUA_GINVOKE_FOOTER("0");
-}
 int lua_ImGui_showFontSelector(lua_State* lua_S)
 {
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.showFontSelector");
 	LUA_TRY_INVOKE(1, &ImGui::ShowFontSelector);
 	LUA_GINVOKE_FOOTER("1");
-}
-int lua_ImGui_showIDStackToolWindow(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.showIDStackToolWindow");
-	LUA_TRY_INVOKE(0, [](){{return ImGui::ShowIDStackToolWindow();}});
-	LUA_GINVOKE_FOOTER("0");
 }
 int lua_ImGui_showStyleSelector(lua_State* lua_S)
 {
@@ -2617,13 +2605,6 @@ int lua_ImGui_textLinkOpenURL(lua_State* lua_S)
 	LUA_GINVOKE_HEADER("ImGui", "ImGui.textLinkOpenURL");
 	LUA_TRY_INVOKE_R(2, &ImGui::TextLinkOpenURL);
 	LUA_TRY_INVOKE_R(1, [](const char* arg0){{return ImGui::TextLinkOpenURL(arg0);}});
-	LUA_GINVOKE_FOOTER("1,2");
-}
-int lua_ImGui_textUnformatted(lua_State* lua_S)
-{
-	LUA_GINVOKE_HEADER("ImGui", "ImGui.textUnformatted");
-	LUA_TRY_INVOKE(2, &ImGui::TextUnformatted);
-	LUA_TRY_INVOKE(1, [](const char* arg0){{return ImGui::TextUnformatted(arg0);}});
 	LUA_GINVOKE_FOOTER("1,2");
 }
 int lua_ImGui_textWrapped(lua_State* lua_S)
@@ -2901,9 +2882,7 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("setWindowPos", lua_ImGui_setWindowPos);
 	LUA_METHOD("setWindowSize", lua_ImGui_setWindowSize);
 	LUA_METHOD("shortcut", lua_ImGui_shortcut);
-	LUA_METHOD("showDebugLogWindow", lua_ImGui_showDebugLogWindow);
 	LUA_METHOD("showFontSelector", lua_ImGui_showFontSelector);
-	LUA_METHOD("showIDStackToolWindow", lua_ImGui_showIDStackToolWindow);
 	LUA_METHOD("showStyleSelector", lua_ImGui_showStyleSelector);
 	LUA_METHOD("showUserGuide", lua_ImGui_showUserGuide);
 	LUA_METHOD("smallButton", lua_ImGui_smallButton);
@@ -2930,7 +2909,6 @@ int luaReg_imgui_imgui_global_functions(lua_State* lua_S)
 	LUA_METHOD("textDisabled", lua_ImGui_textDisabled);
 	LUA_METHOD("textLink", lua_ImGui_textLink);
 	LUA_METHOD("textLinkOpenURL", lua_ImGui_textLinkOpenURL);
-	LUA_METHOD("textUnformatted", lua_ImGui_textUnformatted);
 	LUA_METHOD("textWrapped", lua_ImGui_textWrapped);
 	LUA_METHOD("treeNode", lua_ImGui_treeNode);
 	LUA_METHOD("treeNodeEx", lua_ImGui_treeNodeEx);

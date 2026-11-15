@@ -18,6 +18,25 @@ end
 function imgui.showMetricsWindow(open)
 end
 
+--- Shows the debug log. With open supplied, returns its updated value; without it,
+--- shows no close button and returns no values, like showMetricsWindow().
+---@param open? boolean
+---@return boolean|nil open
+function imgui.showDebugLogWindow(open)
+end
+
+--- Shows the ID stack tool; the optional open value uses the same contract as above.
+---@param open? boolean
+---@return boolean|nil open
+function imgui.showIDStackToolWindow(open)
+end
+
+--- Renders one Lua string without formatting; the binding derives both native boundaries.
+--- Use string.sub() for a substring. A second end pointer/string is not accepted.
+---@param text string
+function imgui.textUnformatted(text)
+end
+
 
 -- Styles
 
@@ -488,28 +507,31 @@ end
 -- - Most of the ImGuiInputTextFlags flags are only useful for InputText() and not for InputFloatX, InputIntX, InputDouble etc.
 --
 
----inputText
+--- Editable string value. Returns the native result (including EnterReturnsTrue semantics)
+--- and the updated string. Embedded NUL bytes and all Callback* flags are rejected.
+--- The native std::string resize callback is internal and never exposed to Lua.
 ---@param label string
 ---@param str string
----@param flags number
+---@param flags? imgui.ImGuiInputTextFlags Defaults to 0.
 ---@return boolean,string
 function imgui.inputText(label, str, flags)
 end
 
----inputTextMultiline
+--- Multiline version of inputText(), with the same string and callback restrictions.
 ---@param label string
 ---@param str string
----@param size ImVec2
----@param flags number
+---@param size? ImVec2 Defaults to (0, 0).
+---@param flags? imgui.ImGuiInputTextFlags Defaults to 0.
 ---@return boolean,string
 function imgui.inputTextMultiline(label, str, size, flags)
 end
 
----inputTextWithHint
+--- Hint and editable string are separate arguments; returns result, updated string.
+--- Uses the same string and callback restrictions as inputText().
 ---@param label string
 ---@param hint string
 ---@param str string
----@param flags number
+---@param flags? imgui.ImGuiInputTextFlags Defaults to 0.
 ---@return boolean,string
 function imgui.inputTextWithHint(label, hint, str, flags)
 end
@@ -1155,6 +1177,35 @@ local ImFontAtlas
 --- The result can be passed directly as imgui.addFontTTF()'s ranges argument.
 ---@return integer[]
 function ImFontAtlas:getGlyphRangesDefault()
+end
+
+--- Plain snapshot; coordinates/UVs are valid for the atlas texture at query time only.
+---@class imgui.ImFontAtlasRect
+---@field x integer
+---@field y integer
+---@field w integer
+---@field h integer
+---@field uv0 ImVec2
+---@field uv1 ImVec2
+local ImFontAtlasRect
+
+--- Allocates a custom rectangle in an unlocked atlas. Dimensions must be 1..65535.
+--- Returns id, snapshot; packing failure returns -1, nil. IDs belong to this atlas
+--- and become invalid after removal/atlas clearing. Requery before using coordinates/UVs,
+--- including after another allocation or glyph load; this does not expose texture pixels.
+---@param width integer
+---@param height integer
+---@return integer id
+---@return imgui.ImFontAtlasRect|nil rect
+function ImFontAtlas:addCustomRect(width, height)
+end
+
+--- Returns true, fresh snapshot for a valid id, or false, nil when not found.
+--- Changing the snapshot does not change native atlas storage.
+---@param id integer
+---@return boolean found
+---@return imgui.ImFontAtlasRect|nil rect
+function ImFontAtlas:getCustomRect(id)
 end
 
 --- Independent glyph data copied before returning to Lua.

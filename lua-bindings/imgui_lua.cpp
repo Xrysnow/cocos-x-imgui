@@ -246,6 +246,18 @@ static int imgui_showAboutWindow(lua_State *L) {
 static int imgui_showMetricsWindow(lua_State *L) {
 	SHOW_WINDOW(ImGui::ShowMetricsWindow);
 }
+static int imgui_showDebugLogWindow(lua_State *L) {
+	if (lua_gettop(L) > 1) return luaL_error(L, "showDebugLogWindow expects optional open");
+	if (lua_isnoneornil(L, 1)) lua_settop(L, 0);
+	else luaL_checktype(L, 1, LUA_TBOOLEAN);
+	SHOW_WINDOW(ImGui::ShowDebugLogWindow);
+}
+static int imgui_showIDStackToolWindow(lua_State *L) {
+	if (lua_gettop(L) > 1) return luaL_error(L, "showIDStackToolWindow expects optional open");
+	if (lua_isnoneornil(L, 1)) lua_settop(L, 0);
+	else luaL_checktype(L, 1, LUA_TBOOLEAN);
+	SHOW_WINDOW(ImGui::ShowIDStackToolWindow);
+}
 
 // Styles
 
@@ -575,6 +587,9 @@ namespace
 {
 enum class Widget { Drag, Slider, Vertical, Input };
 constexpr double max_safe_integer = 9007199254740991.0;
+constexpr int input_callback_flags = ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory |
+	ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_CallbackCharFilter |
+	ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackEdit;
 
 // The common arithmetic output converter uses lua_Number. Preserve wide integers
 // with byte copies instead; neither direction converts wide cdata through double.
@@ -740,10 +755,7 @@ int scalar_widget(lua_State* L, int value_index, bool alias = false)
 			format = (flags & ImGuiInputTextFlags_CharsHexadecimal) ? "%08X" : "%d";
 		else
 			format = luaL_optstring(L, value_index + 3, alias ? (Type == ImGuiDataType_Double ? "%.6f" : "%.3f") : nullptr);
-		constexpr int callbacks = ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory |
-			ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_CallbackCharFilter |
-			ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackEdit;
-		if (flags & callbacks) return luaL_error(L, "scalar input does not accept callback flags");
+		if (flags & input_callback_flags) return luaL_error(L, "scalar input does not accept callback flags");
 	} else {
 		low = check_scalar<T>(L, value_index + 1);
 		high = check_scalar<T>(L, value_index + 2);
@@ -886,39 +898,38 @@ static int imgui_sliderAngle(lua_State *L) {
 
 // Widgets: Input with Keyboard
 
-static int imgui_inputText(lua_State *L) {
+template<int Mode>
+static int imgui_inputTextValue(lua_State* L) {
+	const int value_index = Mode == 2 ? 3 : 2;
+	const int flags_index = Mode == 0 ? 3 : 4;
 	const int args = lua_gettop(L);
-	std::string buf;
-	luaval_to_std_string(L, 2, &buf);
-    lua_pushboolean(L,
-		ImGui::InputText(luaL_checkstring(L, 1), &buf,
-			lua_opt_int(args, 3, 0)));
-	lua_pushlstring(L, buf.c_str(), buf.size());
-    return 2;
-}
-static int imgui_inputTextMultiline(lua_State *L) {
-	const int args = lua_gettop(L);
-	std::string buf;
-	luaval_to_std_string(L, 2, &buf);
-	lua_pushboolean(L,
-		ImGui::InputTextMultiline(
-			luaL_checkstring(L, 1), &buf,
-			lua_opt_imv2(args, 3, ImVec2(0, 0)),
-			lua_opt_int(args, 4, 0)));
-	lua_pushlstring(L, buf.c_str(), buf.size());
-	return 2;
-}
-static int imgui_inputTextWithHint(lua_State *L) {
-	const int args = lua_gettop(L);
-	std::string buf;
-	luaval_to_std_string(L, 2, &buf);
-	lua_pushboolean(L,
-		ImGui::InputTextWithHint(
-			luaL_checkstring(L, 1), luaL_checkstring(L, 2), &buf,
-			lua_opt_int(args, 3, 0)));
+	if (args < value_index || args > flags_index)
+		return luaL_error(L, "invalid text input argument count");
+	const char* label = luaL_checkstring(L, 1);
+	const char* hint = Mode == 2 ? luaL_checkstring(L, 2) : nullptr;
+	size_t length = 0;
+	const char* value = luaL_checklstring(L, value_index, &length);
+	if (std::memchr(value, '\0', length))
+		return luaL_error(L, "text input cannot contain embedded NUL bytes");
+	const int flags = optional_scalar<int>(L, flags_index);
+	if (flags & input_callback_flags) return luaL_error(L, "text input does not accept callback flags");
+	ImVec2 size(0, 0);
+	if constexpr (Mode == 1) {
+		if (!lua_isnoneornil(L, 3)) { lua_checknative(L, 3, &size); }
+	}
+	// Finish argument validation before constructing the native editable string.
+	std::string buf(value, length);
+	bool changed;
+	if constexpr (Mode == 0) changed = ImGui::InputText(label, &buf, flags);
+	else if constexpr (Mode == 1) changed = ImGui::InputTextMultiline(label, &buf, size, flags);
+	else changed = ImGui::InputTextWithHint(label, hint, &buf, flags);
+	lua_pushboolean(L, changed);
 	lua_pushlstring(L, buf.c_str(), buf.size());
 	return 2;
 }
+static int imgui_inputText(lua_State* L) { return imgui_inputTextValue<0>(L); }
+static int imgui_inputTextMultiline(lua_State* L) { return imgui_inputTextValue<1>(L); }
+static int imgui_inputTextWithHint(lua_State* L) { return imgui_inputTextValue<2>(L); }
 
 // Widgets: Color Editor/Picker
 
@@ -2153,6 +2164,14 @@ static float imgui_checkTextSize(lua_State* L, int index)
 	return size;
 }
 
+static int imgui_textUnformatted(lua_State* L)
+{
+	if (lua_gettop(L) != 1) return luaL_error(L, "textUnformatted expects one string");
+	const auto text = imgui_checkTextRange(L, 1);
+	ImGui::TextUnformatted(text.begin, text.end);
+	return 0;
+}
+
 static int imgui_calcTextSize(lua_State* lua_S)
 {
 	if (lua_gettop(lua_S) < 1 || lua_gettop(lua_S) > 3)
@@ -2219,12 +2238,13 @@ static int font_renderText(lua_State* lua_S)
 
 #define M(n) {#n, imgui_##n}
 static const luaL_Reg imgui_methods[] = {
-	M(calcTextSize),
+	M(calcTextSize), M(textUnformatted),
 	// Main
 	M(showStyleEditor),
 
 	// Demo, Debug, Information
 	M(showDemoWindow), M(showAboutWindow), M(showMetricsWindow),
+	M(showDebugLogWindow), M(showIDStackToolWindow),
 
 	// Styles
 	M(styleColorsDark), M(styleColorsClassic), M(styleColorsLight),
@@ -2617,11 +2637,42 @@ static int fontAtlas_getGlyphRangesDefault(lua_State* lua_S)
 	LUA_INVOKE_FOOTER("0");
 }
 
+template<bool Add>
+static int fontAtlas_customRect(lua_State* lua_S)
+{
+	if (lua_gettop(lua_S) != (Add ? 3 : 2))
+		return luaL_error(lua_S, "invalid custom rectangle argument count");
+	LUA_CUR_FNAME("imgui.ImFontAtlas:customRect");
+	luaL_checkudata(lua_S, 1, "imgui.ImFontAtlas");
+	auto* atlas = LUA_TO_COBJ(ImFontAtlas*, 1);
+	if (!atlas) return luaL_error(lua_S, "invalid imgui.ImFontAtlas");
+	ImFontAtlasRect rect;
+	bool found;
+	if constexpr (Add) {
+		const int width = check_scalar<int>(lua_S, 2);
+		const int height = check_scalar<int>(lua_S, 3);
+		if (width <= 0 || width > 0xffff || height <= 0 || height > 0xffff)
+			return luaL_error(lua_S, "rectangle dimensions must be integers in 1..65535");
+		if (atlas->Locked) return luaL_error(lua_S, "font atlas is locked");
+		const auto id = atlas->AddCustomRect(width, height, &rect);
+		found = id != ImFontAtlasRectId_Invalid;
+		LUA_PUSH_NATIVE(id);
+	} else {
+		found = atlas->GetCustomRect(check_scalar<int>(lua_S, 2), &rect);
+		LUA_PUSH_NATIVE(found);
+	}
+	if (found) { LUA_PUSH_NATIVE(rect); }
+	else lua_pushnil(lua_S);
+	return 2;
+}
+
 static int luaReg_imguiFontAtlasManual(lua_State* lua_S)
 {
 	LUA_ENTRY("imgui");
 	LUA_ENTRY("ImFontAtlas");
 	LUA_METHOD("getGlyphRangesDefault", fontAtlas_getGlyphRangesDefault);
+	LUA_METHOD("addCustomRect", fontAtlas_customRect<true>);
+	LUA_METHOD("getCustomRect", fontAtlas_customRect<false>);
 	LUA_ENTRY_END(2);
 	return 0;
 }

@@ -2474,17 +2474,9 @@ end
 function imgui.shortcut(key_chord)
 end
 
----@return nil @(void)
-function imgui.showDebugLogWindow()
-end
-
 ---@param label string @(const char*)
 ---@return nil @(void)
 function imgui.showFontSelector(label)
-end
-
----@return nil @(void)
-function imgui.showIDStackToolWindow()
 end
 
 ---@param label string @(const char*)
@@ -2668,17 +2660,6 @@ end
 ---@param label string @(const char*)
 ---@return boolean @(bool)
 function imgui.textLinkOpenURL(label)
-end
-
----@param text string @(const char*)
----@param text_end string @(const char*)
----@return nil @(void)
-function imgui.textUnformatted(text, text_end)
-end
-
----@param text string @(const char*)
----@return nil @(void)
-function imgui.textUnformatted(text)
 end
 
 ---@param fmt string @(const char*)

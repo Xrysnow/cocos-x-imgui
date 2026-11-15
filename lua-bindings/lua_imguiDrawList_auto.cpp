@@ -87,12 +87,6 @@ int lua_ImDrawList_addCircleFilled(lua_State* lua_S)
 	LUA_TRY_INVOKE(3, ([](ImDrawList* obj,const ImVec2& arg0,float arg1,ImU32 arg2){{return obj->AddCircleFilled(arg0,std::move(arg1),std::move(arg2));}}));
 	LUA_INVOKE_FOOTER("3,4");
 }
-int lua_ImDrawList_addConcavePolyFilled(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("imgui.ImDrawList", "imgui.ImDrawList:addConcavePolyFilled");
-	LUA_TRY_INVOKE(3, &ImDrawList::AddConcavePolyFilled);
-	LUA_INVOKE_FOOTER("3");
-}
 int lua_ImDrawList_addDrawCmd(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ImDrawList", "imgui.ImDrawList:addDrawCmd");
@@ -418,7 +412,6 @@ int luaReg_imguiDrawList_imguiImDrawList(lua_State* lua_S)
 	LUA_METHOD("addBezierQuadratic", lua_ImDrawList_addBezierQuadratic);
 	LUA_METHOD("addCircle", lua_ImDrawList_addCircle);
 	LUA_METHOD("addCircleFilled", lua_ImDrawList_addCircleFilled);
-	LUA_METHOD("addConcavePolyFilled", lua_ImDrawList_addConcavePolyFilled);
 	LUA_METHOD("addDrawCmd", lua_ImDrawList_addDrawCmd);
 	LUA_METHOD("addEllipse", lua_ImDrawList_addEllipse);
 	LUA_METHOD("addEllipseFilled", lua_ImDrawList_addEllipseFilled);

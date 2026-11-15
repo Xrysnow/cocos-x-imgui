@@ -70,6 +70,8 @@ namespace lua
     LUA_TO_NATIVE_STRUCT4(ImVec4, x, y, z, w);
     LUA_TO_LUA_STRUCT4(ImVec4, x, y, z, w);
 
+    LUA_TO_LUA_STRUCT6(ImFontAtlasRect, x, y, w, h, uv0, uv1);
+
     LUA_TO_LUA_STRUCT2(ImPlotPoint, x, y);
     LUA_TO_NATIVE_STRUCT2(ImPlotPoint, x, y);
 

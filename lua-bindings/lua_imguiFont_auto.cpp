@@ -806,13 +806,6 @@ int lua_ImFontAtlas_TexUvWhitePixel_setter(lua_State* lua_S)
 	LUA_NATIVE_SETTER(cobj->TexUvWhitePixel, 2);
 	return 0;
 }
-int lua_ImFontAtlas_addCustomRect(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("imgui.ImFontAtlas", "imgui.ImFontAtlas:addCustomRect");
-	LUA_TRY_INVOKE_R(3, &ImFontAtlas::AddCustomRect);
-	LUA_TRY_INVOKE_R(2, ([](ImFontAtlas* obj,int arg0,int arg1){{return obj->AddCustomRect(std::move(arg0),std::move(arg1));}}));
-	LUA_INVOKE_FOOTER("2,3");
-}
 int lua_ImFontAtlas_addFont(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ImFontAtlas", "imgui.ImFontAtlas:addFont");
@@ -870,12 +863,6 @@ int lua_ImFontAtlas_compactCache(lua_State* lua_S)
 	LUA_TRY_INVOKE(0, &ImFontAtlas::CompactCache);
 	LUA_INVOKE_FOOTER("0");
 }
-int lua_ImFontAtlas_getCustomRect(lua_State* lua_S)
-{
-	LUA_INVOKE_HEADER("imgui.ImFontAtlas", "imgui.ImFontAtlas:getCustomRect");
-	LUA_TRY_INVOKE_R(2, &ImFontAtlas::GetCustomRect);
-	LUA_INVOKE_FOOTER("2");
-}
 int lua_ImFontAtlas_removeCustomRect(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ImFontAtlas", "imgui.ImFontAtlas:removeCustomRect");
@@ -912,7 +899,6 @@ int luaReg_imguiFont_imguiImFontAtlas(lua_State* lua_S)
 	LUA_FIELD("TexPixelsUseColors", lua_ImFontAtlas_TexPixelsUseColors_getter, lua_ImFontAtlas_TexPixelsUseColors_setter);
 	LUA_FIELD("TexUvScale", lua_ImFontAtlas_TexUvScale_getter, lua_ImFontAtlas_TexUvScale_setter);
 	LUA_FIELD("TexUvWhitePixel", lua_ImFontAtlas_TexUvWhitePixel_getter, lua_ImFontAtlas_TexUvWhitePixel_setter);
-	LUA_METHOD("addCustomRect", lua_ImFontAtlas_addCustomRect);
 	LUA_METHOD("addFont", lua_ImFontAtlas_addFont);
 	LUA_METHOD("addFontDefault", lua_ImFontAtlas_addFontDefault);
 	LUA_METHOD("addFontDefaultBitmap", lua_ImFontAtlas_addFontDefaultBitmap);
@@ -922,7 +908,6 @@ int luaReg_imguiFont_imguiImFontAtlas(lua_State* lua_S)
 	LUA_METHOD("clearInputData", lua_ImFontAtlas_clearInputData);
 	LUA_METHOD("clearTexData", lua_ImFontAtlas_clearTexData);
 	LUA_METHOD("compactCache", lua_ImFontAtlas_compactCache);
-	LUA_METHOD("getCustomRect", lua_ImFontAtlas_getCustomRect);
 	LUA_METHOD("removeCustomRect", lua_ImFontAtlas_removeCustomRect);
 	LUA_METHOD("removeFont", lua_ImFontAtlas_removeFont);
 	LUA_CLS_END();
