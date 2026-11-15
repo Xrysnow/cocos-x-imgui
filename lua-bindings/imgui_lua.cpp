@@ -647,6 +647,22 @@ static int imgui_dragFloat(lua_State *L) {
 	lua_pushnumber(L, v);
 	return 2;
 }
+static int imgui_dragFloatRange2(lua_State *L) {
+	const char* label = luaL_checkstring(L, 1);
+	float current_min = luaL_checknumber(L, 2);
+	float current_max = luaL_checknumber(L, 3);
+	lua_pushboolean(L,
+		ImGui::DragFloatRange2(label, &current_min, &current_max,
+			luaL_optnumber(L, 4, 1.0f),
+			luaL_optnumber(L, 5, 0.0f),
+			luaL_optnumber(L, 6, 0.0f),
+			luaL_optstring(L, 7, "%.3f"),
+			luaL_optstring(L, 8, nullptr),
+			luaL_optint(L, 9, 0)));
+	lua_pushnumber(L, current_min);
+	lua_pushnumber(L, current_max);
+	return 3;
+}
 static int imgui_dragFloatN(lua_State *L) {
 	const int args = lua_gettop(L);
 	auto label = luaL_checkstring(L, 1);
@@ -699,6 +715,22 @@ static int imgui_dragInt(lua_State *L) {
 			lua_opt_int(args, 7, 0)));
 	lua_pushnumber(L, v);
 	return 2;
+}
+static int imgui_dragIntRange2(lua_State *L) {
+	const char* label = luaL_checkstring(L, 1);
+	int current_min = luaL_checkint(L, 2);
+	int current_max = luaL_checkint(L, 3);
+	lua_pushboolean(L,
+		ImGui::DragIntRange2(label, &current_min, &current_max,
+			luaL_optnumber(L, 4, 1.0f),
+			luaL_optint(L, 5, 0),
+			luaL_optint(L, 6, 0),
+			luaL_optstring(L, 7, "%d"),
+			luaL_optstring(L, 8, nullptr),
+			luaL_optint(L, 9, 0)));
+	lua_pushinteger(L, current_min);
+	lua_pushinteger(L, current_max);
+	return 3;
 }
 static int imgui_dragIntN(lua_State *L) {
 	const int args = lua_gettop(L);
@@ -2138,7 +2170,7 @@ static const luaL_Reg imgui_methods[] = {
 	M(checkboxFlags), M(radioButton), M(combo),
 
     // Widgets: Drags
-    M(dragFloat),M(dragFloatN),M(dragInt),M(dragIntN),
+    M(dragFloat),M(dragFloatN),M(dragFloatRange2),M(dragInt),M(dragIntN),M(dragIntRange2),
 
     // Widgets: Sliders
     M(sliderFloat),M(sliderFloatN),M(sliderAngle),M(sliderInt),

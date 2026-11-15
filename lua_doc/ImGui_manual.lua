@@ -202,6 +202,23 @@ end
 function imgui.dragFloat(label, value, v_speed, v_min, v_max, format, flags)
 end
 
+--- Drag both range endpoints; returns the native result flag and both updated values.
+--- Omitted/nil optional arguments use native defaults. v_min >= v_max disables outer bounds.
+---@param label string
+---@param current_min number
+---@param current_max number
+---@param v_speed? number Defaults to 1.
+---@param v_min? number Defaults to 0.
+---@param v_max? number Defaults to 0.
+---@param format? string Defaults to "%.3f".
+---@param format_max? string Defaults to format.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return number current_min
+---@return number current_max
+function imgui.dragFloatRange2(label, current_min, current_max, v_speed, v_min, v_max, format, format_max, flags)
+end
+
 ---
 ---@param label string
 ---@param array number[]
@@ -224,6 +241,23 @@ end
 ---@param flags number @optional, ImGuiSliderFlags
 ---@return boolean,number
 function imgui.dragInt(label, value, v_speed, v_min, v_max, format, flags)
+end
+
+--- Drag both integer range endpoints; returns the native result flag and both updated values.
+--- Omitted/nil optional arguments use native defaults. v_min >= v_max disables outer bounds.
+---@param label string
+---@param current_min integer
+---@param current_max integer
+---@param v_speed? number Defaults to 1.
+---@param v_min? integer Defaults to 0.
+---@param v_max? integer Defaults to 0.
+---@param format? string Defaults to "%d".
+---@param format_max? string Defaults to format.
+---@param flags? imgui.ImGuiSliderFlags Defaults to 0.
+---@return boolean changed
+---@return integer current_min
+---@return integer current_max
+function imgui.dragIntRange2(label, current_min, current_max, v_speed, v_min, v_max, format, format_max, flags)
 end
 
 ---
