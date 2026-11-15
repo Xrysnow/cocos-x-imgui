@@ -2,6 +2,7 @@
 #include "cocos2d.h"
 #include "renderer/backend/Backend.h"
 #include "renderer/backend/gfx/DeviceGFX.h"
+#include <cstring>
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 #include "imgui_internal.h"
@@ -268,13 +269,16 @@ struct ProgramInfo
 };
 static ProgramInfo g_ProgramInfo;
 static ProgramInfo g_ProgramFontInfo;
-static Texture2D* g_FontTexture = nullptr;
 static Mat4 g_Projection;
 constexpr IndexFormat g_IndexFormat = sizeof(ImDrawIdx) == 2 ? IndexFormat::U_SHORT : IndexFormat::U_INT;
 
 static std::vector<std::shared_ptr<CallbackCommand>> g_CallbackCommands;
 static std::vector<std::shared_ptr<CustomCommand>> g_CustomCommands;
 static Vector<ProgramState*> g_ProgramStates;
+// cocos executes draw commands later; retain textures until those commands finish.
+static Vector<Texture2D*> g_DrawTextures;
+
+static bool ImGui_ImplCocos2dx_UpdateTexture(ImTextureData* texture);
 
 static void AddRendererCommand(const std::function<void()>& f)
 {
@@ -333,6 +337,12 @@ static SavedRenderState g_SavedRenderState;
 
 void ImGui_ImplCocos2dx_RenderDrawData(ImDrawData* draw_data)
 {
+	// Glyphs may be loaded during UI submission. Upload them before resolving TexRef.
+	if (draw_data->Textures)
+		for (ImTextureData* texture : *draw_data->Textures)
+			if (texture->Status != ImTextureStatus_OK && !ImGui_ImplCocos2dx_UpdateTexture(texture))
+				return;
+
 	// Avoid rendering when minimized, scale coordinates for retina displays
 	// (screen coordinates != framebuffer coordinates)
 	int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
@@ -359,7 +369,7 @@ void ImGui_ImplCocos2dx_RenderDrawData(ImDrawData* draw_data)
 	ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
 	// Render command lists
-	for (int n = 0; n < draw_data->CmdListsCount; n++)
+	for (int n = 0; n < draw_data->CmdLists.Size; n++)
 	{
 		const ImDrawList* cmd_list = draw_data->CmdLists[n];
 		size_t ibuffer_offset = 0;
@@ -419,13 +429,17 @@ void ImGui_ImplCocos2dx_RenderDrawData(ImDrawData* draw_data)
 							clip_rect.w - clip_rect.y);
 					});
 
-					if (typeid(*((Ref*)pcmd->TextureId)) == typeid(Texture2D))
+					const ImTextureID texture_id = pcmd->GetTexID();
+					if (texture_id == ImTextureID_Invalid || texture_id == 0)
+						continue;
+					if (typeid(*((Ref*)texture_id)) == typeid(Texture2D))
 					{
-						auto tex = (Texture2D*)pcmd->TextureId;
+						auto tex = (Texture2D*)texture_id;
+						g_DrawTextures.pushBack(tex);
 						auto cmd = std::make_shared<CustomCommand>();
 						g_CustomCommands.push_back(cmd);
 						cmd->init(0.f, BlendFunc::ALPHA_NON_PREMULTIPLIED);
-						const auto pinfo = tex == g_FontTexture ? &g_ProgramFontInfo : &g_ProgramInfo;
+						const auto pinfo = tex->getPixelFormat() == PixelFormat::A8 ? &g_ProgramFontInfo : &g_ProgramInfo;
 						// create new ProgramState
 						auto state = new ProgramState(pinfo->program);
 						state->autorelease();
@@ -446,7 +460,7 @@ void ImGui_ImplCocos2dx_RenderDrawData(ImDrawData* draw_data)
 					}
 					else
 					{
-						auto node = (Node*)pcmd->TextureId;
+						auto node = (Node*)texture_id;
 						const auto tr = node->getNodeToParentTransform();
 						node->setVisible(true);
 						node->setNodeToParentTransform(tr);
@@ -572,35 +586,54 @@ void ImGui_ImplGlfw_MonitorCallback(GLFWmonitor*, int)
 
 #endif
 
-bool ImGui_ImplCocos2dx_CreateFontsTexture()
+static void ImGui_ImplCocos2dx_DestroyTexture(ImTextureData* texture)
 {
-	// Build texture atlas
-	ImGuiIO& io = ImGui::GetIO();
-	unsigned char* pixels;
-	int width, height;
-	// Load as RGBA 32-bits (75% of the memory is wasted, but default font is so small)
-	// because it is more likely to be compatible with user's existing shaders.
-	// If your ImTextureId represent a higher-level concept than just a GL texture id,
-	// consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
-	io.Fonts->GetTexDataAsAlpha8(&pixels, &width, &height);
-
-	CC_SAFE_RELEASE(g_FontTexture);
-	g_FontTexture = new Texture2D();
-
-	g_FontTexture->setAntiAliasTexParameters();
-	g_FontTexture->initWithData(pixels, width * height,
-		backend::PixelFormat::A8, width, height);
-	io.Fonts->SetTexID((ImTextureID)g_FontTexture);
-	return true;
+	auto* native_texture = static_cast<Texture2D*>(texture->BackendUserData);
+	CC_SAFE_RELEASE(native_texture);
+	texture->BackendUserData = nullptr;
+	texture->SetTexID(ImTextureID_Invalid);
+	texture->SetStatus(ImTextureStatus_Destroyed);
 }
 
-void ImGui_ImplCocos2dx_DestroyFontsTexture()
+static bool ImGui_ImplCocos2dx_UpdateTexture(ImTextureData* texture)
 {
-	if (g_FontTexture)
+	if (texture->Status == ImTextureStatus_WantCreate)
 	{
-		ImGui::GetIO().Fonts->SetTexID(nullptr);
-		CC_SAFE_DELETE(g_FontTexture);
+		IM_ASSERT(texture->GetTexID() == ImTextureID_Invalid && texture->BackendUserData == nullptr);
+		IM_ASSERT(texture->Format == ImTextureFormat_RGBA32 || texture->Format == ImTextureFormat_Alpha8);
+		auto* native_texture = new Texture2D();
+		native_texture->setAntiAliasTexParameters();
+		const auto format = texture->Format == ImTextureFormat_Alpha8 ? PixelFormat::A8 : PixelFormat::RGBA8888;
+		if (!native_texture->initWithData(texture->GetPixels(), texture->GetSizeInBytes(),
+			format, texture->Width, texture->Height))
+		{
+			native_texture->release();
+			return false;
+		}
+		texture->BackendUserData = native_texture;
+		texture->SetTexID((ImTextureID)native_texture);
+		texture->SetStatus(ImTextureStatus_OK);
 	}
+	else if (texture->Status == ImTextureStatus_WantUpdates)
+	{
+		auto* native_texture = static_cast<Texture2D*>(texture->BackendUserData);
+		IM_ASSERT(native_texture != nullptr);
+		// Texture2D expects tightly packed rows, unlike the atlas's full-width pitch.
+		std::vector<unsigned char> pixels;
+		for (const ImTextureRect& rect : texture->Updates)
+		{
+			const size_t pitch = static_cast<size_t>(rect.w) * texture->BytesPerPixel;
+			pixels.resize(pitch * rect.h);
+			for (int y = 0; y < rect.h; ++y)
+				std::memcpy(pixels.data() + y * pitch, texture->GetPixelsAt(rect.x, rect.y + y), pitch);
+			if (!native_texture->updateWithSubData(pixels.data(), rect.x, rect.y, rect.w, rect.h))
+				return false;
+		}
+		texture->SetStatus(ImTextureStatus_OK);
+	}
+	else if (texture->Status == ImTextureStatus_WantDestroy && texture->UnusedFrames > 0)
+		ImGui_ImplCocos2dx_DestroyTexture(texture);
+	return true;
 }
 
 bool ImGui_ImplCocos2dx_CreateDeviceObjects()
@@ -720,7 +753,6 @@ void main()
 		layout->setStride(sizeof(ImDrawVert));
 	}
 
-	ImGui_ImplCocos2dx_CreateFontsTexture();
 	return true;
 }
 
@@ -730,9 +762,12 @@ void ImGui_ImplCocos2dx_DestroyDeviceObjects()
 	g_CallbackCommands.clear();
 	g_CustomCommands.clear();
 	g_ProgramStates.clear();
+	g_DrawTextures.clear();
 	CC_SAFE_RELEASE_NULL(g_ProgramInfo.program);
 	CC_SAFE_RELEASE_NULL(g_ProgramFontInfo.program);
-	ImGui_ImplCocos2dx_DestroyFontsTexture();
+	for (ImTextureData* texture : ImGui::GetPlatformIO().Textures)
+		if (texture->RefCount == 1)
+			ImGui_ImplCocos2dx_DestroyTexture(texture);
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -758,6 +793,10 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 
 	// Setup backend capabilities flags
 	ImGuiIO& io = ImGui::GetIO();
+	io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
+	auto& platform_io = ImGui::GetPlatformIO();
+	platform_io.Renderer_TextureMaxWidth = platform_io.Renderer_TextureMaxHeight =
+		Configuration::getInstance()->getMaxTextureSize();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
@@ -779,7 +818,6 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	io.BackendFlags |= ImGuiBackendFlags_HasMouseHoveredViewport;
 #endif
 	// gfx renderer does not support multi-viewports rendering
-	ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
 	platform_io.Renderer_RenderWindow = ImGui_ImplOpenGL2_RenderWindow;
 #endif // CC_PLATFORM_PC
 
@@ -1043,6 +1081,7 @@ void ImGui_ImplCocos2dx_Shutdown()
 #endif // CC_PLATFORM_PC
 	ImGui::DestroyPlatformWindows();
 	ImGui_ImplCocos2dx_DestroyDeviceObjects();
+	ImGui::GetIO().BackendFlags &= ~ImGuiBackendFlags_RendererHasTextures;
 	ImGui::DestroyContext();
 }
 
@@ -1270,16 +1309,12 @@ void ImGui_ImplCocos2dx_NewFrame()
 	g_CallbackCommands.clear();
 	g_CustomCommands.clear();
 	g_ProgramStates.clear();
+	g_DrawTextures.clear();
 
-	if (!g_FontTexture)
+	if (!g_ProgramInfo.program || !g_ProgramFontInfo.program)
 		ImGui_ImplCocos2dx_CreateDeviceObjects();
-	else if (!ImGui::GetIO().Fonts->IsBuilt())
-		// Fonts added lazily also invalidate an existing atlas and GPU texture.
-		ImGui_ImplCocos2dx_CreateFontsTexture();
 
 	ImGuiIO& io = ImGui::GetIO();
-	IM_ASSERT(io.Fonts->IsBuilt() &&
-		"Font atlas not built! Missing call to renderer _NewFrame() function?");
 
 	// Setup display size (every frame to accommodate for window resizing)
 	int w, h;

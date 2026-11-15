@@ -954,17 +954,6 @@ function imgui.getDragDropPayload()
 end
 
 --
--- Miscellaneous Utilities
---
-
---- calculate coarse clipping for large list of evenly sized items. Prefer using the ImGuiListClipper higher-level helper if you can.
----@param items_count number
----@param items_height number
----@return number,number out_items_display_start, out_items_display_end
-function imgui.calcListClipping(items_count, items_height)
-end
-
---
 -- Inputs Utilities
 --
 
@@ -1020,13 +1009,13 @@ end
 ---@param path string
 ---@param size number Finite, non-negative reference size.
 ---@param config? table|imgui.ImFontConfig MergeMode, optional DstFont and ordinary font options.
---- Ranges are dense start/end pairs with inclusive endpoints; an optional final 0 is accepted.
---- Invalid endpoints/presets raise an error. Arrays are copied into persistent native storage.
---- These are legacy preload ranges, not an allowlist for dynamic glyph loading or merging.
+--- The cocos backend loads glyphs and updates atlas textures on demand; no ranges are needed.
+--- Font bytes are copied into ImGui-owned storage for the full atlas lifetime.
 --- GlyphRanges/GlyphExcludeRanges properties and loader/data pointers remain unavailable.
----@param ranges? integer|integer[] Preset 0..7 or ranges; omitted defaults to ChineseFull.
+--- The old fourth ranges argument and imgui.GlyphRanges presets have been removed.
+--- Missing/invalid file data raises an error; native source initialization failure returns nil.
 ---@return imgui.ImFont|nil New font, merge destination, or nil when loading fails.
-function imgui.addFontTTF(path, size, config, ranges)
+function imgui.addFontTTF(path, size, config)
 end
 
 -- Merge sources during font setup (the same fields also work in a plain config table):
@@ -1175,7 +1164,7 @@ local ImFontAtlas
 
 --- Returns a fresh 1-based snapshot of inclusive start/end pairs, without the native terminating zero.
 --- The default ranges are {0x0020, 0x00FF}; changing the table does not affect native storage.
---- The result can be passed directly as imgui.addFontTTF()'s ranges argument.
+--- This informational snapshot is not used by imgui.addFontTTF(); glyphs load on demand.
 ---@return integer[]
 function ImFontAtlas:getGlyphRangesDefault()
 end

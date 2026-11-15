@@ -1660,18 +1660,6 @@ static int imgui_getDragDropPayload(lua_State *L) {
 	return 2;
 }
 
-// Miscellaneous Utilities
-
-static int imgui_calcListClipping(lua_State *L) {
-	int start = 0;
-	int end = 0;
-	//TODO:
-	//ImGui::CalcListClipping(luaL_checkint(L, 1), luaL_checknumber(L, 2), &start, &end);
-	lua_pushinteger(L, start);
-	lua_pushinteger(L, end);
-	return 2;
-}
-
 // Color Utilities
 
 static int imgui_colorConvertRGBtoHSV(lua_State* L) {
@@ -1738,104 +1726,16 @@ static int imgui_getIO(lua_State *L) {
 
 // Font
 
-enum GlyphRanges
-{
-	GlyphRangesDefault,                // Basic Latin, Extended Latin
-	GlyphRangesKorean,                 // Default + Korean characters
-	GlyphRangesJapanese,               // Default + Hiragana, Katakana, Half-Width, Selection of 1946 Ideographs
-	GlyphRangesChineseFull,            // Default + Half-Width + Japanese Hiragana/Katakana + full set of about 21000 CJK Unified Ideographs
-	GlyphRangesChineseSimplifiedCommon,// Default + Half-Width + Japanese Hiragana/Katakana + set of 2500 CJK Unified Ideographs for common simplified Chinese
-	GlyphRangesCyrillic,               // Default + about 400 Cyrillic characters
-	GlyphRangesThai,                   // Default + Thai characters
-	GlyphRangesVietnamese,             // Default + Vietname characters
-};
-static const ImWchar* luaval_to_GlyphRanges(lua_State* L, int lo)
-{
-	auto& io = ImGui::GetIO();
-	auto ranges = io.Fonts->GetGlyphRangesChineseFull();
-	if (lua_istable(L, lo))
-	{
-		const size_t count = lua_objlen(L, lo);
-		if (count > static_cast<size_t>((std::numeric_limits<int>::max)()))
-			luaL_error(L, "glyph range array is too large");
-		// Validate raw keys as well as values: Lua's length alone does not reject holes.
-		size_t keys = 0;
-		lua_pushnil(L);
-		while (lua_next(L, lo) != 0)
-		{
-			const auto key = lua_tonumber(L, -2);
-			if (lua_type(L, -2) != LUA_TNUMBER || !std::isfinite(key) ||
-				std::trunc(key) != key || key < 1 || key > count)
-				luaL_error(L, "glyph ranges must be a dense array");
-			++keys;
-			lua_pop(L, 1);
-		}
-		if (keys != count)
-			luaL_error(L, "glyph ranges must be a dense array");
-		size_t endpoints = count;
-		lua_Number start = 0;
-		for (size_t i = 0; i < count; ++i)
-		{
-			lua_rawgeti(L, lo, static_cast<int>(i + 1));
-			const auto value = lua_tonumber(L, -1);
-			if (lua_type(L, -1) != LUA_TNUMBER || !std::isfinite(value) ||
-				std::trunc(value) != value || value < 0 || value > IM_UNICODE_CODEPOINT_MAX)
-				luaL_error(L, "glyph range endpoints must be supported integer code points");
-			if (value == 0)
-			{
-				if (i != count - 1 || i % 2 != 0)
-					luaL_error(L, "glyph ranges only allow a final zero after complete pairs");
-				--endpoints;
-			}
-			else if (i % 2 == 0) start = value;
-			else if (value < start)
-				luaL_error(L, "glyph range start exceeds its end");
-			lua_pop(L, 1);
-		}
-		if (endpoints % 2 != 0)
-			luaL_error(L, "glyph ranges require start/end pairs");
-		std::vector<ImWchar> arr;
-		arr.reserve(endpoints + 1);
-		for (size_t i = 0; i < endpoints; ++i)
-		{
-			lua_rawgeti(L, lo, static_cast<int>(i + 1));
-			arr.push_back(static_cast<ImWchar>(lua_tonumber(L, -1)));
-			lua_pop(L, 1);
-		}
-		arr.push_back(0);
-		// Immutable storage is keyed by content, never by a truncated debug name.
-		const std::string key(reinterpret_cast<const char*>(arr.data()), arr.size() * sizeof(ImWchar));
-		ranges = CCIMGUI::getInstance()->addGlyphRanges(key, arr);
-	}
-	else
-	{
-		const auto preset = lua_tonumber(L, lo);
-		if (lua_type(L, lo) != LUA_TNUMBER || !std::isfinite(preset) ||
-			std::trunc(preset) != preset || (int)preset < GlyphRangesDefault || (int)preset > GlyphRangesVietnamese)
-			luaL_error(L, "invalid glyph range preset");
-		switch (static_cast<GlyphRanges>(static_cast<int>(preset))) {
-		case GlyphRangesDefault: ranges = io.Fonts->GetGlyphRangesDefault(); break;
-		case GlyphRangesKorean: ranges = io.Fonts->GetGlyphRangesKorean(); break;
-		case GlyphRangesJapanese: ranges = io.Fonts->GetGlyphRangesJapanese(); break;
-		case GlyphRangesChineseFull: ranges = io.Fonts->GetGlyphRangesChineseFull(); break;
-		case GlyphRangesChineseSimplifiedCommon: ranges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon(); break;
-		case GlyphRangesCyrillic: ranges = io.Fonts->GetGlyphRangesCyrillic(); break;
-		case GlyphRangesThai: ranges = io.Fonts->GetGlyphRangesThai(); break;
-		case GlyphRangesVietnamese: ranges = io.Fonts->GetGlyphRangesVietnamese(); break;
-		default:;
-		}
-	}
-	return ranges;
-}
 static int imgui_addFontTTF(lua_State *L) {
+	// (path, size, [config]) -> ImFont
 	const auto args = lua_gettop(L);
-	if (args < 2 || args > 4)
-		return luaL_error(L, "addFontTTF expects path, size, optional config and ranges");
+	if (args < 2 || args > 3)
+		return luaL_error(L, "wrong number of arguments: %d, expects 2,3", args);
 	if (!ImGui::GetCurrentContext())
 		return luaL_error(L, "addFontTTF requires an ImGui context");
-	const float size_pixels = check_scalar<float>(L, 2);
-	if (size_pixels < 0)
-		return luaL_error(L, "font size must be non-negative");
+	const float size_pixels = (float)luaL_checknumber(L, 2);
+	if (!std::isfinite(size_pixels) || size_pixels < 0)
+		return luaL_error(L, "font size must be finite and non-negative");
 	ImFontConfig cfg;
 	if (args >= 3)
 		cfg = lua_toImFontConfig(L, 3);
@@ -1864,23 +1764,18 @@ static int imgui_addFontTTF(lua_State *L) {
 			return luaL_error(L, "an implicit-size destination requires an implicit-size merge source");
 	}
 	cfg.FontDataOwnedByAtlas = true;
-	auto ranges = atlas->GetGlyphRangesChineseFull();
-	if (args >= 4)
-	{
-		ranges = luaval_to_GlyphRanges(L, 4);
-	}
 	std::string path;
-	if (!luaval_to_std_string(L, 1, &path))
+	if (!luaval_to_native(L, 1, &path))
 		return 0;
 	if (cfg.Name[0] == 0)
 	{
-		auto name = path + ", " + std::to_string(reference_size);
+		const auto name = path + ", " + std::to_string(reference_size);
 		const auto count = (std::min)(name.size(), sizeof(cfg.Name) - 1);
 		imgui_copyFontConfigName(cfg, name.data() + name.size() - count, count);
 	}
-	auto data = cocos2d::FileUtils::getInstance()->getDataFromFile(path);
+	const auto data = cocos2d::FileUtils::getInstance()->getDataFromFile(path);
 	if (data.getSize() == 0)
-		return 0;
+		return luaL_error(L, "no font data at %s", path.c_str());
 	if (data.getSize() <= 100 || data.getSize() > (std::numeric_limits<int>::max)())
 		return luaL_error(L, "invalid font data size");
 	// Modern ImGui retains font bytes for later glyph loads; cocos Data is local.
@@ -1890,7 +1785,7 @@ static int imgui_addFontTTF(lua_State *L) {
 	std::memcpy(fontData, data.getBytes(), data.getSize());
 	object_to_luaval(L, "imgui.ImFont",
 		atlas->AddFontFromMemoryTTF(
-			fontData, static_cast<int>(data.getSize()), size_pixels, &cfg, ranges));
+			fontData, static_cast<int>(data.getSize()), size_pixels, &cfg));
 	return 1;
 }
 
@@ -2301,9 +2196,6 @@ static const luaL_Reg imgui_methods[] = {
 
 	// Drag and Drop
 	M(setDragDropPayload),M(acceptDragDropPayload),M(getDragDropPayload),
-
-	// Miscellaneous Utilities
-	M(calcListClipping),
 
 	// Color Utilities
 	M(colorConvertRGBtoHSV),

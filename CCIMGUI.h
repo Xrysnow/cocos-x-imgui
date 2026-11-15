@@ -78,7 +78,6 @@ public:
 	static void setLabelColor(cocos2d::Label* label, bool disabled = false);
 	static void setLabelColor(cocos2d::Label* label, ImGuiCol col);
 
-	ImWchar* addGlyphRanges(const std::string& key, const std::vector<ImWchar>& ranges);
 	int getCCRefId(cocos2d::Ref* p);
 
 	// implot
@@ -122,5 +121,4 @@ private:
     std::unordered_map<cocos2d::Ref*, int> usedCCRefIdMap;
 	// cocos objects should be retained until next frame
     cocos2d::Vector<cocos2d::Ref*> usedCCRef;
-	std::unordered_map<std::string, std::vector<ImWchar>> glyphRanges;
 };

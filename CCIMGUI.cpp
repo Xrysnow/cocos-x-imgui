@@ -26,7 +26,6 @@ void CCIMGUI::destroyInstance()
 {
 	if (_instance)
 	{
-		// Font range storage must outlive the atlas/context using it.
 		ImGui_ImplCocos2dx_Shutdown();
 		delete _instance;
 		_instance = nullptr;
@@ -283,18 +282,6 @@ void CCIMGUI::setLabelColor(Label* label, ImGuiCol col)
 {
 	if (label && 0 <= col && col < ImGuiCol_COUNT)
 		setLabelColor(label, ImGui::GetStyleColorVec4(col));
-}
-
-ImWchar* CCIMGUI::addGlyphRanges(const std::string& key, const std::vector<ImWchar>& ranges)
-{
-	auto it = glyphRanges.find(key);
-	// the pointer must be persistant, do not replace
-	if (it != glyphRanges.end())
-		return it->second.data();
-	glyphRanges[key] = ranges;
-	if (ranges.empty())
-		glyphRanges[key].push_back(0);
-	return glyphRanges[key].data();
 }
 
 int CCIMGUI::getCCRefId(Ref* p)
