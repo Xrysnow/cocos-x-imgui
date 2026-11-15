@@ -1,6 +1,6 @@
 #include "CCImGuiLayer.h"
 #include "imgui/imgui.h"
-#include "imgui_impl_cocos2dx.h"
+#include "imgui_impl_cc.h"
 #include "CCIMGUI.h"
 
 using namespace cocos2d;
@@ -51,11 +51,11 @@ void ImGuiLayer::visit(Renderer* renderer, const Mat4 &parentTransform, uint32_t
 void ImGuiLayer::onDraw()
 {
     // create frame
-    ImGui_ImplCocos2dx_NewFrame();
+    ImGui_ImplCC_NewFrame();
     // draw all gui
     CCIMGUI::getInstance()->update();
     // render
     ImGui::Render();
-    ImGui_ImplCocos2dx_RenderDrawData(ImGui::GetDrawData());
-	ImGui_ImplCocos2dx_RenderPlatform();
+    ImGui_ImplCC_RenderDrawData(ImGui::GetDrawData());
+	ImGui_ImplCC_RenderPlatform();
 }

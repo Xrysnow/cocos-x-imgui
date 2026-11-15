@@ -1,4 +1,4 @@
-#include "imgui_impl_cocos2dx.h"
+#include "imgui_impl_cc.h"
 #include "cocos2d.h"
 #include "renderer/backend/Backend.h"
 #include "renderer/backend/gfx/DeviceGFX.h"
@@ -162,7 +162,7 @@ private:
 
 static std::unique_ptr<ImGuiCocosIME> g_AndroidIME;
 
-static ImGuiKey ImGui_ImplCocos2dx_TranslateKey(EventKeyboard::KeyCode key)
+static ImGuiKey ImGui_ImplCC_TranslateKey(EventKeyboard::KeyCode key)
 {
 	using K = EventKeyboard::KeyCode;
 	if (key >= K::KEY_A && key <= K::KEY_Z)
@@ -220,7 +220,7 @@ static ImGuiKey ImGui_ImplCocos2dx_TranslateKey(EventKeyboard::KeyCode key)
 	}
 }
 
-static void ImGui_ImplCocos2dx_AndroidKey(EventKeyboard::KeyCode key, bool down)
+static void ImGui_ImplCC_AndroidKey(EventKeyboard::KeyCode key, bool down)
 {
 	const int native = (int)key;
 	if (native < 0 || native >= IM_ARRAYSIZE(g_AndroidKeys)) return;
@@ -231,11 +231,11 @@ static void ImGui_ImplCocos2dx_AndroidKey(EventKeyboard::KeyCode key, bool down)
 	io.AddKeyEvent(ImGuiMod_Shift, g_AndroidKeys[(int)K::KEY_LEFT_SHIFT] || g_AndroidKeys[(int)K::KEY_RIGHT_SHIFT]);
 	io.AddKeyEvent(ImGuiMod_Alt, g_AndroidKeys[(int)K::KEY_LEFT_ALT] || g_AndroidKeys[(int)K::KEY_RIGHT_ALT]);
 	io.AddKeyEvent(ImGuiMod_Super, g_AndroidKeys[(int)K::KEY_HYPER]);
-	const auto translated = ImGui_ImplCocos2dx_TranslateKey(key);
+	const auto translated = ImGui_ImplCC_TranslateKey(key);
 	if (translated != ImGuiKey_None) io.AddKeyEvent(translated, down);
 }
 
-static void ImGui_ImplCocos2dx_SetAndroidIME(ImGuiViewport*, ImGuiPlatformImeData* data)
+static void ImGui_ImplCC_SetAndroidIME(ImGuiViewport*, ImGuiPlatformImeData* data)
 {
 	if (g_AndroidIME) g_AndroidIME->update(data->WantVisible);
 }
@@ -278,7 +278,7 @@ static Vector<ProgramState*> g_ProgramStates;
 // cocos executes draw commands later; retain textures until those commands finish.
 static Vector<Texture2D*> g_DrawTextures;
 
-static bool ImGui_ImplCocos2dx_UpdateTexture(ImTextureData* texture);
+static bool ImGui_ImplCC_UpdateTexture(ImTextureData* texture);
 
 static void AddRendererCommand(const std::function<void()>& f)
 {
@@ -297,14 +297,14 @@ static void AddRendererCommand(const std::function<void()>& f)
 }
 
 #ifdef CC_PLATFORM_PC
-static GLFWwindow* ImGui_ImplCocos2dx_GetWindow()
+static GLFWwindow* ImGui_ImplCC_GetWindow()
 {
 	const auto glv = (GLViewImpl*)Director::getInstance()->getOpenGLView();
 	return glv->getWindow();
 }
 #endif // CC_PLATFORM_PC
 
-static void ImGui_ImplCocos2dx_SetupRenderState(ImDrawData* draw_data, int fb_width, int fb_height)
+static void ImGui_ImplCC_SetupRenderState(ImDrawData* draw_data, int fb_width, int fb_height)
 {
 	const auto renderer = Director::getInstance()->getRenderer();
 	// setup
@@ -335,12 +335,12 @@ struct SavedRenderState
 };
 static SavedRenderState g_SavedRenderState;
 
-void ImGui_ImplCocos2dx_RenderDrawData(ImDrawData* draw_data)
+void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 {
 	// Glyphs may be loaded during UI submission. Upload them before resolving TexRef.
 	if (draw_data->Textures)
 		for (ImTextureData* texture : *draw_data->Textures)
-			if (texture->Status != ImTextureStatus_OK && !ImGui_ImplCocos2dx_UpdateTexture(texture))
+			if (texture->Status != ImTextureStatus_OK && !ImGui_ImplCC_UpdateTexture(texture))
 				return;
 
 	// Avoid rendering when minimized, scale coordinates for retina displays
@@ -362,7 +362,7 @@ void ImGui_ImplCocos2dx_RenderDrawData(ImDrawData* draw_data)
 		g_SavedRenderState.stencilTest = renderer->getStencilTest();
 	});
 
-	ImGui_ImplCocos2dx_SetupRenderState(draw_data, fb_width, fb_height);
+	ImGui_ImplCC_SetupRenderState(draw_data, fb_width, fb_height);
 
 	// Will project scissor/clipping rectangles into framebuffer space
 	ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
@@ -398,7 +398,7 @@ void ImGui_ImplCocos2dx_RenderDrawData(ImDrawData* draw_data)
 				// (ImDrawCallback_ResetRenderState is a special callback value used by the user
 				// to request the renderer to reset render state.)
 				if (pcmd->UserCallback == ImDrawCallback_ResetRenderState)
-					ImGui_ImplCocos2dx_SetupRenderState(draw_data, fb_width, fb_height);
+					ImGui_ImplCC_SetupRenderState(draw_data, fb_width, fb_height);
 				else
 				{
 					AddRendererCommand([=]()
@@ -486,7 +486,7 @@ void ImGui_ImplCocos2dx_RenderDrawData(ImDrawData* draw_data)
 	});
 }
 
-void ImGui_ImplCocos2dx_RenderPlatform()
+void ImGui_ImplCC_RenderPlatform()
 {
 #ifdef CC_PLATFORM_PC
 	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -498,7 +498,7 @@ void ImGui_ImplCocos2dx_RenderPlatform()
 #endif
 }
 
-static const char* ImGui_ImplCocos2dx_GetClipboardText(void* user_data)
+static const char* ImGui_ImplCC_GetClipboardText(void* user_data)
 {
 #ifdef CC_PLATFORM_PC
 	return glfwGetClipboardString((GLFWwindow*)user_data);
@@ -511,7 +511,7 @@ static const char* ImGui_ImplCocos2dx_GetClipboardText(void* user_data)
 #endif
 }
 
-static void ImGui_ImplCocos2dx_SetClipboardText(void* user_data, const char* text)
+static void ImGui_ImplCC_SetClipboardText(void* user_data, const char* text)
 {
 #ifdef CC_PLATFORM_PC
 	glfwSetClipboardString((GLFWwindow*)user_data, text);
@@ -523,18 +523,18 @@ static void ImGui_ImplCocos2dx_SetClipboardText(void* user_data, const char* tex
 
 #ifdef CC_PLATFORM_PC
 
-void ImGui_ImplCocos2dx_MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+void ImGui_ImplCC_MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-	if (g_PrevUserCallbackMousebutton != nullptr && window == ImGui_ImplCocos2dx_GetWindow())
+	if (g_PrevUserCallbackMousebutton != nullptr && window == ImGui_ImplCC_GetWindow())
 		g_PrevUserCallbackMousebutton(window, button, action, mods);
 
 	if (action == GLFW_PRESS && button >= 0 && button < IM_ARRAYSIZE(g_MouseJustPressed))
 		g_MouseJustPressed[button] = true;
 }
 
-void ImGui_ImplCocos2dx_ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+void ImGui_ImplCC_ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	if (g_PrevUserCallbackScroll != nullptr && window == ImGui_ImplCocos2dx_GetWindow())
+	if (g_PrevUserCallbackScroll != nullptr && window == ImGui_ImplCC_GetWindow())
 		g_PrevUserCallbackScroll(window, xoffset, yoffset);
 
 	ImGuiIO& io = ImGui::GetIO();
@@ -542,9 +542,9 @@ void ImGui_ImplCocos2dx_ScrollCallback(GLFWwindow* window, double xoffset, doubl
 	io.MouseWheel += (float)yoffset;
 }
 
-void ImGui_ImplCocos2dx_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void ImGui_ImplCC_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	if (g_PrevUserCallbackKey != nullptr && window == ImGui_ImplCocos2dx_GetWindow())
+	if (g_PrevUserCallbackKey != nullptr && window == ImGui_ImplCC_GetWindow())
 		g_PrevUserCallbackKey(window, key, scancode, action, mods);
 
 	if (key < 0)
@@ -570,9 +570,9 @@ void ImGui_ImplCocos2dx_KeyCallback(GLFWwindow* window, int key, int scancode, i
 #endif
 }
 
-void ImGui_ImplCocos2dx_CharCallback(GLFWwindow* window, unsigned int c)
+void ImGui_ImplCC_CharCallback(GLFWwindow* window, unsigned int c)
 {
-	if (g_PrevUserCallbackChar != nullptr && window == ImGui_ImplCocos2dx_GetWindow())
+	if (g_PrevUserCallbackChar != nullptr && window == ImGui_ImplCC_GetWindow())
 		g_PrevUserCallbackChar(window, c);
 
 	ImGuiIO& io = ImGui::GetIO();
@@ -586,7 +586,7 @@ void ImGui_ImplGlfw_MonitorCallback(GLFWmonitor*, int)
 
 #endif
 
-static void ImGui_ImplCocos2dx_DestroyTexture(ImTextureData* texture)
+static void ImGui_ImplCC_DestroyTexture(ImTextureData* texture)
 {
 	auto* native_texture = static_cast<Texture2D*>(texture->BackendUserData);
 	CC_SAFE_RELEASE(native_texture);
@@ -595,7 +595,7 @@ static void ImGui_ImplCocos2dx_DestroyTexture(ImTextureData* texture)
 	texture->SetStatus(ImTextureStatus_Destroyed);
 }
 
-static bool ImGui_ImplCocos2dx_UpdateTexture(ImTextureData* texture)
+static bool ImGui_ImplCC_UpdateTexture(ImTextureData* texture)
 {
 	if (texture->Status == ImTextureStatus_WantCreate)
 	{
@@ -632,11 +632,11 @@ static bool ImGui_ImplCocos2dx_UpdateTexture(ImTextureData* texture)
 		texture->SetStatus(ImTextureStatus_OK);
 	}
 	else if (texture->Status == ImTextureStatus_WantDestroy && texture->UnusedFrames > 0)
-		ImGui_ImplCocos2dx_DestroyTexture(texture);
+		ImGui_ImplCC_DestroyTexture(texture);
 	return true;
 }
 
-bool ImGui_ImplCocos2dx_CreateDeviceObjects()
+bool ImGui_ImplCC_CreateDeviceObjects()
 {
 	static auto vertex_shader = R"(
 #ifndef GL_ES
@@ -756,7 +756,7 @@ void main()
 	return true;
 }
 
-void ImGui_ImplCocos2dx_DestroyDeviceObjects()
+void ImGui_ImplCC_DestroyDeviceObjects()
 {
 	// Shutdown may have no next frame to release the last draw's buffers.
 	g_CallbackCommands.clear();
@@ -767,7 +767,7 @@ void ImGui_ImplCocos2dx_DestroyDeviceObjects()
 	CC_SAFE_RELEASE_NULL(g_ProgramFontInfo.program);
 	for (ImTextureData* texture : ImGui::GetPlatformIO().Textures)
 		if (texture->RefCount == 1)
-			ImGui_ImplCocos2dx_DestroyTexture(texture);
+			ImGui_ImplCC_DestroyTexture(texture);
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -783,10 +783,10 @@ static void ImGui_ImplOpenGL2_RenderWindow(ImGuiViewport* viewport, void*)
 		const auto renderer = Director::getInstance()->getRenderer();
 		renderer->clear(ClearFlag::COLOR, { 0,0,0,1 }, 1, 0, 0);
 	}
-	ImGui_ImplCocos2dx_RenderDrawData(viewport->DrawData);
+	ImGui_ImplCC_RenderDrawData(viewport->DrawData);
 }
 
-bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
+bool ImGui_ImplCC_Init(bool install_callbacks)
 {
 	g_Time = 0.0;
 	ImGui::CreateContext();
@@ -806,7 +806,7 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 	//io.ConfigViewportsNoAutoMerge = true;
 	//io.ConfigViewportsNoTaskBarIcon = true;
-	const auto window = ImGui_ImplCocos2dx_GetWindow();
+	const auto window = ImGui_ImplCC_GetWindow();
 	// We can honor GetMouseCursor() values (optional)
 	io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
 	// We can honor io.WantSetMousePos requests (optional, rarely used)
@@ -830,9 +830,9 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	g_AndroidIME.reset(new ImGuiCocosIME());
 	std::fill(std::begin(g_AndroidKeys), std::end(g_AndroidKeys), false);
 	io.ConfigInputTrickleEventQueue = true;
-	io.SetPlatformImeDataFn = ImGui_ImplCocos2dx_SetAndroidIME;
-	io.SetClipboardTextFn = ImGui_ImplCocos2dx_SetClipboardText;
-	io.GetClipboardTextFn = ImGui_ImplCocos2dx_GetClipboardText;
+	io.SetPlatformImeDataFn = ImGui_ImplCC_SetAndroidIME;
+	io.SetClipboardTextFn = ImGui_ImplCC_SetClipboardText;
+	io.GetClipboardTextFn = ImGui_ImplCC_GetClipboardText;
 #endif
 
 #ifdef CC_PLATFORM_PC
@@ -860,8 +860,8 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
 	io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
 
-	io.SetClipboardTextFn = ImGui_ImplCocos2dx_SetClipboardText;
-	io.GetClipboardTextFn = ImGui_ImplCocos2dx_GetClipboardText;
+	io.SetClipboardTextFn = ImGui_ImplCC_SetClipboardText;
+	io.GetClipboardTextFn = ImGui_ImplCC_GetClipboardText;
 	io.ClipboardUserData = window;
 
 	// Create mouse cursors
@@ -896,10 +896,10 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	if (install_callbacks)
 	{
 		g_InstalledCallbacks = true;
-		g_PrevUserCallbackMousebutton = glfwSetMouseButtonCallback(window, ImGui_ImplCocos2dx_MouseButtonCallback);
-		g_PrevUserCallbackScroll = glfwSetScrollCallback(window, ImGui_ImplCocos2dx_ScrollCallback);
-		g_PrevUserCallbackKey = glfwSetKeyCallback(window, ImGui_ImplCocos2dx_KeyCallback);
-		g_PrevUserCallbackChar = glfwSetCharCallback(window, ImGui_ImplCocos2dx_CharCallback);
+		g_PrevUserCallbackMousebutton = glfwSetMouseButtonCallback(window, ImGui_ImplCC_MouseButtonCallback);
+		g_PrevUserCallbackScroll = glfwSetScrollCallback(window, ImGui_ImplCC_ScrollCallback);
+		g_PrevUserCallbackKey = glfwSetKeyCallback(window, ImGui_ImplCC_KeyCallback);
+		g_PrevUserCallbackChar = glfwSetCharCallback(window, ImGui_ImplCC_CharCallback);
 		g_PrevUserCallbackMonitor = glfwSetMonitorCallback(ImGui_ImplGlfw_MonitorCallback);
 	}
 
@@ -1014,7 +1014,7 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	e2->onKeyPressed = [](KeyCode k, cocos2d::Event* ev)
 	{
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-		ImGui_ImplCocos2dx_AndroidKey(k, true);
+		ImGui_ImplCC_AndroidKey(k, true);
 #else
 		auto& _io = ImGui::GetIO();
 		_io.KeysDown[(int)k] = true;
@@ -1028,7 +1028,7 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	e2->onKeyReleased = [](KeyCode k, cocos2d::Event* ev)
 	{
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-		ImGui_ImplCocos2dx_AndroidKey(k, false);
+		ImGui_ImplCC_AndroidKey(k, false);
 #else
 		auto& _io = ImGui::GetIO();
 		_io.KeysDown[(int)k] = false;
@@ -1045,7 +1045,7 @@ bool ImGui_ImplCocos2dx_Init(bool install_callbacks)
 	return true;
 }
 
-void ImGui_ImplCocos2dx_Shutdown()
+void ImGui_ImplCC_Shutdown()
 {
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 	g_AndroidIME->stop();
@@ -1063,7 +1063,7 @@ void ImGui_ImplCocos2dx_Shutdown()
 #endif
 #ifdef CC_PLATFORM_PC
 	ImGui_ImplGlfw_ShutdownPlatformInterface();
-	const auto g_Window = ImGui_ImplCocos2dx_GetWindow();
+	const auto g_Window = ImGui_ImplCC_GetWindow();
 	if (g_InstalledCallbacks)
 	{
 		glfwSetMouseButtonCallback(g_Window, g_PrevUserCallbackMousebutton);
@@ -1080,15 +1080,15 @@ void ImGui_ImplCocos2dx_Shutdown()
 	}
 #endif // CC_PLATFORM_PC
 	ImGui::DestroyPlatformWindows();
-	ImGui_ImplCocos2dx_DestroyDeviceObjects();
+	ImGui_ImplCC_DestroyDeviceObjects();
 	ImGui::GetIO().BackendFlags &= ~ImGuiBackendFlags_RendererHasTextures;
 	ImGui::DestroyContext();
 }
 
-static void ImGui_ImplCocos2dx_UpdateMousePosAndButtons()
+static void ImGui_ImplCC_UpdateMousePosAndButtons()
 {
 #ifdef CC_PLATFORM_PC
-	const auto g_Window = ImGui_ImplCocos2dx_GetWindow();
+	const auto g_Window = ImGui_ImplCC_GetWindow();
 	// Update buttons
 	ImGuiIO& io = ImGui::GetIO();
 	for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
@@ -1187,10 +1187,10 @@ static void ImGui_ImplCocos2dx_UpdateMousePosAndButtons()
 #endif // CC_PLATFORM_PC
 }
 
-static void ImGui_ImplCocos2dx_UpdateMouseCursor()
+static void ImGui_ImplCC_UpdateMouseCursor()
 {
 #ifdef CC_PLATFORM_PC
-	const auto g_Window = ImGui_ImplCocos2dx_GetWindow();
+	const auto g_Window = ImGui_ImplCC_GetWindow();
 	ImGuiIO& io = ImGui::GetIO();
 	if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) || glfwGetInputMode(g_Window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
 		return;
@@ -1216,7 +1216,7 @@ static void ImGui_ImplCocos2dx_UpdateMouseCursor()
 #endif // CC_PLATFORM_PC
 }
 
-static void ImGui_ImplCocos2dx_UpdateGamepads()
+static void ImGui_ImplCC_UpdateGamepads()
 {
 	ImGuiIO& io = ImGui::GetIO();
 	memset(io.NavInputs, 0, sizeof(io.NavInputs));
@@ -1298,7 +1298,7 @@ static void ImGui_ImplGlfw_UpdateMonitors()
 #endif // CC_PLATFORM_PC
 }
 
-void ImGui_ImplCocos2dx_NewFrame()
+void ImGui_ImplCC_NewFrame()
 {
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 	// WantTextInput is computed at NewFrame and lags widget activation. Only
@@ -1312,7 +1312,7 @@ void ImGui_ImplCocos2dx_NewFrame()
 	g_DrawTextures.clear();
 
 	if (!g_ProgramInfo.program || !g_ProgramFontInfo.program)
-		ImGui_ImplCocos2dx_CreateDeviceObjects();
+		ImGui_ImplCC_CreateDeviceObjects();
 
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -1320,7 +1320,7 @@ void ImGui_ImplCocos2dx_NewFrame()
 	int w, h;
 	int buffer_w, buffer_h;
 #ifdef CC_PLATFORM_PC
-	const auto g_Window = ImGui_ImplCocos2dx_GetWindow();
+	const auto g_Window = ImGui_ImplCC_GetWindow();
 	glfwGetWindowSize(g_Window, &w, &h);
 	glfwGetFramebufferSize(g_Window, &buffer_w, &buffer_h);
 #else
@@ -1344,11 +1344,11 @@ void ImGui_ImplCocos2dx_NewFrame()
 	// ImGui requires a positive time step even on those reset frames.
 	io.DeltaTime = deltaTime > 0.0f ? deltaTime : 1.0f / 60.0f;
 
-	ImGui_ImplCocos2dx_UpdateMousePosAndButtons();
-	ImGui_ImplCocos2dx_UpdateMouseCursor();
+	ImGui_ImplCC_UpdateMousePosAndButtons();
+	ImGui_ImplCC_UpdateMouseCursor();
 
 	// Update game controllers (if enabled and available)
-	ImGui_ImplCocos2dx_UpdateGamepads();
+	ImGui_ImplCC_UpdateGamepads();
 
 	ImGui::NewFrame();
 }
@@ -1442,10 +1442,10 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
 	glfwSetWindowPos(data->Window, (int)viewport->Pos.x, (int)viewport->Pos.y);
 
 	// Install GLFW callbacks for secondary viewports
-	glfwSetMouseButtonCallback(data->Window, ImGui_ImplCocos2dx_MouseButtonCallback);
-	glfwSetScrollCallback(data->Window, ImGui_ImplCocos2dx_ScrollCallback);
-	glfwSetKeyCallback(data->Window, ImGui_ImplCocos2dx_KeyCallback);
-	glfwSetCharCallback(data->Window, ImGui_ImplCocos2dx_CharCallback);
+	glfwSetMouseButtonCallback(data->Window, ImGui_ImplCC_MouseButtonCallback);
+	glfwSetScrollCallback(data->Window, ImGui_ImplCC_ScrollCallback);
+	glfwSetKeyCallback(data->Window, ImGui_ImplCC_KeyCallback);
+	glfwSetCharCallback(data->Window, ImGui_ImplCC_CharCallback);
 	glfwSetWindowCloseCallback(data->Window, ImGui_ImplGlfw_WindowCloseCallback);
 	glfwSetWindowPosCallback(data->Window, ImGui_ImplGlfw_WindowPosCallback);
 	glfwSetWindowSizeCallback(data->Window, ImGui_ImplGlfw_WindowSizeCallback);
@@ -1470,7 +1470,7 @@ static void ImGui_ImplGlfw_DestroyWindow(ImGuiViewport* viewport)
 				// because we will not receive any release events after window is destroyed.
 				for (int i = 0; i < IM_ARRAYSIZE(g_KeyOwnerWindows); i++)
 					if (g_KeyOwnerWindows[i] == window)
-						ImGui_ImplCocos2dx_KeyCallback(window, i, 0, GLFW_RELEASE, 0); // Later params are only used for main viewport, on which this function is never called.
+						ImGui_ImplCC_KeyCallback(window, i, 0, GLFW_RELEASE, 0); // Later params are only used for main viewport, on which this function is never called.
 
 				glfwDestroyWindow(window);
 			});
@@ -1641,7 +1641,7 @@ static void ImGui_ImplGlfw_SwapBuffers(ImGuiViewport* viewport, void*)
 
 static void ImGui_ImplGlfw_SetImeInputData(ImGuiViewport* viewport, ImGuiPlatformImeData* data)
 {
-	const auto hwnd = (HWND)glfwGetWin32Window(ImGui_ImplCocos2dx_GetWindow());
+	const auto hwnd = (HWND)glfwGetWin32Window(ImGui_ImplCC_GetWindow());
 	if (hwnd)
 	{
 		if (HIMC himc = ::ImmGetContext(hwnd))
@@ -1677,7 +1677,7 @@ struct VkAllocationCallbacks;
 enum VkResult { VK_RESULT_MAX_ENUM = 0x7FFFFFFF };
 #endif // VULKAN_H_
 extern "C" { extern GLFWAPI VkResult glfwCreateWindowSurface(VkInstance instance, GLFWwindow* window, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface); }
-static int ImGui_ImplCocos2dx_CreateVkSurface(ImGuiViewport* viewport, ImU64 vk_instance, const void* vk_allocator, ImU64* out_vk_surface)
+static int ImGui_ImplCC_CreateVkSurface(ImGuiViewport* viewport, ImU64 vk_instance, const void* vk_allocator, ImU64* out_vk_surface)
 {
 	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
 	IM_ASSERT(g_ClientApi == GlfwClientApi_Vulkan);
@@ -1707,7 +1707,7 @@ static void ImGui_ImplGlfw_InitPlatformInterface()
 	platform_io.Platform_SetWindowAlpha = ImGui_ImplGlfw_SetWindowAlpha;
 #endif
 #if 0 && GLFW_HAS_VULKAN
-	platform_io.Platform_CreateVkSurface = ImGui_ImplCocos2dx_CreateVkSurface;
+	platform_io.Platform_CreateVkSurface = ImGui_ImplCC_CreateVkSurface;
 #endif
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 	ImGui::GetIO().SetPlatformImeDataFn = ImGui_ImplGlfw_SetImeInputData;
@@ -1717,7 +1717,7 @@ static void ImGui_ImplGlfw_InitPlatformInterface()
 	// This is mostly for simplicity and consistency, so that our code (e.g. mouse handling etc.) can use same logic for main and secondary viewports.
 	ImGuiViewport* main_viewport = ImGui::GetMainViewport();
 	ImGuiViewportDataGlfw* data = IM_NEW(ImGuiViewportDataGlfw)();
-	const auto window = ImGui_ImplCocos2dx_GetWindow();
+	const auto window = ImGui_ImplCC_GetWindow();
 	data->Window = window;
 	data->WindowOwned = false;
 	main_viewport->PlatformUserData = data;

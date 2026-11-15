@@ -1,5 +1,5 @@
 #include "CCIMGUI.h"
-#include "imgui_impl_cocos2dx.h"
+#include "imgui_impl_cc.h"
 
 using namespace cocos2d;
 static CCIMGUI* _instance = nullptr;
@@ -7,7 +7,7 @@ std::function<void(CCIMGUI*)> CCIMGUI::_onInit;
 
 void CCIMGUI::init()
 {
-	ImGui_ImplCocos2dx_Init(true);
+	ImGui_ImplCC_Init(true);
 }
 
 CCIMGUI* CCIMGUI::getInstance()
@@ -26,7 +26,7 @@ void CCIMGUI::destroyInstance()
 {
 	if (_instance)
 	{
-		ImGui_ImplCocos2dx_Shutdown();
+		ImGui_ImplCC_Shutdown();
 		delete _instance;
 		_instance = nullptr;
 	}

@@ -4,7 +4,7 @@ set(HEADER
     CCIMGUI.h
     CCImGuiLayer.h
     CCImGuiColorTextEdit.h
-    imgui_impl_cocos2dx.h
+    imgui_impl_cc.h
     imgui/imconfig.h
     imgui/imgui.h
     imgui/imgui_internal.h
@@ -22,7 +22,7 @@ set(SOURCE
     CCIMGUI.cpp
     CCImGuiLayer.cpp
     CCImGuiColorTextEdit.cpp
-    imgui_impl_cocos2dx.cpp
+    imgui_impl_cc.cpp
     imgui/imgui.cpp
     imgui/imgui_demo.cpp
     imgui/imgui_draw.cpp
