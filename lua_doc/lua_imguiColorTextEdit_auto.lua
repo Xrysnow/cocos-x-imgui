@@ -3,7 +3,7 @@
 ------------------------------
 
 
----@class imgui.ColorTextEdit:imgui.cocos2d.Node
+---@class imgui.ColorTextEdit:cc.Node
 local ColorTextEdit = {}
 imgui.ColorTextEdit = ColorTextEdit
 

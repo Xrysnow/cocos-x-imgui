@@ -308,21 +308,23 @@ static int imgui_end(lua_State *L) {
 static int imgui_beginChild(lua_State *L) {
 	const int args = lua_gettop(L);
 	ImVec2 size = ImVec2(0, 0);
-	bool border = false;
+	ImGuiChildFlags child_flags = ImGuiChildFlags_None;
 	ImGuiWindowFlags flags = 0;
 	if (args > 1)
 		size = _luaval_to_imvec2(L, 2);
-	if (args > 2)
-		border = lua_toboolean(L, 3);
+	if (args > 2 && !lua_isnil(L, 3))
+		child_flags = lua_isboolean(L, 3)
+			? (lua_toboolean(L, 3) ? ImGuiChildFlags_Borders : ImGuiChildFlags_None)
+			: static_cast<ImGuiChildFlags>(luaL_checkinteger(L, 3));
 	if (args > 3)
 		flags = luaL_checkinteger(L, 4);
 
 	switch (lua_type(L, 1)) {
         case LUA_TSTRING:
-			lua_pushboolean(L, ImGui::BeginChild(luaL_checkstring(L, 1), size, border, flags));
+			lua_pushboolean(L, ImGui::BeginChild(luaL_checkstring(L, 1), size, child_flags, flags));
 			return 1;
         case LUA_TNUMBER:
-			lua_pushboolean(L, ImGui::BeginChild(luaL_checkinteger(L, 1), size, border, flags));
+			lua_pushboolean(L, ImGui::BeginChild(luaL_checkinteger(L, 1), size, child_flags, flags));
 			return 1;
         default: ;
     }

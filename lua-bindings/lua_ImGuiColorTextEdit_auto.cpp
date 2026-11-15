@@ -521,7 +521,7 @@ int luaReg_imguiColorTextEdit_imguiColorTextEdit(lua_State* lua_S)
 {
 	LUA_ENTRY("imgui");
 	LUA_CLS_DEF_BASE(ImGui::ColorTextEdit, "ColorTextEdit", "imgui.ColorTextEdit",
-		cocos2d::Node, "imgui.cocos2d.Node",
+		cocos2d::Node, "cc.Node",
 		nullptr, nullptr);
 	LUA_METHOD("addLanguageIdentifier", lua_ImGui_ColorTextEdit_addLanguageIdentifier);
 	LUA_METHOD("addLanguagePreprocIdentifier", lua_ImGui_ColorTextEdit_addLanguagePreprocIdentifier);
