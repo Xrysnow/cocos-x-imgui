@@ -1,6 +1,7 @@
 #include "implot_lua.hpp"
 #include "imgui_lua_internal.hpp"
 #include "lua_implot_auto.hpp"
+#include "../implot/implot_internal.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 #include "../CCIMGUI.h"
 #include <algorithm>
@@ -68,6 +69,138 @@ ImPlotSpec lua_toImPlotSpec(lua_State* L, int lo)
 }
 
 // implot
+
+// Link arguments must own stable writable storage, unlike temporary numeric copies.
+// Registry roots are grouped by native context and deduplicated by buffer address.
+static char axis_link_roots_key;
+
+static double* axis_link_pointer(lua_State* L, int index) {
+	if (lua_isnoneornil(L, index)) return nullptr;
+	static constexpr auto code = R"__(
+local ffi = require('ffi')
+local cell = ffi.typeof('double[1]')
+local pointer = ffi.typeof('void*[1]')
+local pointer_size = ffi.sizeof('void*')
+return function(value, out)
+    if not ffi.istype(cell, value) then return false end
+    value[0] = value[0] -- Reject read-only cdata too.
+    ffi.copy(out, pointer(value), pointer_size)
+    return true
+end
+)__";
+	if (!lua::_try_get_internal_helper(L, "implot.axis_link.pointer", code))
+		luaL_error(L, "cannot initialize axis link conversion");
+	double* pointer = nullptr;
+	lua_pushvalue(L, index);
+	lua_pushlightuserdata(L, &pointer);
+	const bool ok = lua_pcall(L, 2, 1, 0) == 0 && lua_toboolean(L, -1);
+	lua_pop(L, 1);
+	if (!ok || !pointer || !std::isfinite(*pointer))
+		luaL_error(L, "axis link argument #%d must be nil or a writable double[1] cdata with a finite value", index);
+	return pointer;
+}
+
+static void pin_axis_link(lua_State* L, ImPlotContext* context, int index, double* pointer) {
+	if (!pointer) return;
+	const int top = lua_gettop(L);
+	lua_pushlightuserdata(L, &axis_link_roots_key);
+	lua_rawget(L, LUA_REGISTRYINDEX);
+	if (lua_isnil(L, -1)) {
+		lua_pop(L, 1);
+		lua_newtable(L);
+		lua_pushlightuserdata(L, &axis_link_roots_key);
+		lua_pushvalue(L, -2);
+		lua_rawset(L, LUA_REGISTRYINDEX);
+	}
+	lua_pushlightuserdata(L, context);
+	lua_rawget(L, -2);
+	if (lua_isnil(L, -1)) {
+		lua_pop(L, 1);
+		lua_newtable(L);
+		lua_pushlightuserdata(L, context);
+		lua_pushvalue(L, -2);
+		lua_rawset(L, -4);
+	}
+	lua_pushlightuserdata(L, pointer);
+	lua_pushvalue(L, index);
+	lua_rawset(L, -3);
+	lua_settop(L, top);
+}
+
+static void release_axis_links(lua_State* L, ImPlotContext* context) {
+	const int top = lua_gettop(L);
+	lua_pushlightuserdata(L, &axis_link_roots_key);
+	lua_rawget(L, LUA_REGISTRYINDEX);
+	if (!lua_istable(L, -1)) { lua_settop(L, top); return; }
+	lua_pushlightuserdata(L, context);
+	lua_rawget(L, -2);
+	if (lua_istable(L, -1)) {
+		lua_pushnil(L);
+		while (lua_next(L, -2)) {
+			auto* pointer = static_cast<double*>(lua_touserdata(L, -2));
+			// Disabled axes retain LinkedMin/Max across native Reset() and EndPlot
+			// writes every axis. Detach only our pointers before dropping their owners.
+			for (int p = 0; p < context->Plots.GetMapSize(); ++p) {
+				if (auto* plot = context->Plots.TryGetMapData(p)) {
+					for (auto& axis : plot->Axes) {
+						if (axis.LinkedMin == pointer) axis.LinkedMin = nullptr;
+						if (axis.LinkedMax == pointer) axis.LinkedMax = nullptr;
+					}
+				}
+			}
+			for (int axis = 0; axis < ImAxis_COUNT; ++axis) {
+				if (context->NextPlotData.LinkedMin[axis] == pointer) context->NextPlotData.LinkedMin[axis] = nullptr;
+				if (context->NextPlotData.LinkedMax[axis] == pointer) context->NextPlotData.LinkedMax[axis] = nullptr;
+			}
+			lua_pop(L, 1);
+		}
+	}
+	lua_pop(L, 1);
+	lua_pushlightuserdata(L, context);
+	lua_pushnil(L);
+	lua_rawset(L, -3);
+	lua_settop(L, top);
+}
+
+// Call the generated BeginPlot/EndPlot binding unchanged, including its overloads
+// and return values. EndPlot must write the linked values before roots are released.
+static int implot_plotBoundary(lua_State* L) {
+	auto* context = ImPlot::GetCurrentContext();
+	const int args = lua_gettop(L);
+	lua_pushvalue(L, lua_upvalueindex(1));
+	lua_insert(L, 1);
+	lua_call(L, args, LUA_MULTRET);
+	const int results = lua_gettop(L);
+	const bool begin = lua_toboolean(L, lua_upvalueindex(2)) != 0;
+	if (context && (!begin || (results > 0 && !lua_toboolean(L, 1))))
+		release_axis_links(L, context);
+	return results;
+}
+
+template<bool Next>
+static int implot_axisLinks(lua_State* L) {
+	if (lua_gettop(L) < 1 || lua_gettop(L) > 3)
+		return luaL_error(L, "axis links expect axis, optional link_min and optional link_max");
+	const double axis_value = luaL_checknumber(L, 1);
+	if (!std::isfinite(axis_value) || std::trunc(axis_value) != axis_value || axis_value < 0 || axis_value >= ImAxis_COUNT)
+		return luaL_error(L, "invalid ImAxis");
+	const auto axis = static_cast<ImAxis>(axis_value);
+	auto* context = ImPlot::GetCurrentContext();
+	if (!context) return luaL_error(L, "axis links require an ImPlot context");
+	if constexpr (Next) {
+		if (context->CurrentPlot) return luaL_error(L, "setNextAxisLinks must precede beginPlot");
+	} else {
+		if (!context->CurrentPlot || context->CurrentPlot->SetupLocked || !context->CurrentPlot->Axes[axis].Enabled)
+			return luaL_error(L, "setupAxisLinks requires an enabled axis during plot setup");
+	}
+	double* min = axis_link_pointer(L, 2);
+	double* max = axis_link_pointer(L, 3);
+	pin_axis_link(L, context, 2, min);
+	pin_axis_link(L, context, 3, max);
+	if constexpr (Next) ImPlot::SetNextAxisLinks(axis, min, max);
+	else ImPlot::SetupAxisLinks(axis, min, max);
+	return 0;
+}
 
 static int implot_beginSubplots(lua_State* L) {
 	const int args = lua_gettop(L);
@@ -356,6 +489,81 @@ DEF_PLOT_T(implot_plotScatter) {
 	return lua_param_error(3 + Offset);
 }
 DEF_PLOT_C(implot_plotScatter);
+static int implot_plotBubbles(lua_State* L) {
+	const int args = lua_gettop(L);
+	const char* label_id = luaL_checkstring(L, 1);
+	std::vector<double> v1, v2;
+	if (!luaval_to_native(L, 2, &v1)) return lua_param_error(2);
+	if (!luaval_to_native(L, 3, &v2)) return lua_param_error(3);
+	const auto type = lua_type(L, 4);
+	if (type == LUA_TNUMBER) {
+		// values, radii, count
+		const int count = lua_check_count(L, 4, std::min(v1.size(), v2.size()));
+		if (count > 0)
+			ImPlot::PlotBubbles<double>(label_id, v1.data(), v2.data(), count,
+				lua_opt_number(args, 5, 1), lua_opt_number(args, 6, 0),
+				lua_plot_spec(L, 7, sizeof(double), true));
+		return 0;
+	}
+	if (type == LUA_TTABLE) {
+		// xs, ys, radii, count
+		std::vector<double> radii;
+		if (!luaval_to_native(L, 4, &radii)) return lua_param_error(4);
+		const int count = lua_check_count(L, 5, std::min({ v1.size(), v2.size(), radii.size() }));
+		if (count > 0)
+			ImPlot::PlotBubbles<double>(label_id, v1.data(), v2.data(), radii.data(), count,
+				lua_plot_spec(L, 6, sizeof(double), true));
+		return 0;
+	}
+	return lua_param_error(4);
+}
+DEF_PLOT_T(implot_plotBubbles) {
+	const int args = lua_gettop(L);
+	const char* label_id = luaL_checkstring(L, 1);
+	LUA_GET_PTR(v1, 2 + Offset);
+	LUA_GET_PTR(v2, 3 + Offset);
+	const auto type = lua_type(L, 4 + Offset);
+	if (type == LUA_TNUMBER) {
+		const int count = lua_plot_count(L, 4 + Offset);
+		if (count > 0)
+			ImPlot::PlotBubbles<T>(label_id, v1, v2, count,
+				lua_opt_number(args, 5 + Offset, 1), lua_opt_number(args, 6 + Offset, 0),
+				lua_plot_spec(L, 7 + Offset, sizeof(T), false, true));
+		return 0;
+	}
+	if (type == LUA_TCDATA) {
+		LUA_GET_PTR(radii, 4 + Offset);
+		const int count = lua_plot_count(L, 5 + Offset);
+		if (count > 0)
+			ImPlot::PlotBubbles<T>(label_id, v1, v2, radii, count,
+				lua_plot_spec(L, 6 + Offset, sizeof(T), false, true));
+		return 0;
+	}
+	return lua_param_error(4 + Offset);
+}
+DEF_PLOT_C(implot_plotBubbles);
+static int implot_plotPolygon(lua_State* L) {
+	const char* label_id = luaL_checkstring(L, 1);
+	std::vector<double> xs, ys;
+	if (!luaval_to_native(L, 2, &xs)) return lua_param_error(2);
+	if (!luaval_to_native(L, 3, &ys)) return lua_param_error(3);
+	const int count = lua_check_count(L, 4, std::min(xs.size(), ys.size()));
+	if (count > 0)
+		ImPlot::PlotPolygon<double>(label_id, xs.data(), ys.data(), count,
+			lua_plot_spec(L, 5, sizeof(double), true));
+	return 0;
+}
+DEF_PLOT_T(implot_plotPolygon) {
+	const char* label_id = luaL_checkstring(L, 1);
+	LUA_GET_PTR(xs, 2 + Offset);
+	LUA_GET_PTR(ys, 3 + Offset);
+	const int count = lua_plot_count(L, 4 + Offset);
+	if (count > 0)
+		ImPlot::PlotPolygon<T>(label_id, xs, ys, count,
+			lua_plot_spec(L, 5 + Offset, sizeof(T), false, true));
+	return 0;
+}
+DEF_PLOT_C(implot_plotPolygon);
 static int implot_plotStairs(lua_State* L) {
 	const int args = lua_gettop(L);
 	const auto label_id = luaL_checkstring(L, 1);
@@ -1219,10 +1427,14 @@ static int implot_showDemoWindow(lua_State* L) {
 #define M(n) {#n, implot_##n}
 #define M_PLOT(n) {#n, implot_##n}, {#n "C", implot_##n##C}
 static const luaL_Reg implot_methods[] = {
+	{ "setupAxisLinks", implot_axisLinks<false> },
+	{ "setNextAxisLinks", implot_axisLinks<true> },
 	M(beginSubplots),
 	M(setupAxisTicks),
 	M_PLOT(plotLine),
 	M_PLOT(plotScatter),
+	M_PLOT(plotBubbles),
+	M_PLOT(plotPolygon),
 	M_PLOT(plotStairs),
 	M_PLOT(plotShaded),
 	M_PLOT(plotBars),
@@ -1271,6 +1483,12 @@ void luaReg_implotManual(lua_State* L)
 	{
 		for (auto&& reg : implot_methods)
 			tolua_function(L, reg.name, reg.func);
+		for (const char* name : { "beginPlot", "endPlot" }) {
+			lua_getfield(L, -1, name);
+			lua_pushboolean(L, name[0] == 'b');
+			lua_pushcclosure(L, implot_plotBoundary, 2);
+			lua_setfield(L, -2, name);
+		}
 	}
 	lua_pushliteral(L, IMPLOT_VERSION);
 	lua_setfield(L, -2, "version");

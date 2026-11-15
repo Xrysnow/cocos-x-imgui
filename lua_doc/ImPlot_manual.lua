@@ -6,21 +6,49 @@ implot = implot or {}
 -------------------------------------------------------------------------------
 
 --- Starts a 2D plotting context. If this function returns true, EndPlot() must
---- be called, e.g. "if (BeginPlot(...)) { ... EndPlot(); }". #title_id must
---- be unique. If you need to avoid ID collisions or don't want to display a
---- title in the plot, use double hashes (e.g. "MyPlot##Hidden" or "##NoTitle").
---- If #x_label and/or #y_label are provided, axes labels will be displayed.
+--- be called. title_id must be unique; use ## suffixes to disambiguate hidden IDs.
+--- A false result discards queued axis links and releases their retained buffers.
 ---@param title_id string
----@param x_label string @optional
----@param y_label string @optional
 ---@param size ImVec2 @optional
 ---@param flags number @optional
----@param x_flags number @optional
----@param y_flags number @optional
----@param y2_flags number @optional
----@param y3_flags number @optional
-function implot.beginPlot(title_id, x_label, y_label, size, flags, x_flags, y_flags, y2_flags, y3_flags)
+---@return boolean
+function implot.beginPlot(title_id, size, flags)
 end
+
+--- Link an enabled axis during setup, after successful beginPlot() and before plotting/setupFinish().
+--- Each non-nil link must be a writable ffi.new('double[1]', value) with a finite value.
+--- Ordinary numbers, tables, raw double* pointers and other cdata types are rejected.
+--- Values are read immediately; endPlot() writes the final axis limits back to link[0].
+--- nil disconnects that endpoint; two nil endpoints disconnect both. This function returns no values.
+--- Buffers are retained by the binding until endPlot(), then detached from cached native plots.
+--- Register links for every plot submission; reuse the same buffers to share limits across plots/frames.
+--- Use the Lua beginPlot()/endPlot() pair for cleanup and finish plotting before closing the Lua state.
+---@param axis implot.ImAxis
+---@param link_min? ffi.cdata Writable double[1], or nil for no lower link.
+---@param link_max? ffi.cdata Writable double[1], or nil for no upper link.
+function implot.setupAxisLinks(axis, link_min, link_max)
+end
+
+--- Queue links before beginPlot(); uses the same double[1] reference contract as setupAxisLinks().
+--- The next beginPlot() reads the buffers; successful plots write them back at endPlot().
+--- Buffers remain retained while pending. Failed beginPlot() releases them without a writeback.
+--- Native next-plot links apply only to axes enabled at BeginPlot; for secondary axes call
+--- setupAxis() followed by setupAxisLinks() instead. Repeat for each plot submission.
+---@param axis implot.ImAxis
+---@param link_min? ffi.cdata Writable double[1], or nil for no lower link.
+---@param link_max? ffi.cdata Writable double[1], or nil for no upper link.
+function implot.setNextAxisLinks(axis, link_min, link_max)
+end
+
+-- Example (retain lo/hi yourself to reuse them across frames):
+-- local ffi = require('ffi')
+-- local lo, hi = ffi.new('double[1]', 0), ffi.new('double[1]', 10)
+-- implot.setNextAxisLinks(implot.ImAxis.X1, lo, hi)
+-- if implot.beginPlot('Linked plot') then
+--     -- Submit plot items here.
+--     implot.endPlot()
+-- end
+-- Read lo[0], hi[0] after endPlot(); panning/zooming updates these cells.
 
 -------------------------------------------------------------------------------
 -- Plot Items
@@ -35,7 +63,7 @@ end
 -- Pointer capacity and pointee type cannot be inferred from the dtype argument.
 -- Plotting converts values to double; very large 64-bit integers may lose plot precision.
 -- All variants accept a final spec table, or an integer shorthand for spec.Flags.
--- Line/Scatter/Stairs/Shaded/Bars/ErrorBars/Stems/InfLines/Digital C variants also accept
+-- Line/Scatter/Bubbles/Polygon/Stairs/Shaded/Bars/ErrorBars/Stems/InfLines/Digital C variants also accept
 -- the legacy tail flags, offset, stride instead of spec. Stems now consistently includes
 -- offset before stride; InfLines and Digital now honor stride too.
 -- Array specs only allow Stride = -1 (auto) or sizeof(double) = 8. C specs allow auto or
@@ -143,6 +171,83 @@ end
 ---@param offset? integer Legacy flags form only; default 0.
 ---@param stride? integer Legacy flags form only; default sizeof(T).
 function implot.plotScatterC(label_id, dtype, xs, ys, count, spec, offset, stride)
+end
+
+--- Plot bubbles; radii are in plot units. xscale defaults to 1, xstart to 0.
+--- Count is clamped to the shortest input array; zero count submits no item.
+---@param label_id string
+---@param values number[]
+---@param radii number[]
+---@param count integer
+---@param xscale? number
+---@param xstart? number
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotBubbles(label_id, values, radii, count, xscale, xstart, spec)
+end
+
+--- Plot bubbles; radii are in plot units. xscale defaults to 1, xstart to 0.
+--- All buffers use dtype and the same byte stride; caller must provide sufficient live storage.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param values ffi.cdata
+---@param radii ffi.cdata
+---@param count integer
+---@param xscale? number
+---@param xstart? number
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotBubblesC(label_id, dtype, values, radii, count, xscale, xstart, spec, offset, stride)
+end
+
+--- Plot bubbles from paired coordinates; radii are in plot units.
+--- Count is clamped to the shortest input array; zero count submits no item.
+---@param label_id string
+---@param xs number[]
+---@param ys number[]
+---@param radii number[]
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotBubbles(label_id, xs, ys, radii, count, spec)
+end
+
+--- Plot bubbles from paired coordinates; radii are in plot units.
+--- All buffers use dtype and the same byte stride; caller must provide sufficient live storage.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param xs ffi.cdata
+---@param ys ffi.cdata
+---@param radii ffi.cdata
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotBubblesC(label_id, dtype, xs, ys, radii, count, spec, offset, stride)
+end
+
+--- Plot a closed polygon with counter-clockwise vertices.
+--- For concave shapes set spec.Flags = implot.ImPlotPolygonFlags.ImPlotPolygonFlags_Concave.
+--- Count is clamped to the shortest input array; zero count submits no item.
+---@param label_id string
+---@param xs number[]
+---@param ys number[]
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+function implot.plotPolygon(label_id, xs, ys, count, spec)
+end
+
+--- Plot a closed polygon with counter-clockwise vertices.
+--- For concave shapes set spec.Flags = implot.ImPlotPolygonFlags.ImPlotPolygonFlags_Concave.
+--- All buffers use dtype and the same byte stride; caller must provide sufficient live storage.
+---@param label_id string
+---@param dtype imgui.ImGuiDataType
+---@param xs ffi.cdata
+---@param ys ffi.cdata
+---@param count integer
+---@param spec? implot.ImPlotSpec|integer
+---@param offset? integer Legacy flags form only; default 0.
+---@param stride? integer Legacy flags form only; default sizeof(T).
+function implot.plotPolygonC(label_id, dtype, xs, ys, count, spec, offset, stride)
 end
 
 --- Plot stairs; xscale defaults to 1, xstart to 0.
