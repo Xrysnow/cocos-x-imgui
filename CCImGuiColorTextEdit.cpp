@@ -5,7 +5,7 @@ using namespace cocos2d;
 
 cc::IntrusivePtr<ColorTextEdit> ColorTextEdit::create()
 {
-	cc::IntrusivePtr<ColorTextEdit> ret{new (std::nothrow) ColorTextEdit()};
+	cc::IntrusivePtr ret{new (std::nothrow) ColorTextEdit()};
 	if (ret && ret->init())
 	{
 		return ret;

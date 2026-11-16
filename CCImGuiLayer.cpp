@@ -7,7 +7,7 @@ using namespace cocos2d;
 
 cc::IntrusivePtr<ImGuiLayer> ImGuiLayer::create()
 {
-	cc::IntrusivePtr<ImGuiLayer> pRet{new(std::nothrow) ImGuiLayer()};
+	cc::IntrusivePtr pRet{new(std::nothrow) ImGuiLayer()};
 	if (pRet && pRet->init())
 	{
 		return pRet;

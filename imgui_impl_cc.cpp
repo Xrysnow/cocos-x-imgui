@@ -452,7 +452,7 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 						cmd->init(0.f, BlendFunc::ALPHA_NON_PREMULTIPLIED);
 						const auto pinfo = tex->getPixelFormat() == PixelFormat::A8 ? &g_ProgramFontInfo : &g_ProgramInfo;
 						// create new ProgramState
-						cc::IntrusivePtr<ProgramState> state{new ProgramState(pinfo->program)};
+						cc::IntrusivePtr state{new ProgramState(pinfo->program)};
 						g_ProgramStates.pushBack(state.get());
 						auto& desc = cmd->getPipelineDescriptor();
 						desc.programState = state.get();
@@ -759,7 +759,7 @@ static bool ImGui_ImplCC_UpdateTexture(ImTextureData* texture)
 	{
 		IM_ASSERT(texture->GetTexID() == ImTextureID_Invalid && texture->BackendUserData == nullptr);
 		IM_ASSERT(texture->Format == ImTextureFormat_RGBA32 || texture->Format == ImTextureFormat_Alpha8);
-		cc::IntrusivePtr<Texture2D> native_texture{new Texture2D()};
+		cc::IntrusivePtr native_texture{new Texture2D()};
 		native_texture->setAntiAliasTexParameters();
 		const auto format = texture->Format == ImTextureFormat_Alpha8 ? PixelFormat::A8 : PixelFormat::RGBA8888;
 		if (!native_texture->initWithData(texture->GetPixels(), texture->GetSizeInBytes(),
