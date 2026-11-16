@@ -452,11 +452,10 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 						cmd->init(0.f, BlendFunc::ALPHA_NON_PREMULTIPLIED);
 						const auto pinfo = tex->getPixelFormat() == PixelFormat::A8 ? &g_ProgramFontInfo : &g_ProgramInfo;
 						// create new ProgramState
-						auto state = new ProgramState(pinfo->program);
-						state->autorelease();
-						g_ProgramStates.pushBack(state);
+						cc::IntrusivePtr<ProgramState> state{new ProgramState(pinfo->program)};
+						g_ProgramStates.pushBack(state.get());
 						auto& desc = cmd->getPipelineDescriptor();
-						desc.programState = state;
+						desc.programState = state.get();
 						desc.programState->setUniform(pinfo->projection, &g_Projection, sizeof(Mat4));
 						desc.programState->setTexture(pinfo->texture, 0, tex->getBackendTexture());
 						// In order to composite our output buffer we need to preserve alpha
@@ -760,17 +759,16 @@ static bool ImGui_ImplCC_UpdateTexture(ImTextureData* texture)
 	{
 		IM_ASSERT(texture->GetTexID() == ImTextureID_Invalid && texture->BackendUserData == nullptr);
 		IM_ASSERT(texture->Format == ImTextureFormat_RGBA32 || texture->Format == ImTextureFormat_Alpha8);
-		auto* native_texture = new Texture2D();
+		cc::IntrusivePtr<Texture2D> native_texture{new Texture2D()};
 		native_texture->setAntiAliasTexParameters();
 		const auto format = texture->Format == ImTextureFormat_Alpha8 ? PixelFormat::A8 : PixelFormat::RGBA8888;
 		if (!native_texture->initWithData(texture->GetPixels(), texture->GetSizeInBytes(),
 			format, texture->Width, texture->Height))
 		{
-			native_texture->release();
 			return false;
 		}
-		texture->BackendUserData = native_texture;
-		texture->SetTexID((ImTextureID)native_texture);
+		texture->SetTexID((ImTextureID)native_texture.get());
+		texture->BackendUserData = native_texture.detach();
 		texture->SetStatus(ImTextureStatus_OK);
 	}
 	else if (texture->Status == ImTextureStatus_WantUpdates)

@@ -1816,7 +1816,7 @@ static int imgui_saveIniSettingsToMemory(lua_State *L) {
 }
 
 static int imgui_createLayer(lua_State *L) {
-	object_to_luaval(L, "cc.Layer", ImGuiLayer::create());
+	object_to_luaval(L, "cc.Layer", cocos2d::transferToAutoreleasePool(ImGuiLayer::create()));
 	return 1;
 }
 

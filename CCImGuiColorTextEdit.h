@@ -40,7 +40,7 @@ namespace ImGui
 		};
 		using LanguageDefinition = TextEditor::LanguageDefinition;
 
-		static ColorTextEdit* create();
+		static cc::IntrusivePtr<ColorTextEdit> create();
 
 		void setLanguageDefinition(
 			const std::string& name,

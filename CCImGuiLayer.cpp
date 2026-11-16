@@ -5,15 +5,13 @@
 
 using namespace cocos2d;
 
-ImGuiLayer* ImGuiLayer::create()
+cc::IntrusivePtr<ImGuiLayer> ImGuiLayer::create()
 {
-	ImGuiLayer* pRet = new(std::nothrow) ImGuiLayer();
+	cc::IntrusivePtr<ImGuiLayer> pRet{new(std::nothrow) ImGuiLayer()};
 	if (pRet && pRet->init())
 	{
-		pRet->autorelease();
 		return pRet;
 	}
-	delete pRet;
 	return nullptr;
 }
 

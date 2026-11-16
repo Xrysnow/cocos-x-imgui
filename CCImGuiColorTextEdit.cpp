@@ -3,15 +3,13 @@
 using namespace ImGui;
 using namespace cocos2d;
 
-ColorTextEdit* ColorTextEdit::create()
+cc::IntrusivePtr<ColorTextEdit> ColorTextEdit::create()
 {
-	auto ret = new (std::nothrow) ColorTextEdit();
+	cc::IntrusivePtr<ColorTextEdit> ret{new (std::nothrow) ColorTextEdit()};
 	if (ret && ret->init())
 	{
-		ret->autorelease();
 		return ret;
 	}
-	delete ret;
 	return nullptr;
 }
 
