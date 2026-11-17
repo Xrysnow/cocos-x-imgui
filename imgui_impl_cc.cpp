@@ -7,12 +7,12 @@
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
 #include "imgui_internal.h"
-#include "base/CCIMEDelegate.h"
+#include "base/IMEDelegate.h"
 #include "platform/android/jni/JniHelper.h"
 #endif
 
 #ifdef CC_PLATFORM_PC
-#include "platform/desktop/CCGLViewImpl-desktop.h"
+#include "platform/desktop/GLViewImpl-desktop.h"
 // GLFW
 #ifdef _WIN32
 	#include "glfw3.h"

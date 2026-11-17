@@ -1,6 +1,6 @@
 #include "imgui_lua.hpp"
 #include "../imgui/misc/cpp/imgui_stdlib.h"
-#include "scripting/lua-bindings/manual/CCLuaEngine.h"
+#include "scripting/lua-bindings/manual/LuaEngine.h"
 #include "scripting/lua-bindings/manual/LuaBasicConversions.h"
 #include "lua_imgui_auto.hpp"
 #include "lua_imguiStyle_auto.hpp"
