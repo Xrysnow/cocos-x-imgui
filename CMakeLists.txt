@@ -64,6 +64,7 @@ if(BUILD_LUA_LIBS)
 endif()
 
 add_library(${LIB_NAME} STATIC ${SOURCE} ${HEADER})
+target_compile_definitions(${LIB_NAME} PUBLIC IMGUI_USE_WCHAR32)
 target_include_directories(${LIB_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}

@@ -4,15 +4,19 @@
 #include "renderer/backend/gfx/DeviceGFX.h"
 #include <cstring>
 #include <algorithm>
+#include <deque>
+#include <utility>
+#include <vector>
+
+#include "imgui_internal.h"
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-#include "imgui_internal.h"
-#include "base/IMEDelegate.h"
 #include "platform/android/jni/JniHelper.h"
 #endif
 
 #ifdef CC_PLATFORM_PC
 #include "platform/desktop/GLViewImpl-desktop.h"
+#include "platform/desktop/TextInputGLFW.h"
 // GLFW
 #ifdef _WIN32
 	#include "glfw3.h"
@@ -70,98 +74,6 @@ static EventListenerTouchOneByOne* g_TouchListener = nullptr;
 static EventListenerKeyboard* g_KeyboardListener = nullptr;
 static int g_TouchId = -1;
 static bool g_MobileKeys[512] = {};
-#endif
-
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-// Android owns preedit/candidates. Only committed UTF-8 reaches ImGui. Use the
-// queued key API for deletion so multiple deletes and replacement text retain
-// their order even when the IME delivers them within a single rendered frame.
-class ImGuiCocosIME final : public IMEDelegate
-{
-public:
-	void newFrame()
-	{
-		if (_closing)
-		{
-			// Let queued commits/deletions reach InputText before releasing its
-			// Active ID. InputEventsQueue is drained by NewFrame with trickling.
-			if (ImGui::GetCurrentContext()->InputEventsQueue.empty())
-			{
-				_closing = false;
-				ImGui::GetIO().ClearInputKeys();
-				std::fill(std::begin(g_MobileKeys), std::end(g_MobileKeys), false);
-				stop();
-			}
-		}
-	}
-
-	void update(bool wanted)
-	{
-		if (_closing) return;
-		const ImGuiID active = ImGui::GetActiveID();
-		if (!wanted || active == 0)
-		{
-			if (_attached) detachWithIME();
-			return;
-		}
-		if (_attached && _active == active) return;
-		if (_attached) detachWithIME();
-		_active = active;
-		if (attachWithIME())
-			Director::getInstance()->getOpenGLView()->setIMEKeyboardState(true);
-	}
-
-	void stop()
-	{
-		if (_attached) detachWithIME();
-	}
-
-protected:
-	bool canAttachWithIME() override { return true; }
-	bool canDetachWithIME() override { return true; }
-	void didAttachWithIME() override { _attached = true; }
-	void didDetachWithIME() override
-	{
-		_attached = false;
-		_closing = false;
-		if (ImGui::GetActiveID() == _active) ImGui::ClearActiveID();
-		Director::getInstance()->getOpenGLView()->setIMEKeyboardState(false);
-	}
-	std::string_view getContentText() override { return {}; }
-	void insertText(const char* text, size_t length) override
-	{
-		auto& io = ImGui::GetIO();
-		const std::string committed(text, length);
-		size_t start = 0;
-		for (size_t i = 0; i < committed.size(); ++i)
-		{
-			if (committed[i] != '\n') continue;
-			io.AddInputCharactersUTF8(committed.substr(start, i - start).c_str());
-			io.AddKeyEvent(ImGuiKey_Enter, true);
-			io.AddKeyEvent(ImGuiKey_Enter, false);
-			start = i + 1;
-		}
-		io.AddInputCharactersUTF8(committed.substr(start).c_str());
-	}
-	void deleteBackward() override
-	{
-		auto& io = ImGui::GetIO();
-		io.AddKeyEvent(ImGuiKey_Backspace, true);
-		io.AddKeyEvent(ImGuiKey_Backspace, false);
-	}
-	void keyboardDidHide(IMEKeyboardNotificationInfo&) override
-	{
-		if (!_attached) return;
-		_closing = true;
-	}
-
-private:
-	bool _attached = false;
-	bool _closing = false;
-	ImGuiID _active = 0;
-};
-
-static std::unique_ptr<ImGuiCocosIME> g_AndroidIME;
 #endif
 
 #ifndef CC_PLATFORM_PC
@@ -240,12 +152,301 @@ static void ImGui_ImplCC_MobileKey(EventKeyboard::KeyCode key, bool down)
 
 #endif
 
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-static void ImGui_ImplCC_SetAndroidIME(ImGuiContext*, ImGuiViewport*, ImGuiPlatformImeData* data)
+class ImGuiTextInput
 {
-	if (g_AndroidIME) g_AndroidIME->update(data->WantVisible);
-}
+public:
+	explicit ImGuiTextInput(ImGuiContext* context) : _context(context)
+	{
+		ImGuiContextHook hook;
+		hook.Type = ImGuiContextHookType_EndFramePost;
+		hook.UserData = this;
+		hook.Callback = [](ImGuiContext* ctx, ImGuiContextHook* installed) {
+			// Dear ImGui only calls the platform function when the geometry changes.
+			// Adjacent fields can share coordinates, so check the active ID every frame.
+			auto* self = static_cast<ImGuiTextInput*>(installed->UserData);
+			self->update(ImGui::FindViewportByID(ctx->PlatformImeData.ViewportId), ctx->PlatformImeData);
+		};
+		_hookId = ImGui::AddContextHook(context, &hook);
+	}
+
+	~ImGuiTextInput()
+	{
+		stop();
+		ImGui::RemoveContextHook(_context, _hookId);
+	}
+
+	void update(ImGuiViewport* viewport, const ImGuiPlatformImeData& data)
+	{
+		const ImGuiID field = _context->ActiveId;
+		if (!data.WantTextInput || !field || !viewport || viewport->ID != data.ViewportId)
+		{
+			stop();
+			return;
+		}
+		const auto view = Director::getInstance()->getOpenGLView();
+		if (!view)
+		{
+			stop();
+			return;
+		}
+		int x = 0, y = 0;
+#ifdef CC_PLATFORM_PC
+		auto* window = static_cast<GLFWwindow*>(viewport->PlatformHandle);
+		const auto windowId = TextInputGLFW::getWindow(window);
+		const bool focused = windowId && glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE;
+		if (focused && (_context->IO.ConfigFlags & ImGuiConfigFlags_ViewportsEnable))
+			glfwGetWindowPos(window, &x, &y);
+#else
+		const auto windowId = view->getTextInputWindow();
+		const bool focused = windowId != 0;
 #endif
+		if (_field != field || _viewport != viewport->ID || _session.window() != windowId)
+			stop();
+		if (!focused)
+			return;
+		if (_replaced)
+			return;
+
+		const TextInputRect caret{data.InputPos.x - x, data.InputPos.y - y, 1.0, data.InputLineHeight};
+		const TextInputArea area{caret, caret, std::nullopt, TextInputSpace::window};
+		if (_session)
+		{
+			pruneConsumedInput();
+			if (_caret.x != caret.x || _caret.y != caret.y || _caret.height != caret.height)
+				_session.setArea(area);
+			_caret = caret;
+			updateKeyboardRequest(data.WantVisible);
+			return;
+		}
+
+		auto& service = view->getTextInputService();
+		if (_field == field && service.hasTextFocus())
+			return;
+
+		TextInputOptions options;
+		if (_context->InputTextState.ID == field)
+		{
+			const auto flags = _context->InputTextState.Flags;
+			options.multiline = (flags & ImGuiInputTextFlags_Multiline) != 0;
+			if (flags & ImGuiInputTextFlags_Password)
+				options.purpose = TextInputPurpose::password;
+		}
+		TextInputInitialState initial;
+		initial.area = area;
+		auto started = service.begin(windowId, options, [this](const TextInputEvent& event) { receive(event); }, initial);
+		if (started)
+		{
+			_session = std::move(started.session);
+			_field = field;
+			_viewport = viewport->ID;
+			_caret = caret;
+#ifdef CC_PLATFORM_PC
+			_glfwWindow = window;
+			TextInputGLFW::setCommitObserver(window, [](void* user, TextInputSessionId session) {
+				auto* self = static_cast<ImGuiTextInput*>(user);
+				if (self->_session.id() == session)
+					self->_commitBoundaries.push_back(self->_context->InputEventsNextEventId);
+			}, this);
+#endif
+			updateKeyboardRequest(data.WantVisible);
+		}
+	}
+
+	void newFrame()
+	{
+		if (!_finishAfterKeyboardHide && !_replaced)
+			return;
+		pruneConsumedInput();
+		if (!_pendingInput.empty())
+			return;
+		if (_context->ActiveId == _field)
+			ImGui::ClearActiveID();
+		_context->IO.ClearInputKeys();
+#ifndef CC_PLATFORM_PC
+		std::fill(std::begin(g_MobileKeys), std::end(g_MobileKeys), false);
+#endif
+		stop();
+	}
+
+	void windowDestroyed(ImGuiID viewport)
+	{
+		if (_viewport == viewport)
+			stop();
+	}
+
+private:
+	void receive(const TextInputEvent& event)
+	{
+		if (event.session != _session.id() || _context->ActiveId != _field)
+			return;
+		if (const auto* closed = std::get_if<TextInputClosed>(&event.payload))
+		{
+			_replaced = closed->reason == TextInputCloseReason::replaced;
+			return;
+		}
+		auto& queue = _context->InputEventsQueue;
+		const int start = queue.Size;
+		if (const auto* commit = std::get_if<TextInputCommit>(&event.payload))
+		{
+			_context->IO.AddInputCharactersUTF8(commit->text.c_str());
+#ifdef CC_PLATFORM_PC
+			if (!_commitBoundaries.empty())
+			{
+				const auto boundary = _commitBoundaries.front();
+				_commitBoundaries.pop_front();
+				if (start != queue.Size)
+				{
+					for (int i = start; i < queue.Size; ++i)
+						_pendingInput.push_back(queue[i].EventId);
+					// A later key (e.g. Enter) or click may already have queued while GLFW was polling.
+					// Reinsert the confirmed text ahead of those events in their original input order.
+					const auto appended = queue.begin() + start;
+					const auto position = std::find_if(queue.begin(), appended, [&](const ImGuiInputEvent& input) {
+						return input.EventId >= boundary && !owns(input.EventId);
+					});
+					std::rotate(position, appended, queue.end());
+				}
+				return;
+			}
+#endif
+		}
+#ifndef CC_PLATFORM_PC
+		else if (const auto* command = std::get_if<TextInputCommand>(&event.payload))
+			queueCommand(command->action);
+		else if (const auto* changed = std::get_if<TextInputStateChanged>(&event.payload))
+		{
+			if (changed->state.keyboardVisible == TextInputKnowledge::yes)
+			{
+				_keyboardWasVisible = true;
+				_finishAfterKeyboardHide = false;
+			}
+			else if (changed->state.keyboardVisible == TextInputKnowledge::no && _keyboardWasVisible && _keyboardRequested)
+				_finishAfterKeyboardHide = true;
+		}
+#endif
+		for (int i = start; i < queue.Size; ++i)
+		{
+			const auto& input = queue[i];
+			if (input.Type == ImGuiInputEventType_Text || (input.Type == ImGuiInputEventType_Key && input.Key.Down))
+				_pendingInput.push_back(input.EventId);
+		}
+	}
+
+	void updateKeyboardRequest(bool requested)
+	{
+		if (_keyboardRequested == requested)
+			return;
+		_keyboardRequested = requested;
+		_finishAfterKeyboardHide = false;
+		if (_session.capabilities().requestKeyboard)
+			_session.requestKeyboard(requested);
+	}
+
+	void pruneConsumedInput()
+	{
+		const auto& queue = _context->InputEventsQueue;
+		if (_pendingInput.empty())
+			return;
+		const auto first = std::find_if(queue.begin(), queue.end(), [&](const ImGuiInputEvent& input) {
+			return owns(input.EventId);
+		});
+		const auto pending = first == queue.end() ? _pendingInput.end() :
+			std::lower_bound(_pendingInput.begin(), _pendingInput.end(), first->EventId);
+		_pendingInput.erase(_pendingInput.begin(), pending);
+	}
+
+	bool owns(ImU32 eventId) const
+	{
+		return std::binary_search(_pendingInput.begin(), _pendingInput.end(), eventId);
+	}
+
+#ifndef CC_PLATFORM_PC
+	void queueCommand(TextInputCommandAction action)
+	{
+		using Command = TextInputCommandAction;
+		ImGuiKey key = ImGuiKey_None;
+		switch (action)
+		{
+		case Command::backspace: key = ImGuiKey_Backspace; break;
+		case Command::deleteForward: key = ImGuiKey_Delete; break;
+		case Command::left: key = ImGuiKey_LeftArrow; break;
+		case Command::right: key = ImGuiKey_RightArrow; break;
+		case Command::up: key = ImGuiKey_UpArrow; break;
+		case Command::down: key = ImGuiKey_DownArrow; break;
+		case Command::lineStart: key = ImGuiKey_Home; break;
+		case Command::lineEnd: key = ImGuiKey_End; break;
+		case Command::cancel: key = ImGuiKey_Escape; break;
+		case Command::insertNewline:
+		case Command::done:
+		case Command::search:
+		case Command::send:
+		case Command::next:
+		case Command::go: key = ImGuiKey_Enter; break;
+		case Command::selectAll: break;
+		}
+		if (key != ImGuiKey_None)
+		{
+			_context->IO.AddKeyEvent(key, true);
+			_context->IO.AddKeyEvent(key, false);
+		}
+	}
+#endif
+
+	void stop()
+	{
+#ifdef CC_PLATFORM_PC
+		if (_glfwWindow)
+			TextInputGLFW::clearCommitObserver(_glfwWindow, this);
+		_glfwWindow = nullptr;
+		_commitBoundaries.clear();
+#endif
+		if (!_pendingInput.empty())
+		{
+			// Leave queued key releases intact if a previous frame processed their down event.
+			auto& queue = _context->InputEventsQueue;
+			const auto end = std::remove_if(queue.begin(), queue.end(), [&](const ImGuiInputEvent& event) {
+				return owns(event.EventId);
+			});
+			if (end != queue.end())
+				queue.erase(end, queue.end());
+			_pendingInput.clear();
+		}
+		_session = {};
+		_field = 0;
+		_viewport = 0;
+		_keyboardRequested = true;
+		_keyboardWasVisible = false;
+		_finishAfterKeyboardHide = false;
+		_replaced = false;
+	}
+
+	ImGuiContext* _context;
+	ImGuiID _hookId = 0;
+	ImGuiID _field = 0;
+	ImGuiID _viewport = 0;
+	TextInputSession _session;
+	TextInputRect _caret;
+	std::vector<ImU32> _pendingInput;
+#ifdef CC_PLATFORM_PC
+	GLFWwindow* _glfwWindow = nullptr;
+	std::deque<ImU32> _commitBoundaries;
+#endif
+	bool _keyboardRequested = true;
+	bool _keyboardWasVisible = false;
+	bool _finishAfterKeyboardHide = false;
+	bool _replaced = false;
+};
+
+static ImGuiTextInput* ImGui_ImplCC_GetTextInput(ImGuiContext* context)
+{
+	return static_cast<ImGuiTextInput*>(ImGui::GetIO(context).BackendPlatformUserData);
+}
+
+static void ImGui_ImplCC_SetImeData(ImGuiContext* context, ImGuiViewport* viewport, ImGuiPlatformImeData* data)
+{
+	if (auto* input = ImGui_ImplCC_GetTextInput(context))
+		input->update(viewport, *data);
+}
 
 #ifdef CC_PLATFORM_PC
 static GLFWcursor*          g_MouseCursors[ImGuiMouseCursor_COUNT] = { nullptr };
@@ -254,7 +455,6 @@ static GLFWwindow*          g_KeyOwnerWindows[512] = { nullptr };
 static GLFWmousebuttonfun   g_PrevUserCallbackMousebutton = nullptr;
 static GLFWscrollfun        g_PrevUserCallbackScroll = nullptr;
 static GLFWkeyfun           g_PrevUserCallbackKey = nullptr;
-static GLFWcharfun          g_PrevUserCallbackChar = nullptr;
 static GLFWwindowfocusfun   g_PrevUserCallbackWindowFocus = nullptr;
 static GLFWcursorposfun     g_PrevUserCallbackCursorPos = nullptr;
 static GLFWmonitorfun       g_PrevUserCallbackMonitor = nullptr;
@@ -308,7 +508,7 @@ static void AddRendererCommand(const std::function<void()>& f)
 static GLFWwindow* ImGui_ImplCC_GetWindow()
 {
 	const auto glv = (GLViewImpl*)Director::getInstance()->getOpenGLView();
-	return glv->getWindow();
+	return glv ? glv->getWindow() : nullptr;
 }
 #endif // CC_PLATFORM_PC
 
@@ -505,6 +705,9 @@ void ImGui_ImplCC_RenderPlatform()
 			return;
 		// no GL context to restore under gfx; platform windows only
 		ImGui::UpdatePlatformWindows();
+		for (auto* viewport : ImGui::GetPlatformIO().Viewports)
+			if (!viewport->PlatformHandle)
+				viewport->PlatformRequestClose = true;
 		ImGui::RenderPlatformWindowsDefault();
 	}
 #endif
@@ -698,6 +901,8 @@ static ImGuiKey ImGui_ImplCC_KeyToImGuiKey(int keycode, int scancode)
 
 void ImGui_ImplCC_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	if (action != GLFW_RELEASE && TextInputGLFW::isKeyConsumed(window))
+		return;
 	if (g_PrevUserCallbackKey != nullptr && window == ImGui_ImplCC_GetWindow())
 		g_PrevUserCallbackKey(window, key, scancode, action, mods);
 	if (key < 0 || key >= IM_ARRAYSIZE(g_KeyOwnerWindows) ||
@@ -721,6 +926,8 @@ void ImGui_ImplCC_WindowFocusCallback(GLFWwindow* window, int focused)
 {
 	if (g_PrevUserCallbackWindowFocus && window == ImGui_ImplCC_GetWindow())
 		g_PrevUserCallbackWindowFocus(window, focused);
+	else
+		TextInputGLFW::handleFocus(window, focused == GLFW_TRUE);
 	if (!focused)
 		for (auto& owner : g_KeyOwnerWindows)
 			if (owner == window) owner = nullptr;
@@ -729,11 +936,7 @@ void ImGui_ImplCC_WindowFocusCallback(GLFWwindow* window, int focused)
 
 void ImGui_ImplCC_CharCallback(GLFWwindow* window, unsigned int c)
 {
-	if (g_PrevUserCallbackChar != nullptr && window == ImGui_ImplCC_GetWindow())
-		g_PrevUserCallbackChar(window, c);
-
-	ImGuiIO& io = ImGui::GetIO();
-	io.AddInputCharacter(c);
+	TextInputGLFW::handleCharacter(window, c);
 }
 
 void ImGui_ImplGlfw_MonitorCallback(GLFWmonitor* monitor, int event)
@@ -970,12 +1173,10 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 	io.BackendRendererName = "imgui_impl_cocos";
 	// disable auto load and save
 	io.IniFilename = nullptr;
+	io.BackendPlatformUserData = new ImGuiTextInput(ImGui::GetCurrentContext());
+	platform_io.Platform_SetImeDataFn = ImGui_ImplCC_SetImeData;
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-	g_AndroidIME.reset(new ImGuiCocosIME());
-	std::fill(std::begin(g_MobileKeys), std::end(g_MobileKeys), false);
-	io.ConfigInputTrickleEventQueue = true;
-	platform_io.Platform_SetImeDataFn = ImGui_ImplCC_SetAndroidIME;
 	platform_io.Platform_SetClipboardTextFn = ImGui_ImplCC_SetClipboardText;
 	platform_io.Platform_GetClipboardTextFn = ImGui_ImplCC_GetClipboardText;
 #endif
@@ -1011,7 +1212,6 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 	g_PrevUserCallbackMousebutton = nullptr;
 	g_PrevUserCallbackScroll = nullptr;
 	g_PrevUserCallbackKey = nullptr;
-	g_PrevUserCallbackChar = nullptr;
 	g_PrevUserCallbackWindowFocus = nullptr;
 	g_PrevUserCallbackCursorPos = nullptr;
 	g_PrevUserCallbackMonitor = nullptr;
@@ -1021,7 +1221,6 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 		g_PrevUserCallbackMousebutton = glfwSetMouseButtonCallback(window, ImGui_ImplCC_MouseButtonCallback);
 		g_PrevUserCallbackScroll = glfwSetScrollCallback(window, ImGui_ImplCC_ScrollCallback);
 		g_PrevUserCallbackKey = glfwSetKeyCallback(window, ImGui_ImplCC_KeyCallback);
-		g_PrevUserCallbackChar = glfwSetCharCallback(window, ImGui_ImplCC_CharCallback);
 		g_PrevUserCallbackWindowFocus = glfwSetWindowFocusCallback(window, ImGui_ImplCC_WindowFocusCallback);
 		g_PrevUserCallbackCursorPos = glfwSetCursorPosCallback(window, ImGui_ImplCC_CursorPosCallback);
 		g_PrevUserCallbackMonitor = glfwSetMonitorCallback(ImGui_ImplGlfw_MonitorCallback);
@@ -1124,10 +1323,6 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 
 void ImGui_ImplCC_Shutdown()
 {
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-	g_AndroidIME->stop();
-	g_AndroidIME.reset();
-#endif
 #ifndef CC_PLATFORM_PC
 	auto dispatcher = Director::getInstance()->getEventDispatcher();
 	dispatcher->removeEventListener(g_TouchListener);
@@ -1143,12 +1338,14 @@ void ImGui_ImplCC_Shutdown()
 	const auto g_Window = ImGui_ImplCC_GetWindow();
 	if (g_InstalledCallbacks)
 	{
-		glfwSetMouseButtonCallback(g_Window, g_PrevUserCallbackMousebutton);
-		glfwSetScrollCallback(g_Window, g_PrevUserCallbackScroll);
-		glfwSetKeyCallback(g_Window, g_PrevUserCallbackKey);
-		glfwSetCharCallback(g_Window, g_PrevUserCallbackChar);
-		glfwSetWindowFocusCallback(g_Window, g_PrevUserCallbackWindowFocus);
-		glfwSetCursorPosCallback(g_Window, g_PrevUserCallbackCursorPos);
+		if (g_Window)
+		{
+			glfwSetMouseButtonCallback(g_Window, g_PrevUserCallbackMousebutton);
+			glfwSetScrollCallback(g_Window, g_PrevUserCallbackScroll);
+			glfwSetKeyCallback(g_Window, g_PrevUserCallbackKey);
+			glfwSetWindowFocusCallback(g_Window, g_PrevUserCallbackWindowFocus);
+			glfwSetCursorPosCallback(g_Window, g_PrevUserCallbackCursorPos);
+		}
 		glfwSetMonitorCallback(g_PrevUserCallbackMonitor);
 		g_InstalledCallbacks = false;
 	}
@@ -1161,6 +1358,9 @@ void ImGui_ImplCC_Shutdown()
 	}
 #endif // CC_PLATFORM_PC
 	ImGui::DestroyPlatformWindows();
+	delete ImGui_ImplCC_GetTextInput(ImGui::GetCurrentContext());
+	ImGui::GetIO().BackendPlatformUserData = nullptr;
+	ImGui::GetPlatformIO().Platform_SetImeDataFn = nullptr;
 	ImGui_ImplCC_DestroyDeviceObjects();
 	ImGui::GetIO().BackendFlags &= ~ImGuiBackendFlags_RendererHasTextures;
 	ImGui::DestroyContext();
@@ -1183,7 +1383,8 @@ static void ImGui_ImplCC_UpdateMousePosAndButtons()
 	{
 		ImGuiViewport* viewport = platform_io.Viewports[n];
 		GLFWwindow* window = (GLFWwindow*)viewport->PlatformHandle;
-		IM_ASSERT(window != NULL);
+		if (!window)
+			continue;
 #ifdef __EMSCRIPTEN__
 		const bool focused = true;
 		IM_ASSERT(platform_io.Viewports.Size == 1);
@@ -1278,6 +1479,8 @@ static void ImGui_ImplCC_UpdateMouseCursor()
 	for (int n = 0; n < platform_io.Viewports.Size; n++)
 	{
 		GLFWwindow* window = (GLFWwindow*)platform_io.Viewports[n]->PlatformHandle;
+		if (!window)
+			continue;
 		if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
 		{
 			// Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
@@ -1378,12 +1581,8 @@ static void ImGui_ImplGlfw_UpdateMonitors()
 
 void ImGui_ImplCC_NewFrame()
 {
-#if CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID
-	// WantTextInput is computed at NewFrame and lags widget activation. Only
-	// Platform_SetImeDataFn's current WantVisible may change attachment; polling
-	// last frame's flag here detaches a newly focused widget before it can type.
-	if (g_AndroidIME) g_AndroidIME->newFrame();
-#endif
+	if (auto* input = ImGui_ImplCC_GetTextInput(ImGui::GetCurrentContext()))
+		input->newFrame();
 	g_CallbackCommands.clear();
 	g_CustomCommands.clear();
 	g_ProgramStates.clear();
@@ -1465,6 +1664,7 @@ static void ImGui_ImplGlfw_WindowCloseCallback(GLFWwindow* window)
 // ignore recent glfwSetWindowXXX() calls.
 static void ImGui_ImplGlfw_WindowPosCallback(GLFWwindow* window, int, int)
 {
+	TextInputGLFW::handleGeometry(window);
 	if (ImGuiViewport* viewport = ImGui::FindViewportByPlatformHandle(window))
 	{
 		if (ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData)
@@ -1480,6 +1680,7 @@ static void ImGui_ImplGlfw_WindowPosCallback(GLFWwindow* window, int, int)
 
 static void ImGui_ImplGlfw_WindowSizeCallback(GLFWwindow* window, int, int)
 {
+	TextInputGLFW::handleGeometry(window);
 	if (ImGuiViewport* viewport = ImGui::FindViewportByPlatformHandle(window))
 	{
 		if (ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData)
@@ -1512,8 +1713,12 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
 	// gfx renderer does not own a shareable GL context
 	GLFWwindow* share_window = nullptr;
 	data->Window = glfwCreateWindow((int)viewport->Size.x, (int)viewport->Size.y, "No Title Yet", nullptr, share_window);
+	if (!data->Window)
+		return;
 	data->WindowOwned = true;
 	viewport->PlatformHandle = (void*)data->Window;
+	if (const auto view = Director::getInstance()->getOpenGLView())
+		TextInputGLFW::attachWindow(view->getTextInputService(), data->Window);
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 	viewport->PlatformHandleRaw = glfwGetWin32Window(data->Window);
 #endif
@@ -1529,15 +1734,21 @@ static void ImGui_ImplGlfw_CreateWindow(ImGuiViewport* viewport)
 	glfwSetWindowCloseCallback(data->Window, ImGui_ImplGlfw_WindowCloseCallback);
 	glfwSetWindowPosCallback(data->Window, ImGui_ImplGlfw_WindowPosCallback);
 	glfwSetWindowSizeCallback(data->Window, ImGui_ImplGlfw_WindowSizeCallback);
+	glfwSetWindowContentScaleCallback(data->Window, [](GLFWwindow* window, float, float) {
+		TextInputGLFW::handleGeometry(window);
+	});
 }
 
 static void ImGui_ImplGlfw_DestroyWindow(ImGuiViewport* viewport)
 {
+	if (auto* input = ImGui_ImplCC_GetTextInput(ImGui::GetCurrentContext()))
+		input->windowDestroyed(viewport->ID);
 	if (ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData)
 	{
 		if (data->WindowOwned)
 		{
 			const auto window = data->Window;
+			TextInputGLFW::detachWindow(window);
 #if !GLFW_HAS_MOUSE_PASSTHROUGH && GLFW_HAS_WINDOW_HOVERED && CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 			HWND hwnd = (HWND)viewport->PlatformHandleRaw;
 			::RemovePropA(hwnd, "IMGUI_VIEWPORT");
@@ -1580,6 +1791,8 @@ static LRESULT CALLBACK WndProcNoInputs(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 static void ImGui_ImplGlfw_ShowWindow(ImGuiViewport* viewport)
 {
 	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
+	if (!data->Window)
+		return;
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 	// GLFW hack: Hide icon from task bar
@@ -1618,30 +1831,38 @@ static void ImGui_ImplGlfw_ShowWindow(ImGuiViewport* viewport)
 
 static ImVec2 ImGui_ImplGlfw_GetWindowPos(ImGuiViewport* viewport)
 {
-	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
+	auto* window = static_cast<GLFWwindow*>(viewport->PlatformHandle);
+	if (!window)
+		return viewport->Pos;
 	int x = 0, y = 0;
-	glfwGetWindowPos(data->Window, &x, &y);
+	glfwGetWindowPos(window, &x, &y);
 	return ImVec2((float)x, (float)y);
 }
 
 static void ImGui_ImplGlfw_SetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
 {
 	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
+	if (!data || !data->Window)
+		return;
 	data->IgnoreWindowPosEventFrame = ImGui::GetFrameCount();
 	glfwSetWindowPos(data->Window, (int)pos.x, (int)pos.y);
 }
 
 static ImVec2 ImGui_ImplGlfw_GetWindowSize(ImGuiViewport* viewport)
 {
-	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
+	auto* window = static_cast<GLFWwindow*>(viewport->PlatformHandle);
+	if (!window)
+		return viewport->Size;
 	int w = 0, h = 0;
-	glfwGetWindowSize(data->Window, &w, &h);
+	glfwGetWindowSize(window, &w, &h);
 	return ImVec2((float)w, (float)h);
 }
 
 static void ImGui_ImplGlfw_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
 {
 	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
+	if (!data || !data->Window)
+		return;
 #if CC_TARGET_PLATFORM == CC_PLATFORM_MAC && !GLFW_HAS_OSX_WINDOW_POS_FIX
 	// Native OS windows are positioned from the bottom-left corner on macOS, whereas on other platforms they are
 	// positioned from the upper-left corner. GLFW makes an effort to convert macOS style coordinates, however it
@@ -1658,15 +1879,15 @@ static void ImGui_ImplGlfw_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
 
 static void ImGui_ImplGlfw_SetWindowTitle(ImGuiViewport* viewport, const char* title)
 {
-	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
-	glfwSetWindowTitle(data->Window, title);
+	if (auto* window = static_cast<GLFWwindow*>(viewport->PlatformHandle))
+		glfwSetWindowTitle(window, title);
 }
 
 static void ImGui_ImplGlfw_SetWindowFocus(ImGuiViewport* viewport)
 {
 #if GLFW_HAS_FOCUS_WINDOW
-	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
-	glfwFocusWindow(data->Window);
+	if (auto* window = static_cast<GLFWwindow*>(viewport->PlatformHandle))
+		glfwFocusWindow(window);
 #else
 	// FIXME: What are the effect of not having this function? At the moment imgui doesn't actually call SetWindowFocus - we set that up ahead, will answer that question later.
 	(void)viewport;
@@ -1675,21 +1896,21 @@ static void ImGui_ImplGlfw_SetWindowFocus(ImGuiViewport* viewport)
 
 static bool ImGui_ImplGlfw_GetWindowFocus(ImGuiViewport* viewport)
 {
-	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
-	return glfwGetWindowAttrib(data->Window, GLFW_FOCUSED) != 0;
+	auto* window = static_cast<GLFWwindow*>(viewport->PlatformHandle);
+	return window && glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE;
 }
 
 static bool ImGui_ImplGlfw_GetWindowMinimized(ImGuiViewport* viewport)
 {
-	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
-	return glfwGetWindowAttrib(data->Window, GLFW_ICONIFIED) != 0;
+	auto* window = static_cast<GLFWwindow*>(viewport->PlatformHandle);
+	return !window || glfwGetWindowAttrib(window, GLFW_ICONIFIED) == GLFW_TRUE;
 }
 
 #if GLFW_HAS_WINDOW_ALPHA
 static void ImGui_ImplGlfw_SetWindowAlpha(ImGuiViewport* viewport, float alpha)
 {
-	ImGuiViewportDataGlfw* data = (ImGuiViewportDataGlfw*)viewport->PlatformUserData;
-	glfwSetWindowOpacity(data->Window, alpha);
+	if (auto* window = static_cast<GLFWwindow*>(viewport->PlatformHandle))
+		glfwSetWindowOpacity(window, alpha);
 }
 #endif
 
@@ -1702,37 +1923,6 @@ static void ImGui_ImplGlfw_SwapBuffers(ImGuiViewport* viewport, void*)
 {
 	// gfx renderer presents through its own swapchain; nothing to do here
 }
-
-//--------------------------------------------------------------------------------------------------------
-// IME (Input Method Editor) basic support for e.g. Asian language users
-//--------------------------------------------------------------------------------------------------------
-
-// We provide a Win32 implementation because this is such a common issue for IME users
-#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-
-#include <imm.h>
-#ifdef _MSC_VER
-#pragma comment(lib, "imm32")
-#endif
-
-static void ImGui_ImplGlfw_SetImeInputData(ImGuiContext*, ImGuiViewport* viewport, ImGuiPlatformImeData* data)
-{
-	const auto hwnd = (HWND)viewport->PlatformHandleRaw;
-	if (hwnd)
-	{
-		if (HIMC himc = ::ImmGetContext(hwnd))
-		{
-			COMPOSITIONFORM cf = {
-				CFS_FORCE_POSITION,
-				{ (LONG)(data->InputPos.x - viewport->Pos.x), (LONG)(data->InputPos.y - viewport->Pos.y) },
-				{ 0, 0, 0, 0 } };
-			::ImmSetCompositionWindow(himc, &cf);
-			::ImmReleaseContext(hwnd, himc);
-		}
-	}
-}
-
-#endif
 
 //--------------------------------------------------------------------------------------------------------
 // Vulkan support (the Vulkan renderer needs to call a platform-side support function to create the surface)
@@ -1784,9 +1974,6 @@ static void ImGui_ImplGlfw_InitPlatformInterface()
 #endif
 #if 0 && GLFW_HAS_VULKAN
 	platform_io.Platform_CreateVkSurface = ImGui_ImplCC_CreateVkSurface;
-#endif
-#if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
-	platform_io.Platform_SetImeDataFn = ImGui_ImplGlfw_SetImeInputData;
 #endif
 
 	// Register main window handle (which is owned by the main application, not by us)
