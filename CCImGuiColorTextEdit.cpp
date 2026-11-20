@@ -1,7 +1,7 @@
 ﻿#include "CCImGuiColorTextEdit.h"
 
 using namespace ImGui;
-using namespace cocos2d;
+using namespace cc;
 
 cc::IntrusivePtr<ColorTextEdit> ColorTextEdit::create()
 {
@@ -55,7 +55,7 @@ void ColorTextEdit::setLanguageDefinition(
 	{
 		lang.mTokenRegexStrings.clear();
 		e.SetLanguageDefinition(lang);
-		cocos2d::log("invalid regex");
+		cc::log("invalid regex");
 	}
 }
 

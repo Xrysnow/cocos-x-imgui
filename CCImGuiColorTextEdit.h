@@ -4,7 +4,7 @@
 
 namespace ImGui
 {
-	class ColorTextEdit : public cocos2d::Node
+	class ColorTextEdit : public cc::Node
 	{
 	public:
 		enum class PaletteIndex
@@ -77,7 +77,7 @@ namespace ImGui
 		void setErrorMarkers(const TextEditor::ErrorMarkers& markers) { e.SetErrorMarkers(markers); }
 		void setBreakpoints(const TextEditor::Breakpoints& markers) { e.SetBreakpoints(markers); }
 
-		void render(const char* title, const cocos2d::Vec2& size = cocos2d::Vec2(), bool border = false);
+		void render(const char* title, const cc::Vec2& size = cc::Vec2(), bool border = false);
 		void setText(const std::string& text) { e.SetText(text); }
 		std::string getText() const { return e.GetText(); }
 

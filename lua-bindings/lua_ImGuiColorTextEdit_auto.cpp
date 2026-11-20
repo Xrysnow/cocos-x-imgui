@@ -310,7 +310,7 @@ int lua_ImGui_ColorTextEdit_render(lua_State* lua_S)
 {
 	LUA_INVOKE_HEADER("imgui.ColorTextEdit", "imgui.ColorTextEdit:render");
 	LUA_TRY_INVOKE(3, &ImGui::ColorTextEdit::render);
-	LUA_TRY_INVOKE(2, ([](ImGui::ColorTextEdit* obj,const char* arg0,const cocos2d::Vec2& arg1){{return obj->render(arg0,arg1);}}));
+	LUA_TRY_INVOKE(2, ([](ImGui::ColorTextEdit* obj,const char* arg0,const cc::Vec2& arg1){{return obj->render(arg0,arg1);}}));
 	LUA_TRY_INVOKE(1, ([](ImGui::ColorTextEdit* obj,const char* arg0){{return obj->render(arg0);}}));
 	LUA_INVOKE_FOOTER("1,2,3");
 }
@@ -521,7 +521,7 @@ int luaReg_imguiColorTextEdit_imguiColorTextEdit(lua_State* lua_S)
 {
 	LUA_ENTRY("imgui");
 	LUA_CLS_DEF_BASE(ImGui::ColorTextEdit, "ColorTextEdit", "imgui.ColorTextEdit",
-		cocos2d::Node, "cc.Node",
+		cc::Node, "cc.Node",
 		nullptr, nullptr);
 	LUA_METHOD("addLanguageIdentifier", lua_ImGui_ColorTextEdit_addLanguageIdentifier);
 	LUA_METHOD("addLanguagePreprocIdentifier", lua_ImGui_ColorTextEdit_addLanguagePreprocIdentifier);

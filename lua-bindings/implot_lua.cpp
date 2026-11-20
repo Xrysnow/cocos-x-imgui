@@ -1350,7 +1350,7 @@ static int implot_plotDummy(lua_State* L) {
 }
 static int implot_plotImage(lua_State* L) {
 	const int args = lua_gettop(L);
-	cocos2d::Texture2D* tex = nullptr;
+	cc::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, 2, "cc.Texture2D", &tex))
 	{
 		if (!tex)
@@ -1367,7 +1367,7 @@ static int implot_plotImage(lua_State* L) {
 			lua_isnoneornil(L, 7) ? ImVec4(1, 1, 1, 1) : _luaval_to_imvec4(L, 7), spec);
 		return 0;
 	}
-	cocos2d::Sprite* sp = nullptr;
+	cc::Sprite* sp = nullptr;
 	if (luaval_to_object(L, 2, "cc.Sprite", &sp))
 	{
 		if (!sp)

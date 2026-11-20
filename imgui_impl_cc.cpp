@@ -61,7 +61,7 @@ static_assert(
 
 #endif // CC_PLATFORM_PC
 
-using namespace cocos2d;
+using namespace cc;
 using namespace backend;
 
 // GLFW data
@@ -470,7 +470,7 @@ static void ImGui_ImplGlfw_UpdateMonitors();
 
 struct ProgramInfo
 {
-	cocos2d::backend::Program* program = nullptr;
+	cc::backend::Program* program = nullptr;
 	// Uniforms location
 	UniformLocation texture;
 	UniformLocation projection;
@@ -1264,7 +1264,7 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 	};
 	cocos2d::Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(e, 1);
 	*/
-	auto e1 = cocos2d::EventListenerTouchOneByOne::create();
+	auto e1 = cc::EventListenerTouchOneByOne::create();
 	//e1->setSwallowTouches(true);
 	e1->onTouchBegan = [](Touch* touch, Event*)
 	{
@@ -1300,22 +1300,22 @@ bool ImGui_ImplCC_Init(bool install_callbacks)
 		g_CursorPos = ImVec2(-FLT_MAX, -FLT_MAX);
 		g_MouseJustPressed[0] = false;
 	};
-	cocos2d::Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(e1, -1);
+	cc::Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(e1, -1);
 	g_TouchListener = e1;
 
-	using KeyCode = cocos2d::EventKeyboard::KeyCode;
+	using KeyCode = cc::EventKeyboard::KeyCode;
 	std::fill(std::begin(g_MobileKeys), std::end(g_MobileKeys), false);
 
-	auto e2 = cocos2d::EventListenerKeyboard::create();
-	e2->onKeyPressed = [](KeyCode k, cocos2d::Event*)
+	auto e2 = cc::EventListenerKeyboard::create();
+	e2->onKeyPressed = [](KeyCode k, cc::Event*)
 	{
 		ImGui_ImplCC_MobileKey(k, true);
 	};
-	e2->onKeyReleased = [](KeyCode k, cocos2d::Event*)
+	e2->onKeyReleased = [](KeyCode k, cc::Event*)
 	{
 		ImGui_ImplCC_MobileKey(k, false);
 	};
-	cocos2d::Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(e2, 1);
+	cc::Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(e2, 1);
 	g_KeyboardListener = e2;
 #endif // CC_PLATFORM_PC
 	return true;
@@ -1456,7 +1456,7 @@ static void ImGui_ImplCC_UpdateMousePosAndButtons()
 		if (g_CursorPos.x != -FLT_MAX && g_CursorPos.y != -FLT_MAX)
 		{
 			// convert g_CursorPos
-			const auto glv = cocos2d::Director::getInstance()->getOpenGLView();
+			const auto glv = cc::Director::getInstance()->getOpenGLView();
 			const auto rect = glv->getViewPortRect();
 			mouse_pos.x = g_CursorPos.x * glv->getScaleX() + rect.origin.x;
 			mouse_pos.y = g_CursorPos.y * glv->getScaleY() + rect.origin.y;
@@ -1601,7 +1601,7 @@ void ImGui_ImplCC_NewFrame()
 	glfwGetWindowSize(g_Window, &w, &h);
 	glfwGetFramebufferSize(g_Window, &buffer_w, &buffer_h);
 #else
-	auto glv = cocos2d::Director::getInstance()->getOpenGLView();
+	auto glv = cc::Director::getInstance()->getOpenGLView();
 	const auto frame_size = glv->getFrameSize();
 	//const auto buffer_size = glv->getDesignResolutionSize();
 	w = buffer_w = frame_size.width;

@@ -1,7 +1,7 @@
 #include "CCIMGUI.h"
 #include "imgui_impl_cc.h"
 
-using namespace cocos2d;
+using namespace cc;
 static CCIMGUI* _instance = nullptr;
 std::function<void(CCIMGUI*)> CCIMGUI::_onInit;
 

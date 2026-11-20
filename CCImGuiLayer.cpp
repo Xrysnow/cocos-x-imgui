@@ -3,7 +3,7 @@
 #include "imgui_impl_cc.h"
 #include "CCIMGUI.h"
 
-using namespace cocos2d;
+using namespace cc;
 
 cc::IntrusivePtr<ImGuiLayer> ImGuiLayer::create()
 {

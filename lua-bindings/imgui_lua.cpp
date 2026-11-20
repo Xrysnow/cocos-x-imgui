@@ -107,7 +107,7 @@ end
 
 ImVec2 _luaval_to_imvec2(lua_State *L, int lo)
 {
-	cocos2d::Vec2 v;
+	cc::Vec2 v;
 	ImVec2 vec;
 	luaval_to_vec2(L, lo, &v);
 	vec.x = v.x;
@@ -116,7 +116,7 @@ ImVec2 _luaval_to_imvec2(lua_State *L, int lo)
 }
 ImVec4 _luaval_to_imvec4(lua_State *L, int lo)
 {
-	cocos2d::Vec4 v;
+	cc::Vec4 v;
 	ImVec4 vec;
 	luaval_to_vec4(L, lo, &v);
 	vec.x = v.x;
@@ -138,13 +138,13 @@ ImTextureRef _luaval_to_imTextureRef(lua_State *L, int lo)
 
 bool luaval_to_ImTextureRef(lua_State* L, int lo, ImTextureRef* out, const char* name)
 {
-	cocos2d::Sprite* sp = nullptr;
+	cc::Sprite* sp = nullptr;
 	if (luaval_to_object(L, lo, "cc.Sprite", &sp, name))
 	{
 		*out = sp ? ImTextureRef{(ImTextureID)sp->getTexture()} : ImTextureRef{};
 		return true;
 	}
-	cocos2d::Texture2D* tex = nullptr;
+	cc::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, lo, "cc.Texture2D", &tex, name))
 	{
 		*out = tex ? ImTextureRef{(ImTextureID)tex} : ImTextureRef{};
@@ -420,7 +420,7 @@ static int imgui_pushStyleVar(lua_State *L) {
 
 static int imgui_image(lua_State *L) {
 	const int args = lua_gettop(L);
-	cocos2d::Texture2D* tex = nullptr;
+	cc::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, 1, "cc.Texture2D", &tex))
 	{
 		if (!tex)
@@ -433,7 +433,7 @@ static int imgui_image(lua_State *L) {
 			lua_opt_imv4(args, 6, ImVec4(0, 0, 0, 0)));
 		return 0;
 	}
-	cocos2d::Sprite* sp = nullptr;
+	cc::Sprite* sp = nullptr;
 	if (luaval_to_object(L, 1, "cc.Sprite", &sp))
 	{
 		if (!sp)
@@ -448,7 +448,7 @@ static int imgui_image(lua_State *L) {
 }
 static int imgui_imageWithBg(lua_State *L) {
 	const int args = lua_gettop(L);
-	cocos2d::Texture2D* tex = nullptr;
+	cc::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, 1, "cc.Texture2D", &tex))
 	{
 		if (!tex)
@@ -461,7 +461,7 @@ static int imgui_imageWithBg(lua_State *L) {
 			lua_opt_imv4(args, 6, ImVec4(1, 1, 1, 1)));
 		return 0;
 	}
-	cocos2d::Sprite* sp = nullptr;
+	cc::Sprite* sp = nullptr;
 	if (luaval_to_object(L, 1, "cc.Sprite", &sp))
 	{
 		if (!sp)
@@ -477,7 +477,7 @@ static int imgui_imageWithBg(lua_State *L) {
 static int imgui_imageButton(lua_State *L) {
 	// retrun 0 to hint an error
 	const int args = lua_gettop(L);
-	cocos2d::Texture2D* tex = nullptr;
+	cc::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, 2, "cc.Texture2D", &tex))
 	{
 		if (!tex)
@@ -494,7 +494,7 @@ static int imgui_imageButton(lua_State *L) {
 		);
 		return 1;
 	}
-	cocos2d::Sprite* sp = nullptr;
+	cc::Sprite* sp = nullptr;
 	if (luaval_to_object(L, 2, "cc.Sprite", &sp))
 	{
 		if (!sp)
@@ -1775,7 +1775,7 @@ static int imgui_addFontTTF(lua_State *L) {
 		const auto count = (std::min)(name.size(), sizeof(cfg.Name) - 1);
 		imgui_copyFontConfigName(cfg, name.data() + name.size() - count, count);
 	}
-	const auto data = cocos2d::FileUtils::getInstance()->getDataFromFile(path);
+	const auto data = cc::FileUtils::getInstance()->getDataFromFile(path);
 	if (data.getSize() == 0)
 		return luaL_error(L, "no font data at %s", path.c_str());
 	if (data.getSize() <= 100 || data.getSize() > (std::numeric_limits<int>::max)())
@@ -1816,7 +1816,7 @@ static int imgui_saveIniSettingsToMemory(lua_State *L) {
 }
 
 static int imgui_createLayer(lua_State *L) {
-	object_to_luaval(L, "cc.Layer", cocos2d::transferToAutoreleasePool(ImGuiLayer::create()));
+	object_to_luaval(L, "cc.Layer", cc::transferToAutoreleasePool(ImGuiLayer::create()));
 	return 1;
 }
 
@@ -1829,7 +1829,7 @@ static int imgui_shutdown(lua_State *L) {
 
 static int imgui_ccNode(lua_State *L) {
 	const int args = lua_gettop(L);
-	cocos2d::Node* node = nullptr;
+	cc::Node* node = nullptr;
 	if (luaval_to_object(L, 1, "cc.Node", &node))
 	{
 		if (!node)
@@ -1843,7 +1843,7 @@ static int imgui_ccNode(lua_State *L) {
 }
 static int imgui_ccNodeButton(lua_State *L) {
 	const int args = lua_gettop(L);
-	cocos2d::Node* node = nullptr;
+	cc::Node* node = nullptr;
 	if (luaval_to_object(L, 2, "cc.Node", &node))
 	{
 		if (!node)
@@ -1861,7 +1861,7 @@ static int imgui_ccNodeButton(lua_State *L) {
 }
 static int imgui_setCCNodeColor(lua_State *L)
 {
-	cocos2d::Node* node = nullptr;
+	cc::Node* node = nullptr;
 	if (luaval_to_object(L, 1, "cc.Node", &node))
 	{
 		if (!node) return 0;
@@ -1882,7 +1882,7 @@ static int imgui_setCCNodeColor(lua_State *L)
 }
 static int imgui_setCCLabelColor(lua_State *L)
 {
-	cocos2d::Label* label = nullptr;
+	cc::Label* label = nullptr;
 	if (luaval_to_object(L, 1, "cc.Label", &label))
 	{
 		if (!label) return 0;
@@ -1976,7 +1976,7 @@ static int imgui_setMarkdownImageCallback(lua_State* L)
 		// ... f, p1, p2
 		lua_call(L, 2, 4);
 		// ... f, r1, r2, r3, r4
-		cocos2d::Sprite* sp = nullptr;
+		cc::Sprite* sp = nullptr;
 		luaval_to_object(L, -4, "cc.Sprite", &sp);
 		ImVec2 size(0, 0);
 		luaval_to_native(L, -3, &size);
@@ -2246,7 +2246,7 @@ static int drawlist_addCCNode(lua_State *L)
 {
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
-	cocos2d::Node* node = nullptr;
+	cc::Node* node = nullptr;
 	if (luaval_to_object(L, 2, "cc.Node", &node))
 	{
 		if (!node) return 0;
@@ -2300,7 +2300,7 @@ static int drawlist_addImage(lua_State *L)
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
 	const int args = lua_gettop(L);
-	cocos2d::Texture2D* tex = nullptr;
+	cc::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, 2, "cc.Texture2D", &tex))
 	{
 		if (!tex) return 0;
@@ -2315,7 +2315,7 @@ static int drawlist_addImage(lua_State *L)
 			lua_opt_u32(args, 7, IM_COL32_WHITE));
 		return 0;
 	}
-	cocos2d::Sprite* sp = nullptr;
+	cc::Sprite* sp = nullptr;
 	if (luaval_to_object(L, 2, "cc.Sprite", &sp))
 	{
 		if (!sp) return 0;
@@ -2337,7 +2337,7 @@ static int drawlist_addImageQuad(lua_State *L)
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
 	const int args = lua_gettop(L);
-	cocos2d::Texture2D* tex = nullptr;
+	cc::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, 2, "cc.Texture2D", &tex))
 	{
 		if (!tex) return 0;
@@ -2356,7 +2356,7 @@ static int drawlist_addImageQuad(lua_State *L)
 			lua_opt_u32(args, 11, IM_COL32_WHITE));
 		return 0;
 	}
-	cocos2d::Sprite* sp = nullptr;
+	cc::Sprite* sp = nullptr;
 	if (luaval_to_object(L, 2, "cc.Sprite", &sp))
 	{
 		if (!sp) return 0;
@@ -2382,7 +2382,7 @@ static int drawlist_addImageRounded(lua_State *L)
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
 	const int args = lua_gettop(L);
-	cocos2d::Texture2D* tex = nullptr;
+	cc::Texture2D* tex = nullptr;
 	if (luaval_to_object(L, 2, "cc.Texture2D", &tex))
 	{
 		if (!tex) return 0;
@@ -2399,7 +2399,7 @@ static int drawlist_addImageRounded(lua_State *L)
 			lua_opt_int(args, 9, 0));
 		return 0;
 	}
-	cocos2d::Sprite* sp = nullptr;
+	cc::Sprite* sp = nullptr;
 	if (luaval_to_object(L, 2, "cc.Sprite", &sp))
 	{
 		if (!sp) return 0;
@@ -2422,7 +2422,7 @@ static int drawlist_addPolyline(lua_State *L)
 {
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
-	std::vector<cocos2d::Vec2> arr;
+	std::vector<cc::Vec2> arr;
 	if (!luaval_to_native(L, 2, &arr))
 		return 0;
 	cobj->AddPolyline(
@@ -2437,7 +2437,7 @@ static int drawlist_addConvexPolyFilled(lua_State *L)
 {
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
-	std::vector<cocos2d::Vec2> arr;
+	std::vector<cc::Vec2> arr;
 	if (!luaval_to_native(L, 2, &arr))
 		return 0;
 	cobj->AddConvexPolyFilled(
@@ -2450,7 +2450,7 @@ static int drawlist_addConcavePolyFilled(lua_State *L)
 {
 	auto cobj = (ImDrawList*)tolua_tousertype(L, 1, nullptr);
 	if (!cobj) return 0;
-	std::vector<cocos2d::Vec2> arr;
+	std::vector<cc::Vec2> arr;
 	if (!luaval_to_native(L, 2, &arr))
 		return 0;
 	cobj->AddConcavePolyFilled(
