@@ -13,6 +13,7 @@
 #include "imgui_lua_internal.hpp"
 #include "../CCIMGUI.h"
 #include "../CCImGuiLayer.h"
+#include "../imgui_impl_cc.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -1726,6 +1727,15 @@ static int imgui_getIO(lua_State *L) {
 	return 1;
 }
 
+static int imgui_setGamepadPlayer(lua_State* L)
+{
+	const auto slot = luaL_checknumber(L, 1);
+	if (!std::isfinite(slot) || slot < 0 || slot > std::numeric_limits<unsigned>::max() || slot != std::trunc(slot))
+		return luaL_argerror(L, 1, "expected a zero-based player slot");
+	ImGui_ImplCC_SetGamepadPlayer(static_cast<unsigned>(slot));
+	return 0;
+}
+
 // Font
 
 static int imgui_addFontTTF(lua_State *L) {
@@ -2137,6 +2147,7 @@ static int font_renderText(lua_State* lua_S)
 #define M(n) {#n, imgui_##n}
 static const luaL_Reg imgui_methods[] = {
 	M(calcTextSize), M(textUnformatted),
+	M(setGamepadPlayer),
 	// Main
 	M(showStyleEditor),
 

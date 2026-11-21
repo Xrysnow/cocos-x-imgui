@@ -155,6 +155,10 @@ static void ImGui_ImplCC_MobileKey(EventKeyboard::KeyCode key, bool down)
 class ImGuiTextInput
 {
 public:
+	unsigned gamepadPlayer = 0;
+	cc::input::DeviceId gamepadDevice{};
+	std::uint64_t gamepadTick = 0;
+
 	explicit ImGuiTextInput(ImGuiContext* context) : _context(context)
 	{
 		ImGuiContextHook hook;
@@ -1497,49 +1501,92 @@ static void ImGui_ImplCC_UpdateMouseCursor()
 #endif // CC_PLATFORM_PC
 }
 
+void ImGui_ImplCC_SetGamepadPlayer(unsigned player)
+{
+	if (auto* context = ImGui::GetCurrentContext())
+		if (auto* state = ImGui_ImplCC_GetTextInput(context))
+			state->gamepadPlayer = player;
+}
+
+static void ImGui_ImplCC_ClearGamepad(ImGuiIO& io)
+{
+	for (int key = ImGuiKey_GamepadStart; key <= ImGuiKey_GamepadRStickDown; ++key)
+		io.AddKeyAnalogEvent(static_cast<ImGuiKey>(key), false, 0.0f);
+}
+
+static void ImGui_ImplCC_UpdateNativeGamepad(ImGuiIO& io)
+{
+	using namespace cc::input;
+	auto* state = ImGui_ImplCC_GetTextInput(ImGui::GetCurrentContext());
+	const auto& frame = Director::getInstance()->getGamepads().frame();
+	const PadView* selected = nullptr;
+	if (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad)
+	{
+		for (auto id : frame.devices())
+		{
+			const auto* pad = frame.find(id);
+			if (pad->mapped() && pad->player() == state->gamepadPlayer)
+			{
+				selected = pad;
+				break;
+			}
+		}
+	}
+	const auto id = selected ? selected->info().id : DeviceId{};
+	const bool changed = id != state->gamepadDevice;
+	if (changed && state->gamepadDevice != DeviceId{})
+		ImGui_ImplCC_ClearGamepad(io);
+	state->gamepadDevice = id;
+	if (!selected)
+		return;
+
+	io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
+	constexpr std::pair<Button, ImGuiKey> buttons[]{
+		{Button::Start, ImGuiKey_GamepadStart}, {Button::Back, ImGuiKey_GamepadBack},
+		{Button::West, ImGuiKey_GamepadFaceLeft}, {Button::East, ImGuiKey_GamepadFaceRight},
+		{Button::North, ImGuiKey_GamepadFaceUp}, {Button::South, ImGuiKey_GamepadFaceDown},
+		{Button::DpadLeft, ImGuiKey_GamepadDpadLeft}, {Button::DpadRight, ImGuiKey_GamepadDpadRight},
+		{Button::DpadUp, ImGuiKey_GamepadDpadUp}, {Button::DpadDown, ImGuiKey_GamepadDpadDown},
+		{Button::LeftShoulder, ImGuiKey_GamepadL1}, {Button::RightShoulder, ImGuiKey_GamepadR1},
+		{Button::LeftStick, ImGuiKey_GamepadL3}, {Button::RightStick, ImGuiKey_GamepadR3},
+	};
+	if (!changed && state->gamepadTick != frame.tick())
+	{
+		for (const auto& event : frame.events())
+		{
+			const auto* edge = event.device == id ? std::get_if<ButtonEdge>(&event.payload) : nullptr;
+			if (!edge)
+				continue;
+			for (const auto& [button, key] : buttons)
+				if (edge->button == button)
+					io.AddKeyEvent(key, edge->down);
+		}
+	}
+	state->gamepadTick = frame.tick();
+	for (const auto& [button, key] : buttons)
+		io.AddKeyEvent(key, selected->down(button));
+
+	const auto analog = [&](ImGuiKey key, Axis axis, float sign, float deadZone) {
+		const auto value = std::clamp((selected->axis(axis).value_or(0) * sign - deadZone) / (1 - deadZone), 0.0f, 1.0f);
+		io.AddKeyAnalogEvent(key, value > 0.1f, value);
+	};
+	analog(ImGuiKey_GamepadL2, Axis::LeftTrigger, 1, 0.125f);
+	analog(ImGuiKey_GamepadR2, Axis::RightTrigger, 1, 0.125f);
+	analog(ImGuiKey_GamepadLStickLeft, Axis::LeftX, -1, 0.25f);
+	analog(ImGuiKey_GamepadLStickRight, Axis::LeftX, 1, 0.25f);
+	analog(ImGuiKey_GamepadLStickUp, Axis::LeftY, -1, 0.25f);
+	analog(ImGuiKey_GamepadLStickDown, Axis::LeftY, 1, 0.25f);
+	analog(ImGuiKey_GamepadRStickLeft, Axis::RightX, -1, 0.25f);
+	analog(ImGuiKey_GamepadRStickRight, Axis::RightX, 1, 0.25f);
+	analog(ImGuiKey_GamepadRStickUp, Axis::RightY, -1, 0.25f);
+	analog(ImGuiKey_GamepadRStickDown, Axis::RightY, 1, 0.25f);
+}
 static void ImGui_ImplCC_UpdateGamepads()
 {
 	auto& io = ImGui::GetIO();
-	const bool had_gamepad = (io.BackendFlags & ImGuiBackendFlags_HasGamepad) != 0;
 	io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
-#ifdef CC_PLATFORM_PC
-	GLFWgamepadstate gamepad;
-	if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) && glfwGetGamepadState(GLFW_JOYSTICK_1, &gamepad))
-	{
-#define MAP_BUTTON(key, button) io.AddKeyEvent(key, gamepad.buttons[button] == GLFW_PRESS)
-#define MAP_ANALOG(key, axis, v0, v1) { const float v = std::clamp((gamepad.axes[axis] - (v0)) / ((v1) - (v0)), 0.0f, 1.0f); io.AddKeyAnalogEvent(key, v > 0.1f, v); }
-		io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
-		MAP_BUTTON(ImGuiKey_GamepadStart,       GLFW_GAMEPAD_BUTTON_START);
-		MAP_BUTTON(ImGuiKey_GamepadBack,        GLFW_GAMEPAD_BUTTON_BACK);
-		MAP_BUTTON(ImGuiKey_GamepadFaceLeft,    GLFW_GAMEPAD_BUTTON_X);     // Xbox X, PS Square
-		MAP_BUTTON(ImGuiKey_GamepadFaceRight,   GLFW_GAMEPAD_BUTTON_B);     // Xbox B, PS Circle
-		MAP_BUTTON(ImGuiKey_GamepadFaceUp,      GLFW_GAMEPAD_BUTTON_Y);     // Xbox Y, PS Triangle
-		MAP_BUTTON(ImGuiKey_GamepadFaceDown,    GLFW_GAMEPAD_BUTTON_A);     // Xbox A, PS Cross
-		MAP_BUTTON(ImGuiKey_GamepadDpadLeft,    GLFW_GAMEPAD_BUTTON_DPAD_LEFT);
-		MAP_BUTTON(ImGuiKey_GamepadDpadRight,   GLFW_GAMEPAD_BUTTON_DPAD_RIGHT);
-		MAP_BUTTON(ImGuiKey_GamepadDpadUp,      GLFW_GAMEPAD_BUTTON_DPAD_UP);
-		MAP_BUTTON(ImGuiKey_GamepadDpadDown,    GLFW_GAMEPAD_BUTTON_DPAD_DOWN);
-		MAP_BUTTON(ImGuiKey_GamepadL1,          GLFW_GAMEPAD_BUTTON_LEFT_BUMPER);
-		MAP_BUTTON(ImGuiKey_GamepadR1,          GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER);
-		MAP_ANALOG(ImGuiKey_GamepadL2,          GLFW_GAMEPAD_AXIS_LEFT_TRIGGER,      -0.75f,  +1.0f);
-		MAP_ANALOG(ImGuiKey_GamepadR2,          GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER,      -0.75f,  +1.0f);
-		MAP_BUTTON(ImGuiKey_GamepadL3,          GLFW_GAMEPAD_BUTTON_LEFT_THUMB);
-		MAP_BUTTON(ImGuiKey_GamepadR3,          GLFW_GAMEPAD_BUTTON_RIGHT_THUMB);
-		MAP_ANALOG(ImGuiKey_GamepadLStickLeft,  GLFW_GAMEPAD_AXIS_LEFT_X,      -0.25f,  -1.0f);
-		MAP_ANALOG(ImGuiKey_GamepadLStickRight, GLFW_GAMEPAD_AXIS_LEFT_X,      +0.25f,  +1.0f);
-		MAP_ANALOG(ImGuiKey_GamepadLStickUp,    GLFW_GAMEPAD_AXIS_LEFT_Y,      -0.25f,  -1.0f);
-		MAP_ANALOG(ImGuiKey_GamepadLStickDown,  GLFW_GAMEPAD_AXIS_LEFT_Y,      +0.25f,  +1.0f);
-		MAP_ANALOG(ImGuiKey_GamepadRStickLeft,  GLFW_GAMEPAD_AXIS_RIGHT_X,      -0.25f,  -1.0f);
-		MAP_ANALOG(ImGuiKey_GamepadRStickRight, GLFW_GAMEPAD_AXIS_RIGHT_X,      +0.25f,  +1.0f);
-		MAP_ANALOG(ImGuiKey_GamepadRStickUp,    GLFW_GAMEPAD_AXIS_RIGHT_Y,      -0.25f,  -1.0f);
-		MAP_ANALOG(ImGuiKey_GamepadRStickDown,  GLFW_GAMEPAD_AXIS_RIGHT_Y,      +0.25f,  +1.0f);
-#undef MAP_BUTTON
-#undef MAP_ANALOG
-	}
-#endif
-	if (had_gamepad && !(io.BackendFlags & ImGuiBackendFlags_HasGamepad))
-		for (int key = ImGuiKey_GamepadStart; key <= ImGuiKey_GamepadRStickDown; ++key)
-			io.AddKeyAnalogEvent((ImGuiKey)key, false, 0.0f);
+	if (ImGui_ImplCC_GetTextInput(ImGui::GetCurrentContext()))
+		ImGui_ImplCC_UpdateNativeGamepad(io);
 }
 
 static void ImGui_ImplGlfw_UpdateMonitors()
