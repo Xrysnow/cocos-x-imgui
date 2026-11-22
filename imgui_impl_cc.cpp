@@ -2,6 +2,9 @@
 #include "cocos2d.h"
 #include "renderer/backend/Backend.h"
 #include "renderer/backend/gfx/DeviceGFX.h"
+#if CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
+#include "gfx/backend/gfx-base/GFXDevice.h"
+#endif
 #include <cstring>
 #include <algorithm>
 #include <deque>
@@ -554,10 +557,30 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 			if (texture->Status != ImTextureStatus_OK && !ImGui_ImplCC_UpdateTexture(texture))
 				return;
 
-	// Avoid rendering when minimized, scale coordinates for retina displays
-	// (screen coordinates != framebuffer coordinates)
-	int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
-	int fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
+	const ImVec2 display_size = draw_data->DisplaySize;
+	if (display_size.x <= 0.0f || display_size.y <= 0.0f)
+		return;
+
+	ImVec2 clip_scale = draw_data->FramebufferScale;
+	int fb_width = (int)(display_size.x * clip_scale.x);
+	int fb_height = (int)(display_size.y * clip_scale.y);
+#if CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
+	if (draw_data->OwnerViewport == ImGui::GetMainViewport())
+	{
+		const auto& swapchains = gfx::Device::getInstance()->getSwapchains();
+		// On Wayland the GLFW framebuffer can differ from the cocos swapchain.
+		// Use the swapchain extent for both the viewport and the scissor conversion.
+		if (!swapchains.empty())
+		{
+			if (const auto* target = swapchains.front()->getColorTexture())
+			{
+				fb_width = (int)target->getWidth();
+				fb_height = (int)target->getHeight();
+				clip_scale = ImVec2(fb_width / display_size.x, fb_height / display_size.y);
+			}
+		}
+	}
+#endif
 	if (fb_width <= 0 || fb_height <= 0)
 		return;
 
@@ -577,8 +600,7 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 	ImGui_ImplCC_SetupRenderState(draw_data, fb_width, fb_height);
 
 	// Will project scissor/clipping rectangles into framebuffer space
-	ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
-	ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
+	const ImVec2 clip_off = draw_data->DisplayPos; // (0,0) unless using multi-viewports
 
 	// Render command lists
 	for (int n = 0; n < draw_data->CmdLists.Size; n++)
