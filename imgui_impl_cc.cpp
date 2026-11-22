@@ -2,7 +2,7 @@
 #include "cocos2d.h"
 #include "renderer/backend/Backend.h"
 #include "renderer/backend/gfx/DeviceGFX.h"
-#if CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
+#ifdef CC_PLATFORM_PC
 #include "gfx/backend/gfx-base/GFXDevice.h"
 #endif
 #include <cstring>
@@ -564,12 +564,11 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 	ImVec2 clip_scale = draw_data->FramebufferScale;
 	int fb_width = (int)(display_size.x * clip_scale.x);
 	int fb_height = (int)(display_size.y * clip_scale.y);
-#if CC_TARGET_PLATFORM == CC_PLATFORM_LINUX
+#ifdef CC_PLATFORM_PC
 	if (draw_data->OwnerViewport == ImGui::GetMainViewport())
 	{
 		const auto& swapchains = gfx::Device::getInstance()->getSwapchains();
-		// On Wayland the GLFW framebuffer can differ from the cocos swapchain.
-		// Use the swapchain extent for both the viewport and the scissor conversion.
+		// Use the current swapchain extent for both the viewport and the scissor conversion.
 		if (!swapchains.empty())
 		{
 			if (const auto* target = swapchains.front()->getColorTexture())
@@ -1663,22 +1662,19 @@ void ImGui_ImplCC_NewFrame()
 	ImGuiIO& io = ImGui::GetIO();
 
 	// Setup display size (every frame to accommodate for window resizing)
-	int w, h;
-	int buffer_w, buffer_h;
+	const auto* view = Director::getInstance()->getOpenGLView();
 #ifdef CC_PLATFORM_PC
-	const auto g_Window = ImGui_ImplCC_GetWindow();
-	glfwGetWindowSize(g_Window, &w, &h);
-	glfwGetFramebufferSize(g_Window, &buffer_w, &buffer_h);
+	const auto* desktopView = static_cast<const GLViewImpl*>(view);
+	const auto windowSize = desktopView->getRenderWindowSize();
+	const auto framebufferSize = desktopView->getRenderFramebufferSize();
 #else
-	auto glv = cc::Director::getInstance()->getOpenGLView();
-	const auto frame_size = glv->getFrameSize();
-	//const auto buffer_size = glv->getDesignResolutionSize();
-	w = buffer_w = frame_size.width;
-	h = buffer_h = frame_size.height;
+	const auto windowSize = view->getFrameSize();
+	const auto framebufferSize = windowSize;
 #endif // CC_PLATFORM_PC
-	io.DisplaySize = ImVec2((float)w, (float)h);
-	if (w > 0 && h > 0)
-		io.DisplayFramebufferScale = ImVec2((float)buffer_w / w, (float)buffer_h / h);
+	io.DisplaySize = ImVec2(windowSize.width, windowSize.height);
+	if (windowSize.width > 0 && windowSize.height > 0)
+		io.DisplayFramebufferScale = ImVec2(framebufferSize.width / windowSize.width,
+			framebufferSize.height / windowSize.height);
 #ifdef CC_PLATFORM_PC
 	if (g_WantUpdateMonitors)
 		ImGui_ImplGlfw_UpdateMonitors();
