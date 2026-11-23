@@ -1539,21 +1539,26 @@ static void ImGui_ImplCC_UpdateNativeGamepad(ImGuiIO& io)
 {
 	using namespace cc::input;
 	auto* state = ImGui_ImplCC_GetTextInput(ImGui::GetCurrentContext());
-	const auto& frame = Director::getInstance()->getGamepads().frame();
-	const PadView* selected = nullptr;
+	const auto frame = Director::getInstance()->getGamepads().frame();
+	std::optional<Pad> selected;
+	DeviceId id{};
 	if (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad)
 	{
-		for (auto id : frame.devices())
+		const auto devices = frame.devices();
+		for (auto device : devices.value.value_or(std::span<const DeviceId>{}))
 		{
-			const auto* pad = frame.find(id);
-			if (pad->mapped() && pad->player() == state->gamepadPlayer)
+			const auto found = frame.find(device);
+			if (!found || !*found.value)
+				continue;
+			const auto& pad = **found.value;
+			if (pad.mapped().value.value_or(false) && pad.player().value.value_or(std::nullopt) == state->gamepadPlayer)
 			{
 				selected = pad;
+				id = device;
 				break;
 			}
 		}
 	}
-	const auto id = selected ? selected->info().id : DeviceId{};
 	const bool changed = id != state->gamepadDevice;
 	if (changed && state->gamepadDevice != DeviceId{})
 		ImGui_ImplCC_ClearGamepad(io);
@@ -1571,24 +1576,31 @@ static void ImGui_ImplCC_UpdateNativeGamepad(ImGuiIO& io)
 		{Button::LeftShoulder, ImGuiKey_GamepadL1}, {Button::RightShoulder, ImGuiKey_GamepadR1},
 		{Button::LeftStick, ImGuiKey_GamepadL3}, {Button::RightStick, ImGuiKey_GamepadR3},
 	};
-	if (!changed && state->gamepadTick != frame.tick())
+	const auto tick = frame.tick().value.value_or(0);
+	if (!changed && state->gamepadTick != tick)
 	{
-		for (const auto& event : frame.events())
+		if (auto events = frame.events())
 		{
-			const auto* edge = event.device == id ? std::get_if<ButtonEdge>(&event.payload) : nullptr;
-			if (!edge)
-				continue;
-			for (const auto& [button, key] : buttons)
-				if (edge->button == button)
-					io.AddKeyEvent(key, edge->down);
+			auto& cursor = *events.value;
+			for (auto next = cursor.next(); next && *next.value; next = cursor.next())
+			{
+				const auto& event = **next.value;
+				const auto* edge = event.device == id ? std::get_if<ButtonEdge>(&event.payload) : nullptr;
+				if (!edge)
+					continue;
+				for (const auto& [button, key] : buttons)
+					if (edge->button == button)
+						io.AddKeyEvent(key, edge->down);
+			}
 		}
 	}
-	state->gamepadTick = frame.tick();
+	state->gamepadTick = tick;
 	for (const auto& [button, key] : buttons)
-		io.AddKeyEvent(key, selected->down(button));
+		io.AddKeyEvent(key, selected->down(button).value.value_or(false));
 
 	const auto analog = [&](ImGuiKey key, Axis axis, float sign, float deadZone) {
-		const auto value = std::clamp((selected->axis(axis).value_or(0) * sign - deadZone) / (1 - deadZone), 0.0f, 1.0f);
+		const auto axisValue = selected->axis(axis).value.value_or(std::nullopt);
+		const auto value = std::clamp((axisValue.value_or(0) * sign - deadZone) / (1 - deadZone), 0.0f, 1.0f);
 		io.AddKeyAnalogEvent(key, value > 0.1f, value);
 	};
 	analog(ImGuiKey_GamepadL2, Axis::LeftTrigger, 1, 0.125f);
