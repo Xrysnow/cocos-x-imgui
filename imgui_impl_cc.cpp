@@ -1462,14 +1462,13 @@ static void ImGui_ImplCC_UpdateMousePosAndButtons()
 	io.AddMousePosEvent(mouse_pos.x, mouse_pos.y);
 	io.AddMouseViewportEvent(hovered_viewport);
 #else
-	// Update buttons
 	ImGuiIO& io = ImGui::GetIO();
-	for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
-	{
-		// g_MouseJustPressed represents touch state on mobile platforms
-		io.AddMouseButtonEvent(i, g_MouseJustPressed[i]);
-	}
-	// Update mouse position
+
+	// Mark the source so ImGui applies its touch-specific input rules.
+	io.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen);
+
+	// Queue the position before the buttons: ImGui trickles the input queue and
+	// would defer a position queued after a button change, dropping the first tap.
 	const ImVec2 mouse_pos_backup = io.MousePos;
 	ImVec2 mouse_pos(-FLT_MAX, -FLT_MAX);
 	if (io.WantSetMousePos)
@@ -1488,6 +1487,12 @@ static void ImGui_ImplCC_UpdateMousePosAndButtons()
 		}
 	}
 	io.AddMousePosEvent(mouse_pos.x, mouse_pos.y);
+
+	// g_MouseJustPressed represents touch state on mobile platforms
+	for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++)
+	{
+		io.AddMouseButtonEvent(i, g_MouseJustPressed[i]);
+	}
 #endif // CC_PLATFORM_PC
 }
 
