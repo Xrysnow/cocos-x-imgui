@@ -10,4 +10,5 @@ IMGUI_IMPL_API void     ImGui_ImplCC_RenderPlatform();
 
 // Called by Init/NewFrame/Shutdown
 IMGUI_IMPL_API bool     ImGui_ImplCC_CreateDeviceObjects();
+IMGUI_IMPL_API bool     ImGui_ImplCC_EnsureSdfProgram();
 IMGUI_IMPL_API void     ImGui_ImplCC_DestroyDeviceObjects();

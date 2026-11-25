@@ -2,6 +2,7 @@ set(LIB_NAME cc_imgui)
 
 set(HEADER
     CCIMGUI.h
+    CCImGuiSdf.h
     CCImGuiLayer.h
     CCImGuiColorTextEdit.h
     imgui_impl_cc.h
@@ -20,6 +21,7 @@ set(HEADER
 
 set(SOURCE
     CCIMGUI.cpp
+    CCImGuiSdf.cpp
     CCImGuiLayer.cpp
     CCImGuiColorTextEdit.cpp
     imgui_impl_cc.cpp

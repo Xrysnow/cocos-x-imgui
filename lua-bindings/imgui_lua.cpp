@@ -13,11 +13,13 @@
 #include "imgui_lua_internal.hpp"
 #include "../CCIMGUI.h"
 #include "../CCImGuiLayer.h"
+#include "../CCImGuiSdf.h"
 #include "../imgui_impl_cc.h"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <string_view>
 #include <type_traits>
 #include <unordered_set>
 #include <vector>
@@ -180,7 +182,7 @@ static ImFont* imgui_checkFont(lua_State* lua_S, int index)
 	return font;
 }
 
-ImFontConfig lua_toImFontConfig(lua_State* L, int lo)
+static ImFontConfig lua_toImFontConfig(lua_State* L, int lo, bool& use_sdf)
 {
 #define get_field(_K, _F)\
 	lua_getfield(L, lo, #_K);\
@@ -196,14 +198,28 @@ ImFontConfig lua_toImFontConfig(lua_State* L, int lo)
 		if (lua_type(L, lo) == LUA_TUSERDATA)
 			luaL_checkudata(L, lo, "imgui.ImFontConfig");
 		else
+		{
 			luaL_checktype(L, lo, LUA_TTABLE);
+			lua_getfield(L, lo, "RasterMode");
+			if (!lua_isnil(L, -1))
+			{
+				if (lua_type(L, -1) != LUA_TSTRING)
+					luaL_argerror(L, lo, "RasterMode must be 'Bitmap' or 'SDF'");
+				size_t length = 0;
+				const char* value = lua_tolstring(L, -1, &length);
+				const std::string_view mode(value, length);
+				use_sdf = mode == "SDF";
+				if (!use_sdf && mode != "Bitmap")
+					luaL_argerror(L, lo, "RasterMode must be 'Bitmap' or 'SDF'");
+			}
+			lua_pop(L, 1);
+		}
 		lua_getfield(L, lo, "Name");
 		if (!lua_isnil(L, -1))
 			imgui_setFontConfigName(L, -1, ret);
 		lua_pop(L, 1);
 		get_field(FontDataSize, luaL_checkinteger);
 		get_field(FontDataOwnedByAtlas, lua_toboolean);
-		get_field(FontNo, luaL_checkinteger);
 		get_field(MergeMode, lua_toboolean);
 		lua_getfield(L, lo, "DstFont");
 		if (!lua_isnil(L, -1))
@@ -218,9 +234,24 @@ ImFontConfig lua_toImFontConfig(lua_State* L, int lo)
 		get_field(GlyphMinAdvanceX, luaL_checknumber);
 		get_field(GlyphMaxAdvanceX, luaL_checknumber);
 		get_field(GlyphExtraAdvanceX, luaL_checknumber);
-		get_field(FontNo, luaL_checkinteger);
+		lua_getfield(L, lo, "FontNo");
+		if (!lua_isnil(L, -1))
+		{
+			if (use_sdf && luaL_checknumber(L, -1) != 0)
+				luaL_argerror(L, lo, "SDF fonts require FontNo = 0");
+			ret.FontNo = static_cast<ImU32>(luaL_checkinteger(L, -1));
+		}
+		lua_pop(L, 1);
 		get_field(FontLoaderFlags, luaL_checkinteger);
-		get_field(RasterizerMultiply, luaL_checknumber);
+		lua_getfield(L, lo, "RasterizerMultiply");
+		if (!lua_isnil(L, -1))
+		{
+			const auto multiply = luaL_checknumber(L, -1);
+			if (use_sdf && multiply != 1)
+				luaL_argerror(L, lo, "SDF fonts require RasterizerMultiply = 1");
+			ret.RasterizerMultiply = static_cast<float>(multiply);
+		}
+		lua_pop(L, 1);
 		get_field(RasterizerDensity, luaL_checknumber);
 		get_field(ExtraSizeScale, luaL_checknumber);
 		get_field(Flags, luaL_checkinteger);
@@ -1749,8 +1780,9 @@ static int imgui_addFontTTF(lua_State *L) {
 	if (!std::isfinite(size_pixels) || size_pixels < 0)
 		return luaL_error(L, "font size must be finite and non-negative");
 	ImFontConfig cfg;
+	bool use_sdf = false;
 	if (args >= 3)
-		cfg = lua_toImFontConfig(L, 3);
+		cfg = lua_toImFontConfig(L, 3, use_sdf);
 	if (!std::isfinite(cfg.SizePixels) || cfg.SizePixels < 0 ||
 		!std::isfinite(cfg.RasterizerDensity) || cfg.RasterizerDensity <= 0)
 		return luaL_error(L, "invalid font reference size or rasterizer density");
@@ -1775,7 +1807,6 @@ static int imgui_addFontTTF(lua_State *L) {
 		if (reference_size > 0 && (cfg.DstFont->Flags & ImFontFlags_ImplicitRefSize))
 			return luaL_error(L, "an implicit-size destination requires an implicit-size merge source");
 	}
-	cfg.FontDataOwnedByAtlas = true;
 	std::string path;
 	if (!luaval_to_native(L, 1, &path))
 		return 0;
@@ -1785,6 +1816,17 @@ static int imgui_addFontTTF(lua_State *L) {
 		const auto count = (std::min)(name.size(), sizeof(cfg.Name) - 1);
 		imgui_copyFontConfigName(cfg, name.data() + name.size() - count, count);
 	}
+	if (use_sdf)
+	{
+		if (path.find('\0') != std::string::npos)
+			return luaL_argerror(L, 1, "font path must not contain embedded NUL bytes");
+		auto* font = ImGuiCC::AddSdfFont(atlas, path.c_str(), size_pixels, cfg);
+		if (!font)
+			return luaL_error(L, "failed to load SDF font at %s (requires a scalable, monochrome face)", path.c_str());
+		object_to_luaval(L, "imgui.ImFont", font);
+		return 1;
+	}
+	cfg.FontDataOwnedByAtlas = true;
 	const auto data = cc::FileUtils::getInstance()->getDataFromFile(path);
 	if (data.getSize() == 0)
 		return luaL_error(L, "no font data at %s", path.c_str());

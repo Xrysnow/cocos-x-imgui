@@ -999,6 +999,10 @@ end
 
 --- Load a font source while the current atlas is unlocked, before submitting text.
 --- config may be a plain table or an ImFontConfig userdata; only supported value fields are read.
+--- A config table may set RasterMode to "Bitmap" (default) or "SDF".
+--- SDF uses the cocos renderer and shares 48 ppem glyphs across logical sizes and framebuffer densities.
+--- SDF supports scalable monochrome fonts with FontNo = 0 and RasterizerMultiply = 1.
+--- The ImGui atlas preview omits glyphs stored in the cocos SDF atlas.
 --- MergeMode = true adds a source to DstFont, or the last atlas font if DstFont is omitted.
 --- DstFont must be a live font in the current atlas and requires MergeMode = true.
 --- Merging returns the destination font. Earlier sources win when glyph coverage overlaps;
@@ -1008,13 +1012,14 @@ end
 --- An implicit-size destination only accepts implicit-size sources. Do not wait for atlas:isBuilt().
 ---@param path string
 ---@param size number Finite, non-negative reference size.
----@param config? table|imgui.ImFontConfig MergeMode, optional DstFont and ordinary font options.
+---@param config? table|imgui.ImFontConfig Optional MergeMode, DstFont and ordinary font options. RasterMode is available in tables.
 --- The cocos backend loads glyphs and updates atlas textures on demand; no ranges are needed.
---- Font bytes are copied into ImGui-owned storage for the full atlas lifetime.
+--- Font bytes are retained by the loader for the lifetime of the font source.
 --- GlyphRanges/GlyphExcludeRanges properties and loader/data pointers remain unavailable.
 --- The old fourth ranges argument and imgui.GlyphRanges presets have been removed.
---- Missing/invalid file data raises an error; native source initialization failure returns nil.
----@return imgui.ImFont|nil New font, merge destination, or nil when loading fails.
+--- Missing or invalid file data raises an error. Other Bitmap source initialization failures return nil.
+--- SDF source initialization failures raise an error.
+---@return imgui.ImFont|nil New font, merge destination, or nil on Bitmap source initialization failure.
 function imgui.addFontTTF(path, size, config)
 end
 

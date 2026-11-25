@@ -10,6 +10,9 @@ void CCIMGUI::init()
 	ImGui_ImplCC_Init(true);
 	_implotContext = ImPlot::CreateContext();
 	ImPlot::SetCurrentContext(_implotContext);
+	// Release ImGui's textures and callbacks before the Director tears down the device and Lua VM.
+	_resetListener = EventListenerCustom::create(Director::EVENT_RESET, [](EventCustom*) { destroyInstance(); });
+	Director::getInstance()->getEventDispatcher()->addEventListenerWithFixedPriority(_resetListener, -1);
 }
 
 CCIMGUI* CCIMGUI::getInstance()
@@ -28,6 +31,7 @@ void CCIMGUI::destroyInstance()
 {
 	if (_instance)
 	{
+		Director::getInstance()->getEventDispatcher()->removeEventListener(_instance->_resetListener);
 		// Destroy only our context, while ImGui and its allocators are still available.
 		if (_instance->_implotContext)
 		{

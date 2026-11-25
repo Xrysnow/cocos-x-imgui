@@ -1,4 +1,5 @@
 #include "imgui_impl_cc.h"
+#include "CCImGuiSdf.h"
 #include "cocos2d.h"
 #include "renderer/backend/Backend.h"
 #include "renderer/backend/gfx/DeviceGFX.h"
@@ -484,6 +485,8 @@ struct ProgramInfo
 };
 static ProgramInfo g_ProgramInfo;
 static ProgramInfo g_ProgramFontInfo;
+static ProgramInfo g_ProgramSdfInfo;
+static cc::IntrusivePtr<Texture2D> g_MissingGlyph;
 static Mat4 g_Projection;
 constexpr IndexFormat g_IndexFormat = sizeof(ImDrawIdx) == 2 ? IndexFormat::U_SHORT : IndexFormat::U_INT;
 
@@ -549,6 +552,58 @@ struct SavedRenderState
 	bool stencilTest;
 };
 
+static void SetupTextureDraw(CustomCommand& cmd, ProgramState& state, const ProgramInfo& program, Texture2D& texture)
+{
+	cmd.init(0.f, BlendFunc::ALPHA_NON_PREMULTIPLIED);
+	auto& desc = cmd.getPipelineDescriptor();
+	desc.programState = &state;
+	state.setUniform(program.projection, &g_Projection, sizeof(Mat4));
+	state.setTexture(program.texture, 0, texture.getBackendTexture());
+	desc.blendDescriptor.sourceAlphaBlendFactor = BlendFactor::ONE;
+	cmd.setPrimitiveType(PrimitiveType::TRIANGLE);
+}
+
+struct SdfSubmission
+{
+	CustomCommand command;
+	cc::IntrusivePtr<ProgramState> state;
+	cc::IntrusivePtr<Texture2D> texture;
+	std::vector<std::shared_ptr<void>> slots;
+};
+
+static void DrawMixedRuns(Renderer* renderer, Buffer* vertices, Texture2D* atlas, std::vector<ImGuiCC::DrawRun>& runs)
+{
+	for (auto& run : runs)
+	{
+		if (run.mode == ImGuiCC::DrawMode::Missing && !g_MissingGlyph)
+		{
+			// Keep the capacity fallback independent of ImGui atlas generations.
+			uint8_t pixels[64]{};
+			for (int y = 1; y <= 6; ++y)
+				for (int x = 1; x <= 6; ++x)
+					pixels[8 * y + x] = x == 1 || x == 6 || y == 1 || y == 6 ? 255 : 0;
+			cc::IntrusivePtr marker{new Texture2D()};
+			if (marker->initWithData(pixels, sizeof(pixels), PixelFormat::A8, 8, 8))
+				g_MissingGlyph = std::move(marker);
+		}
+		auto* tex = run.mode == ImGuiCC::DrawMode::Atlas ? atlas :
+			run.mode == ImGuiCC::DrawMode::Sdf ? run.page : g_MissingGlyph.get();
+		if (!tex)
+			continue;
+		const auto& program = run.mode == ImGuiCC::DrawMode::Sdf ? g_ProgramSdfInfo :
+			tex->getPixelFormat() == PixelFormat::A8 ? g_ProgramFontInfo : g_ProgramInfo;
+		auto draw = std::make_shared<SdfSubmission>();
+		draw->slots = std::move(run.leases);
+		draw->texture = tex;
+		draw->state = cc::IntrusivePtr{new ProgramState(program.program)};
+		SetupTextureDraw(draw->command, *draw->state, program, *tex);
+		draw->command.setVertexBuffer(vertices);
+		draw->command.setDrawType(CustomCommand::DrawType::ARRAY);
+		draw->command.setVertexDrawInfo(run.first, run.count);
+		renderer->addOwnedCommand(&draw->command, draw);
+	}
+}
+
 void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 {
 	// Glyphs may be loaded during UI submission. Upload them before resolving TexRef.
@@ -601,6 +656,15 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 	// Will project scissor/clipping rectangles into framebuffer space
 	const ImVec2 clip_off = draw_data->DisplayPos; // (0,0) unless using multi-viewports
 
+	auto sdf = ImGuiCC::PrepareSdfDrawData(*draw_data);
+	Buffer* sdfVertices = nullptr;
+	if (!sdf.vertices.empty())
+	{
+		const auto bytes = sdf.vertices.size() * sizeof(ImDrawVert);
+		sdfVertices = backend::Device::getInstance()->newBuffer(bytes, sizeof(ImDrawVert), BufferType::VERTEX, BufferUsage::STATIC);
+		sdfVertices->autorelease();
+		sdfVertices->updateData(sdf.vertices.data(), bytes);
+	}
 	// Render command lists
 	for (int n = 0; n < draw_data->CmdLists.Size; n++)
 	{
@@ -671,25 +735,24 @@ void ImGui_ImplCC_RenderDrawData(ImDrawData* draw_data)
 						continue;
 					if (auto tex = dynamic_cast<Texture2D*>((Ref*)texture_id))
 					{
+						if (auto it = sdf.runs.find(pcmd); it != sdf.runs.end())
+						{
+							DrawMixedRuns(renderer, sdfVertices, tex, it->second);
+							continue;
+						}
 						g_DrawTextures.pushBack(tex);
 						auto cmd = std::make_shared<CustomCommand>();
 						g_CustomCommands.push_back(cmd);
-						cmd->init(0.f, BlendFunc::ALPHA_NON_PREMULTIPLIED);
+						// Ordinary UI uses the original indexed buffers.
 						const auto pinfo = tex->getPixelFormat() == PixelFormat::A8 ? &g_ProgramFontInfo : &g_ProgramInfo;
 						// create new ProgramState
 						cc::IntrusivePtr state{new ProgramState(pinfo->program)};
 						g_ProgramStates.pushBack(state.get());
-						auto& desc = cmd->getPipelineDescriptor();
-						desc.programState = state.get();
-						desc.programState->setUniform(pinfo->projection, &g_Projection, sizeof(Mat4));
-						desc.programState->setTexture(pinfo->texture, 0, tex->getBackendTexture());
-						// In order to composite our output buffer we need to preserve alpha
-						desc.blendDescriptor.sourceAlphaBlendFactor = BlendFactor::ONE;
+						SetupTextureDraw(*cmd, *state, *pinfo, *tex);
 						// set vertex/index buffer
 						cmd->setIndexBuffer(ibuffer, g_IndexFormat);
 						cmd->setVertexBuffer(vbuffer);
 						cmd->setDrawType(CustomCommand::DrawType::ELEMENT);
-						cmd->setPrimitiveType(PrimitiveType::TRIANGLE);
 						cmd->setIndexDrawInfo(pcmd->IdxOffset, pcmd->ElemCount);
 						renderer->addCommand(cmd.get());						
 					}
@@ -1021,12 +1084,11 @@ static bool ImGui_ImplCC_UpdateTexture(ImTextureData* texture)
 	return true;
 }
 
-bool ImGui_ImplCC_CreateDeviceObjects()
-{
-	static auto vertex_shader = R"(
+static constexpr auto vertex_shader = R"(
 #ifndef GL_ES
 #define lowp
 #define mediump
+#define highp
 #endif
 
 #if __VERSION__ >= 300
@@ -1039,7 +1101,7 @@ layout(std140, binding=0) uniform VSBlock
     mat4 u_MVPMatrix;
 };
 layout(location=0) out lowp vec4 v_fragmentColor;
-layout(location=1) out mediump vec2 v_texCoord;
+layout(location=1) out highp vec2 v_texCoord;
 
 #else
 
@@ -1048,7 +1110,7 @@ attribute vec4 a_color;
 attribute vec2 a_texCoord;
 uniform mat4 u_MVPMatrix;
 varying lowp vec4 v_fragmentColor;
-varying mediump vec2 v_texCoord;
+varying highp vec2 v_texCoord;
 
 #endif
 
@@ -1059,6 +1121,53 @@ void main()
     v_texCoord = a_texCoord;
 }
 )";
+
+static void ConfigureProgram(ProgramInfo& p)
+{
+	p.texture = p.program->getUniformLocation(TEXTURE);
+	p.projection = p.program->getUniformLocation(MVP_MATRIX);
+	IM_ASSERT(bool(p.texture));
+	IM_ASSERT(bool(p.projection));
+	auto layout = p.program->getVertexLayout();
+	layout->setAttribute("a_position", 0,
+		VertexFormat::FLOAT2, 0, false);
+	layout->setAttribute("a_texCoord", 1,
+		VertexFormat::FLOAT2, offsetof(ImDrawVert, uv), false);
+	layout->setAttribute("a_color", 2,
+		VertexFormat::UBYTE4, offsetof(ImDrawVert, col), true);
+	layout->setStride(sizeof(ImDrawVert));
+}
+
+static bool g_TriedSdfProgram = false;
+bool ImGui_ImplCC_EnsureSdfProgram()
+{
+	if (g_TriedSdfProgram)
+		return g_ProgramSdfInfo.program != nullptr;
+	g_TriedSdfProgram = true;
+	static auto fragment_shader_sdf = R"(
+#ifdef GL_ES
+precision highp float;
+#endif
+layout(location=0) in vec4 v_fragmentColor;
+layout(location=1) in vec2 v_texCoord;
+layout(binding=2) uniform sampler2D u_texture;
+layout(location=0) out vec4 cc_FragColor;
+void main()
+{
+    float d = texture(u_texture, v_texCoord).r;
+    float aa = max(0.5 * fwidth(d), 0.5 / 255.0);
+    float coverage = smoothstep(0.5 - aa, 0.5 + aa, d);
+    cc_FragColor = vec4(v_fragmentColor.rgb, v_fragmentColor.a * coverage);
+}
+)";
+	g_ProgramSdfInfo.program = backend::Device::getInstance()->newProgram(vertex_shader, fragment_shader_sdf);
+	if (g_ProgramSdfInfo.program)
+		ConfigureProgram(g_ProgramSdfInfo);
+	return g_ProgramSdfInfo.program != nullptr;
+}
+
+bool ImGui_ImplCC_CreateDeviceObjects()
+{
 	static auto fragment_shader = R"(
 #ifdef GL_ES
 precision lowp float;
@@ -1111,6 +1220,7 @@ void main()
 #endif
 }
 )";
+
 	CC_SAFE_RELEASE(g_ProgramInfo.program);
 	CC_SAFE_RELEASE(g_ProgramFontInfo.program);
 	g_ProgramInfo.program = backend::Device::getInstance()->newProgram(
@@ -1122,21 +1232,8 @@ void main()
 	if (!g_ProgramInfo.program || !g_ProgramFontInfo.program)
 		return false;
 
-	for (auto& p : { &g_ProgramInfo,&g_ProgramFontInfo })
-	{
-		p->texture = p->program->getUniformLocation(TEXTURE);
-		p->projection = p->program->getUniformLocation(MVP_MATRIX);
-		IM_ASSERT(bool(p->texture));
-		IM_ASSERT(bool(p->projection));
-		auto layout = p->program->getVertexLayout();
-		layout->setAttribute("a_position", 0,
-			VertexFormat::FLOAT2, 0, false);
-		layout->setAttribute("a_texCoord", 1,
-			VertexFormat::FLOAT2, offsetof(ImDrawVert, uv), false);
-		layout->setAttribute("a_color", 2,
-			VertexFormat::UBYTE4, offsetof(ImDrawVert, col), true);
-		layout->setStride(sizeof(ImDrawVert));
-	}
+	ConfigureProgram(g_ProgramInfo);
+	ConfigureProgram(g_ProgramFontInfo);
 
 	return true;
 }
@@ -1150,6 +1247,9 @@ void ImGui_ImplCC_DestroyDeviceObjects()
 	g_DrawTextures.clear();
 	CC_SAFE_RELEASE_NULL(g_ProgramInfo.program);
 	CC_SAFE_RELEASE_NULL(g_ProgramFontInfo.program);
+	CC_SAFE_RELEASE_NULL(g_ProgramSdfInfo.program);
+	g_TriedSdfProgram = false;
+	g_MissingGlyph.reset();
 	for (ImTextureData* texture : ImGui::GetPlatformIO().Textures)
 		if (texture->RefCount == 1)
 			ImGui_ImplCC_DestroyTexture(texture);
@@ -1389,6 +1489,7 @@ void ImGui_ImplCC_Shutdown()
 	ImGui_ImplCC_DestroyDeviceObjects();
 	ImGui::GetIO().BackendFlags &= ~ImGuiBackendFlags_RendererHasTextures;
 	ImGui::DestroyContext();
+	ImGuiCC::CollectSdfSources();
 }
 
 static void ImGui_ImplCC_UpdateMousePosAndButtons()
@@ -1666,6 +1767,7 @@ static void ImGui_ImplGlfw_UpdateMonitors()
 
 void ImGui_ImplCC_NewFrame()
 {
+	ImGuiCC::CollectSdfSources();
 	if (auto* input = ImGui_ImplCC_GetTextInput(ImGui::GetCurrentContext()))
 		input->newFrame();
 	g_CallbackCommands.clear();

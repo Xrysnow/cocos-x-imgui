@@ -117,6 +117,7 @@ public:
 private:
 	static std::function<void(CCIMGUI*)> _onInit;
 	ImPlotContext* _implotContext = nullptr;
+	cc::IntrusivePtr<cc::EventListenerCustom> _resetListener;
 	
     std::unordered_map<std::string, std::function<void()>> _callPiplines;
     std::unordered_map<cc::Ref*, int> usedCCRefIdMap;
